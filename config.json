@@ -1,0 +1,24 @@
+{
+    "LogDirectory": "./",
+    "LogLevel": "Debug",
+    "Channels": [
+        {
+            "Name": "WebSocketChannel1",
+            "Port": 4401,
+            "Modules": [
+                {
+                    "Name": "LogModule"
+                }
+            ]
+        },
+        {
+            "Name": "WebSocketChannel2",
+            "Port": 4402,
+            "Modules": [
+                {
+                    "Name": "LogModule"
+                }
+            ]
+        }
+    ]
+}

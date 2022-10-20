@@ -1,0 +1,5 @@
+add_subdirectory(common)
+add_subdirectory(modules)
+add_subdirectory(channels)
+add_subdirectory(applications)
+add_subdirectory(websocket_server)
