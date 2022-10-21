@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include "common/service.h"
-#include <jsoncpp/json/json.h>
+#include <json/json.h>
 #include "common/channel_interface.h"
 
 namespace moboware::common

@@ -1,6 +1,6 @@
 #include "applications/application.h"
 #include <fstream>
-#include <jsoncpp/json/json.h>
+#include <json/json.h>
 #include "common/log.h"
 
 using namespace moboware::common;
@@ -24,10 +24,11 @@ bool Application::LoadConfig(const std::string &configFile)
         return false;
     }
 
-    Json::Reader jsonReader;
-    Json::Value rootDocument;
+    Json::CharReaderBuilder builder{};
+    Json::Value rootDocument{};
     auto collectComments{false};
-    if (!jsonReader.parse(configStream, rootDocument, collectComments))
+    Json::String* errors{};
+    if (!Json::parseFromStream(builder,configStream, &rootDocument, errors))
     {
         LOG("Failed to parse config file");
         return false;
