@@ -7,17 +7,17 @@ namespace moboware::common
     class Service
     {
     public:
-        Service() = default;
+        Service();
         ~Service() = default;
-        Service(const Service &) = delete;
-        Service(Service &&) = delete;
-        Service &operator=(const Service &) = delete;
-        Service &operator=(Service &&) = delete;
+        Service(const Service&) = delete;
+        Service(Service&&) = delete;
+        Service& operator=(const Service&) = delete;
+        Service& operator=(Service&&) = delete;
 
         int Run();
         void Stop();
 
-        boost::asio::io_service &GetIoService()
+        boost::asio::io_service& GetIoService()
         {
             return m_IoService;
         }

@@ -3,8 +3,8 @@
 
 using namespace moboware::common;
 
-ChannelBase::ChannelBase(const std::shared_ptr<Service> &service)
-    : m_Service(service)
+ChannelBase::ChannelBase(const std::shared_ptr<Service>& service)
+  : m_Service(service)
 {
 }
 
@@ -12,55 +12,55 @@ void ChannelBase::Stop()
 {
 }
 
-const std::string MODULES_VALUE{"Modules"};
+const std::string MODULES_VALUE{ "Modules" };
 
-bool ChannelBase::LoadConfig(const Json::Value &channelConfig)
+bool ChannelBase::LoadConfig(const Json::Value& channelConfig)
 {
-    if (!channelConfig.isMember(NAME_VALUE) ||
-        !channelConfig.isMember(MODULES_VALUE))
-    {
-        return false;
-    }
+  if (!channelConfig.isMember(NAME_VALUE) ||
+    !channelConfig.isMember(MODULES_VALUE))
+  {
+    return false;
+  }
 
-    m_ChannelName = channelConfig[NAME_VALUE].asString();
-    if (!LoadChannelConfig(channelConfig))
-    {
-        LOG("Faled to load channel config");
-        return false;
-    }
+  m_ChannelName = channelConfig[NAME_VALUE].asString();
+  if (!LoadChannelConfig(channelConfig))
+  {
+    LOG("Faled to load channel config");
+    return false;
+  }
 
-    const auto modules = channelConfig[MODULES_VALUE];
-    if (modules.isArray())
+  const auto modules = channelConfig[MODULES_VALUE];
+  if (modules.isArray())
+  {
+    for (const auto& moduleValue : modules)
     {
-        for (const auto &moduleValue : modules)
+      if (!moduleValue.isMember(NAME_VALUE))
+      {
+        return false;
+      }
+
+      const auto moduleName = moduleValue[NAME_VALUE].asString();
+      const auto module = CreateModule(moduleName, moduleValue);
+      if (module)
+      {
+        if (module->LoadConfig(moduleValue))
         {
-            if (!moduleValue.isMember(NAME_VALUE))
-            {
-                return false;
-            }
-
-            const auto moduleName = moduleValue[NAME_VALUE].asString();
-            const auto module = CreateModule(moduleName, moduleValue);
-            if (module)
-            {
-                if (module->LoadConfig(moduleValue))
-                {
-                    m_Modules.push_back(module);
-                }
-            }
+          m_Modules.push_back(module);
         }
+      }
     }
-    return !m_Modules.empty();
+  }
+  return !m_Modules.empty();
 }
 
 bool ChannelBase::StartModules()
 {
-    for (const auto module : m_Modules)
+  for (const auto module : m_Modules)
+  {
+    if (!module->Start())
     {
-        if (!module->Start())
-        {
-            return false;
-        }
+      return false;
     }
-    return true;
+  }
+  return true;
 }

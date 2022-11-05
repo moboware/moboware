@@ -6,31 +6,31 @@
 
 namespace moboware::web_socket_server
 {
-    class WebSocketServer
-    {
-    public:
-        explicit WebSocketServer(const std::shared_ptr<common::Service> &service);
+  class WebSocketServer
+  {
+  public:
+    explicit WebSocketServer(const std::shared_ptr<common::Service>& service);
 
-        virtual ~WebSocketServer() = default;
-        WebSocketServer(const WebSocketServer &) = delete;
-        WebSocketServer(WebSocketServer &&) = delete;
-        WebSocketServer &operator=(const WebSocketServer &) = delete;
-        WebSocketServer &operator=(WebSocketServer &&) = delete;
+    virtual ~WebSocketServer() = default;
+    WebSocketServer(const WebSocketServer&) = delete;
+    WebSocketServer(WebSocketServer&&) = delete;
+    WebSocketServer& operator=(const WebSocketServer&) = delete;
+    WebSocketServer& operator=(WebSocketServer&&) = delete;
 
-        [[nodiscard]] bool Start(const int port);
-        [[nodiscard]] bool SendData(const std::uint64_t tag, const std::string &payload);
-        using WebSocketDataReceivedFn = std::function<void(const std::uint64_t tag, const std::string &payload)>;
-        void SetWebSocketDataReceived(const WebSocketDataReceivedFn &fn);
+    [[nodiscard]] bool Start(const int port);
+    [[nodiscard]] bool SendData(const std::uint64_t tag, const std::string& payload);
+    using WebSocketDataReceivedFn = std::function<void(const std::uint64_t tag, const std::string& payload)>;
+    void SetWebSocketDataReceived(const WebSocketDataReceivedFn& fn);
 
-    private:
-        using WsppServer_t = websocketpp::server<websocketpp::config::asio>;
-        void OnWebSocketMessage(websocketpp::connection_hdl hdl, WsppServer_t::message_ptr msg);
-        const std::shared_ptr<common::Service> m_Service;
-        WsppServer_t m_WsppServer;
-        TagMap m_TagMap;
-        std::map<websocketpp::connection_hdl, uint64_t, std::owner_less<websocketpp::connection_hdl>> m_WebSocketHandleToTag;
-        std::map<uint64_t, websocketpp::connection_hdl> m_TagToWebSocketHandle;
+  private:
+    using WsppServer_t = websocketpp::server<websocketpp::config::asio>;
+    void OnWebSocketMessage(websocketpp::connection_hdl hdl, WsppServer_t::message_ptr msg);
+    const std::shared_ptr<common::Service> m_Service;
+    WsppServer_t m_WsppServer;
+    TagMap m_TagMap;
+    std::map<websocketpp::connection_hdl, uint64_t, std::owner_less<websocketpp::connection_hdl>> m_WebSocketHandleToTag;
+    std::map<uint64_t, websocketpp::connection_hdl> m_TagToWebSocketHandle;
 
-        WebSocketDataReceivedFn m_WebSocketDataReceivedFn;
-    };
+    WebSocketDataReceivedFn m_WebSocketDataReceivedFn;
+  };
 }
