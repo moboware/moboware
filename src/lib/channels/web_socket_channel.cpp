@@ -1,14 +1,12 @@
 #include "channels/web_socket_channel.h"
-#include "modules/tcp_client_module.h"
 #include "modules/log_module.h"
+#include "modules/tcp_client_module.h"
 
 using namespace moboware::channels;
 using namespace moboware::common;
 using namespace moboware::modules;
 
-WebSocketChannel::WebSocketChannel(const std::shared_ptr<Service>& service)
-  : ChannelBase(service),
-  m_WebSocketServer(service)
+WebSocketChannel::WebSocketChannel(const std::shared_ptr<Service>& service) : ChannelBase(service), m_WebSocketServer(service)
 {
 }
 
@@ -49,17 +47,17 @@ std::shared_ptr<IModule> WebSocketChannel::CreateModule(const std::string& modul
   {
     LOG("Module name unknown:" << moduleName);
   }
-  return nullptr; // or throw exception
+  return nullptr;  // or throw exception
 }
 
 bool WebSocketChannel::Start()
 {
   LOG("Starting WebSocketChannel " << GetChannelName());
 
-  m_WebSocketServer.SetWebSocketDataReceived([this](const uint64_t tag, const std::string& payload) //
-    {                                                      //
-      this->HandleWebSocketData(tag, payload);
-    });
+  m_WebSocketServer.SetWebSocketDataReceived([this](const uint64_t tag, const std::string& payload)  //
+                                             {                                                       //
+                                               this->HandleWebSocketData(tag, payload);
+                                             });
   if (!m_WebSocketServer.Start(m_Port))
   {
     LOG("Start channel failed " << GetChannelName());
@@ -86,9 +84,9 @@ void WebSocketChannel::HandleWebSocketData(const uint64_t tag, const std::string
   // could be more specific in sending to the modules when we have an protocol over json e.g.
   // and implememnt some kind of subscribtion mechanism from the module to the channel wo we can send specific
   // message to subscribed modules only.
-  std::for_each(GetModules().begin(), GetModules().end(),   //
-    [&tag, &payload](const ModulePtr_t& module) //
-    {                                           //
-      module->OnWebSocketPayload(tag, payload);
-    });
+  std::for_each(GetModules().begin(), GetModules().end(),    //
+                [&tag, &payload](const ModulePtr_t& module)  //
+                {                                            //
+                  module->OnWebSocketPayload(tag, payload);
+                });
 }

@@ -1,2 +1,2 @@
 add_subdirectory(common)
-add_subdirectory(websocket_server_app)
+add_subdirectory(web_socket_server_test_app)
