@@ -1,9 +1,9 @@
 #pragma once
 
-#include <map>
 #include "common/service.h"
 #include "common/timer.h"
 #include "web_socket_server/web_socket_session.h"
+#include <map>
 
 namespace moboware {
 
@@ -11,8 +11,9 @@ namespace moboware {
  * @brief
  *
  */
-class WebSocketServer {
- public:
+class WebSocketServer
+{
+public:
   explicit WebSocketServer(const std::shared_ptr<moboware::common::Service>& service, const std::shared_ptr<WebSocketCallback>& callback);
   WebSocketServer(const WebSocketServer&);
   WebSocketServer(WebSocketServer&&);
@@ -22,10 +23,10 @@ class WebSocketServer {
 
   [[nodiscard]] bool Start(const std::string address, const short port);
 
- private:
+private:
   void Accept();
   void StartSessionTimer();
-  std::size_t CheckClosedSessions();
+  auto CheckClosedSessions() -> std::size_t;
 
   const std::shared_ptr<moboware::common::Service> m_Service;
   const std::shared_ptr<WebSocketCallback> m_WebSocketChannelCallback;
@@ -36,4 +37,4 @@ class WebSocketServer {
   Sessions_t m_Sessions;
   common::Timer m_sessionTimer;
 };
-}  // namespace moboware
+} // namespace moboware

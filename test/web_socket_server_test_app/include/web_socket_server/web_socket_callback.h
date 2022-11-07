@@ -5,8 +5,9 @@
 
 namespace moboware {
 
-class WebSocketCallback {
- public:
+class WebSocketCallback
+{
+public:
   WebSocketCallback() = default;
   virtual ~WebSocketCallback() = default;
   WebSocketCallback(const WebSocketCallback&) = default;
@@ -16,4 +17,4 @@ class WebSocketCallback {
 
   virtual void OnDataRead(const boost::beast::flat_buffer& readBuffer, const boost::asio::ip::tcp::endpoint& remoteEndPoint) = 0;
 };
-}  // namespace moboware
+} // namespace moboware

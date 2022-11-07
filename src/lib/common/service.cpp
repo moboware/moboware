@@ -7,10 +7,8 @@ using namespace moboware::common;
 constexpr auto numberOfServiceThreads{ 1U };
 
 Service::Service()
-  :
-  m_IoService(numberOfServiceThreads)
+  : m_IoService(numberOfServiceThreads)
 {
-
 }
 
 int Service::Run()
@@ -19,12 +17,8 @@ int Service::Run()
   std::vector<std::thread> v;
   v.reserve(numberOfServiceThreads - 1);
 
-  for (auto i = numberOfServiceThreads - 1; i > 0; --i)
-  {
-    v.emplace_back([this]
-      {
-        m_IoService.run();
-      });
+  for (auto i = numberOfServiceThreads - 1; i > 0; --i) {
+    v.emplace_back([this] { m_IoService.run(); });
   }
   //
   m_IoService.run();
@@ -34,8 +28,7 @@ int Service::Run()
 
 void Service::Stop()
 {
-  if (!m_IoService.stopped())
-  {
+  if (!m_IoService.stopped()) {
     m_IoService.stop();
   }
 }

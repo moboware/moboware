@@ -5,8 +5,8 @@ using namespace moboware::modules;
 using namespace moboware::common;
 
 LogModule::LogModule(const std::shared_ptr<common::Service>& service,                   //
-  const std::shared_ptr<common::ChannelInterface>& channelInterface) //
-  : common::IModule("LogModule", service, channelInterface)                           //
+                     const std::shared_ptr<common::ChannelInterface>& channelInterface) //
+  : common::IModule("LogModule", service, channelInterface)                             //
 {
 }
 

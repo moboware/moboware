@@ -1,6 +1,6 @@
 #include "common/timer.h"
-#include <cstdlib>
 #include "common/log.h"
+#include <cstdlib>
 
 using namespace boost;
 using namespace boost::asio;
@@ -10,10 +10,8 @@ Timer::Timer(const std::shared_ptr<Service>& service)
   : m_Timer(service->GetIoService())
 {
   // Default timer handler lambda
-  m_TimerHandler = [this](const system::error_code& error)
-  {
-    if (error != asio::error::operation_aborted && m_TimerFunction)
-    {
+  m_TimerHandler = [this](const system::error_code& error) {
+    if (error != asio::error::operation_aborted && m_TimerFunction) {
       m_TimerFunction(*this);
     }
   };

@@ -2,27 +2,23 @@
 
 #include <boost/asio/io_service.hpp>
 
-namespace moboware::common
+namespace moboware::common {
+class Service
 {
-    class Service
-    {
-    public:
-        Service();
-        ~Service() = default;
-        Service(const Service&) = delete;
-        Service(Service&&) = delete;
-        Service& operator=(const Service&) = delete;
-        Service& operator=(Service&&) = delete;
+public:
+  Service();
+  ~Service() = default;
+  Service(const Service&) = delete;
+  Service(Service&&) = delete;
+  Service& operator=(const Service&) = delete;
+  Service& operator=(Service&&) = delete;
 
-        int Run();
-        void Stop();
+  int Run();
+  void Stop();
 
-        boost::asio::io_service& GetIoService()
-        {
-            return m_IoService;
-        }
+  boost::asio::io_service& GetIoService() { return m_IoService; }
 
-    private:
-        boost::asio::io_service m_IoService;
-    };
+private:
+  boost::asio::io_service m_IoService;
+};
 }

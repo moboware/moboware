@@ -2,9 +2,9 @@
 
 #include <iostream>
 
-std::ostream &_logStream = std::cout;
+std::ostream& _logStream = std::cout;
 
-std::ostream &GetStream()
+std::ostream& GetStream()
 {
   return _logStream;
 }

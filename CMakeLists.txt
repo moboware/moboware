@@ -1,3 +1,4 @@
+project (moboware_framework)
 cmake_minimum_required(VERSION 3.22)
 
 find_program(CCACHE_PROGRAM ccache)

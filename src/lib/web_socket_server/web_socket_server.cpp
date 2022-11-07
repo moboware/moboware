@@ -19,26 +19,26 @@ WebSocketServer::WebSocketServer(const std::shared_ptr<common::Service>& service
   m_WsppServer.init_asio(&service->GetIoService());
 
   // Register our message handler
-  auto onMessageFunction{ [this](websocketpp::connection_hdl hdl, WsppServer_t::message_ptr msg) //
-                         {                                                                      //
-                             OnWebSocketMessage(hdl, msg);
-                         } };
+  auto onMessageFunction{ [this](websocketpp::connection_hdl hdl, WsppServer_t::message_ptr msg) {
+    OnWebSocketMessage(hdl, msg);
+  } };
+
   m_WsppServer.set_message_handler(onMessageFunction);
 
   // set open handler
-  const auto onOpenFunction{ [this](websocketpp::connection_hdl hdl)
-                            {
-                                const auto tag{m_TagMap.Insert(hdl)};
-                                LOG("Open connection, tag=" << tag);
-                            } };
+  const auto onOpenFunction{ [this](websocketpp::connection_hdl hdl) {
+    const auto tag{ m_TagMap.Insert(hdl) };
+    LOG("Open connection, tag=" << tag);
+  } };
+
   m_WsppServer.set_open_handler(onOpenFunction);
 
   // set close handler
   const auto onCloseFunction{ [this](websocketpp::connection_hdl hdl) //
-                             {
-                                 const auto tag{m_TagMap.Erase(hdl)};
-                                 LOG("Close connection, tag=" << tag);
-                             } };
+                              {
+                                const auto tag{ m_TagMap.Erase(hdl) };
+                                LOG("Close connection, tag=" << tag);
+                              } };
   m_WsppServer.set_close_handler(onCloseFunction);
 }
 
@@ -47,8 +47,7 @@ void WebSocketServer::OnWebSocketMessage(websocketpp::connection_hdl hdl, WsppSe
   LOG("OnWebSocket Message " << msg->get_payload());
 
   // pass on to the channel
-  if (m_WebSocketDataReceivedFn)
-  {
+  if (m_WebSocketDataReceivedFn) {
     const auto tag{ m_TagMap.Insert(hdl) };
 
     m_WebSocketDataReceivedFn(tag, msg->get_payload());
@@ -62,23 +61,20 @@ bool WebSocketServer::Start(const int port)
 
   websocketpp::lib::error_code ec{};
   m_WsppServer.start_accept(ec);
-  if (ec)
-  {
+  if (ec) {
     LOG(ec.message());
     return false;
   }
   return true;
 }
 
-bool WebSocketServer::SendData(const std::uint64_t tag, const std::string& payload)
+auto WebSocketServer::SendData(const std::uint64_t tag, const std::string& payload) -> bool
 {
   const auto hdl{ m_TagMap.Find(tag) };
-  if (hdl)
-  {
+  if (hdl) {
     websocketpp::lib::error_code ec{};
     m_WsppServer.send(hdl.value(), payload, websocketpp::frame::opcode::text, ec);
-    if (ec)
-    {
+    if (ec) {
       LOG("Failed to send web socket:" << ec.message());
       return false;
     }
