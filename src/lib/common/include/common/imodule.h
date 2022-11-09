@@ -1,10 +1,13 @@
 #pragma once
 #include "common/channel_interface.h"
 #include "common/service.h"
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/beast/core/flat_buffer.hpp>
 #include <json/json.h>
 #include <string>
 
 namespace moboware::common {
+
 class IModule
 {
 public:
@@ -26,7 +29,7 @@ public:
   virtual bool Start() = 0;
 
   virtual bool LoadConfig(const Json::Value& moduleValue) = 0;
-  virtual void OnWebSocketPayload(const uint64_t tag, const std::string& payload) = 0;
+  virtual void OnWebSocketPayload(const boost::beast::flat_buffer& readBuffer, const boost::asio::ip::tcp::endpoint& endpoint) = 0;
 
 protected:
   const std::shared_ptr<common::ChannelInterface>& GetChannelInterface() const { return m_ChannelInterface; }

@@ -1,9 +1,12 @@
 #pragma once
 #include "common/session.h"
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/beast/core/flat_buffer.hpp>
 #include <memory>
 #include <string>
 
 namespace moboware::common {
+
 class ChannelInterface : public std::enable_shared_from_this<ChannelInterface>
 {
 public:
@@ -14,6 +17,6 @@ public:
   ChannelInterface& operator=(ChannelInterface&&) = default;
   virtual ~ChannelInterface() = default;
 
-  virtual void SendData(const uint64_t tag, const std::string& payload) = 0;
+  virtual void SendWebSocketData(const boost::beast::flat_buffer& readBuffer, const boost::asio::ip::tcp::endpoint& endpoint) = 0;
 };
 }

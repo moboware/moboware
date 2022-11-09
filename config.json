@@ -4,6 +4,7 @@
     "Channels": [
         {
             "Name": "WebSocketChannel1",
+            "Address": "0.0.0.0",
             "Port": 4401,
             "Modules": [
                 {
@@ -13,6 +14,7 @@
         },
         {
             "Name": "WebSocketChannel2",
+            "Address": "0.0.0.0",
             "Port": 4402,
             "Modules": [
                 {

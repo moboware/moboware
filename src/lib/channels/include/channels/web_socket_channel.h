@@ -1,21 +1,20 @@
 #pragma once
-#include <array>
-#include <memory>
 #include "common/channel_base.h"
 #include "common/service.h"
 #include "common/session.h"
 #include "common/tcp_server.h"
 #include "common/timer.h"
 #include "web_socket_server/web_socket_server.h"
+#include <array>
+#include <memory>
 
-namespace moboware::channels
-{
+namespace moboware::channels {
 
 class WebSocketChannel
   : public common::ChannelBase
   , public common::ChannelInterface
 {
- public:
+public:
   WebSocketChannel(const std::shared_ptr<common::Service>& service);
   WebSocketChannel(const WebSocketChannel&);
   WebSocketChannel(WebSocketChannel&&);
@@ -27,14 +26,15 @@ class WebSocketChannel
 
   bool Start() final;
 
-  std::shared_ptr<common::IModule> CreateModule(const std::string& moduleName, const Json::Value& module) final;
+  [[nodiscard]] auto CreateModule(const std::string& moduleName, const Json::Value& module) -> std::shared_ptr<common::IModule> final;
 
-  void SendData(const uint64_t tag, const std::string& payload) final;
+  void SendWebSocketData(const boost::beast::flat_buffer& readBuffer, const boost::asio::ip::tcp::endpoint& endpoint) final;
 
-  void HandleWebSocketData(const uint64_t tag, const std::string& payload);
+  void OnWebSocketDataReceived(const boost::beast::flat_buffer& readBuffer, const boost::asio::ip::tcp::endpoint& endpoint);
 
- private:
-  web_socket_server::WebSocketServer m_WebSocketServer;
+private:
+  const std::shared_ptr<web_socket::WebSocketServer> m_WebSocketServer;
+  std::string m_Address{};
   int m_Port{};
 };
-}  // namespace moboware::channels
+} // namespace moboware::channels

@@ -2,7 +2,8 @@ project(web_socket_server)
 
 add_library(${PROJECT_NAME}
     web_socket_server.cpp
-    tag_map.cpp
+    web_socket_session.cpp
+    
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/)

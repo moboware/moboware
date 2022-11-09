@@ -6,10 +6,10 @@ using namespace boost;
 using namespace boost::beast;
 using namespace boost::asio;
 using namespace boost::asio::ip;
-using namespace moboware;
+using namespace moboware::web_socket;
 
 WebSocketSession::WebSocketSession(const std::shared_ptr<moboware::common::Service>& service,
-                                   const std::shared_ptr<WebSocketCallback>& callback,
+                                   const std::shared_ptr<WebSocketSessionCallback>& callback,
                                    tcp::socket&& webSocket)
   : m_Service(service)
   , m_DataHandlerCallback(callback)
@@ -63,6 +63,7 @@ void WebSocketSession::ReadData()
     // This indicates that the session was closed
     if (ec == websocket::error::closed) {
       LOG("Web socket closed");
+      m_DataHandlerCallback->OnSessionClosed();
       return;
     }
 
@@ -81,4 +82,9 @@ void WebSocketSession::ReadData()
 
   // wait for data to read
   m_WebSocket.async_read(m_ReadBuffer, beast::bind_front_handler(readDataFunc));
+}
+
+auto WebSocketSession::SendWebSocketData(const boost::beast::flat_buffer& sendBuffer) -> bool
+{
+  return m_WebSocket.write(sendBuffer.data()) != 0;
 }

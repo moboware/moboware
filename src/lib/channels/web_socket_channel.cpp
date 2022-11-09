@@ -8,24 +8,41 @@ using namespace moboware::modules;
 
 WebSocketChannel::WebSocketChannel(const std::shared_ptr<Service>& service)
   : ChannelBase(service)
-  , m_WebSocketServer(service)
+  , m_WebSocketServer(std::make_shared<web_socket::WebSocketServer>(service))
 {
 }
 
 bool WebSocketChannel::LoadChannelConfig(const Json::Value& channelConfig)
 {
   // load web socket server config settings
-  if (!channelConfig.isMember("Port")) {
-    LOG("Missing Port in channel config");
-    return false;
+  {
+    if (!channelConfig.isMember("Port")) {
+      LOG("Missing Port in channel config");
+      return false;
+    }
+
+    if (!channelConfig["Port"].isInt()) {
+      LOG("Port is not int value");
+      return false;
+    }
+
+    m_Port = channelConfig["Port"].asInt();
   }
 
-  if (!channelConfig["Port"].isInt()) {
-    LOG("Port is not int value");
-    return false;
-  }
+  {
+    const std::string AddressKey{ "Address" };
+    if (!channelConfig.isMember(AddressKey)) {
+      LOG("Missing " << AddressKey << " in channel config");
+      return false;
+    }
 
-  m_Port = channelConfig["Port"].asInt();
+    if (!channelConfig[AddressKey].isString()) {
+      LOG(AddressKey << " is not int value");
+      return false;
+    }
+
+    m_Address = channelConfig[AddressKey].asString();
+  }
   return true;
 }
 
@@ -49,11 +66,11 @@ bool WebSocketChannel::Start()
 {
   LOG("Starting WebSocketChannel " << GetChannelName());
 
-  m_WebSocketServer.SetWebSocketDataReceived([this](const uint64_t tag, const std::string& payload) //
-                                             {                                                      //
-                                               this->HandleWebSocketData(tag, payload);
-                                             });
-  if (!m_WebSocketServer.Start(m_Port)) {
+  m_WebSocketServer->SetWebSocketDataReceived([this](const boost::beast::flat_buffer& readBuffer, const boost::asio::ip::tcp::endpoint& endpoint) {
+    this->OnWebSocketDataReceived(readBuffer, endpoint);
+  });
+
+  if (not m_WebSocketServer->Start(m_Address, m_Port)) {
     LOG("Start channel failed " << GetChannelName());
     return false;
   }
@@ -61,26 +78,26 @@ bool WebSocketChannel::Start()
   return StartModules();
 }
 
-void WebSocketChannel::SendData(const uint64_t tag, const std::string& payload)
+void WebSocketChannel::SendWebSocketData(const boost::beast::flat_buffer& sendBuffer, const boost::asio::ip::tcp::endpoint& endpoint)
 {
   // send data back from a module to the web socket server.
-  LOG("WebSocketChannel SendData:" << payload);
-  if (!m_WebSocketServer.SendData(tag, payload)) {
+  LOG("WebSocketChannel SendWebSocketData:" << sendBuffer.data().data());
+  if (not m_WebSocketServer->SendWebSocketData(sendBuffer, endpoint)) {
     LOG("Web Socket error");
   }
 }
 
-void WebSocketChannel::HandleWebSocketData(const uint64_t tag, const std::string& payload)
+void WebSocketChannel::OnWebSocketDataReceived(const boost::beast::flat_buffer& readBuffer, const boost::asio::ip::tcp::endpoint& endpoint)
 {
-  LOG("Web Socket data Received, tag:" << tag << ":" << payload);
+  LOG("Web Socket data Received, tag:" << endpoint.address().to_string() << ":" << endpoint.port() << ", "
+                                       << std::string((const char*)readBuffer.data().data(), readBuffer.data().size()));
   // send all received web socket payload data to all modules.
   // could be more specific in sending to the modules when we have an protocol over json e.g.
   // and implememnt some kind of subscribtion mechanism from the module to the channel wo we can send specific
   // message to subscribed modules only.
   std::for_each(GetModules().begin(),
-                GetModules().end(),                         //
-                [&tag, &payload](const ModulePtr_t& module) //
-                {                                           //
-                  module->OnWebSocketPayload(tag, payload);
+                GetModules().end(), //
+                [&readBuffer, &endpoint](const ModulePtr_t& module) {
+                  module->OnWebSocketPayload(readBuffer, endpoint);
                 });
 }

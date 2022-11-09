@@ -23,7 +23,9 @@ TcpServer::TcpServer(const std::shared_ptr<Service>& service)
 
 void TcpServer::PostRemoveSession(const Session::Endpoint& endPoint)
 {
-  asio::post(m_Service->GetIoService(), [this, endPoint]() { m_Sessions.erase(endPoint); });
+  asio::post(m_Service->GetIoService(), [this, endPoint]() {
+    m_Sessions.erase(endPoint);
+  });
 }
 
 bool TcpServer::StartListening(const std::uint16_t port)
@@ -94,8 +96,9 @@ void TcpServer::AcceptSession(const std::shared_ptr<ServerSession>& session, con
 
 void TcpServer::SetSessionHandlers(const std::shared_ptr<ServerSession>& session)
 {
-  session->SetSessionDisconnected(
-    [this](const std::shared_ptr<Session>& session, const Session::Endpoint& endPoint) { this->SessionDisconnected(session, endPoint); });
+  session->SetSessionDisconnected([this](const std::shared_ptr<Session>& session, const Session::Endpoint& endPoint) {
+    this->SessionDisconnected(session, endPoint);
+  });
 
   session->SetSessionReceiveData(m_ReceiveDataCallbackFunction);
 }
@@ -146,7 +149,7 @@ void TcpServer::SessionDisconnected(const std::shared_ptr<Session>& /*session*/,
   }
 }
 
-std::size_t TcpServer::SendData(const std::string& data, const Session::Endpoint& endPoint)
+std::size_t TcpServer::SendWebSocketData(const std::string& data, const Session::Endpoint& endPoint)
 {
   const auto iter = m_Sessions.find(endPoint);
   if (iter != m_Sessions.end()) {

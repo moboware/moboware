@@ -22,7 +22,13 @@ bool LogModule::Start()
   return true;
 }
 
-void LogModule::OnWebSocketPayload(const uint64_t tag, const std::string& payload)
+void LogModule::OnWebSocketPayload(const boost::beast::flat_buffer& readBuffer, const boost::asio::ip::tcp::endpoint& endpoint)
 {
-  GetChannelInterface()->SendData(tag, "Hello websocket " + payload);
+  // boost::beast::flat_buffer sendBuffer;
+  // sendBuffer.prepare()
+  //
+  // sendBuffer = "Hello websocket ";
+
+  // GetChannelInterface()->SendWebSocketData(sendBuffer, endpoint);
+  GetChannelInterface()->SendWebSocketData(readBuffer, endpoint);
 }

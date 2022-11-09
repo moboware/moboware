@@ -23,7 +23,7 @@ public:
 
   [[nodiscard]] bool StartListening(const std::uint16_t port);
   void SetSessionReceiveData(const Session::ReceiveDataFunction& fn);
-  std::size_t SendData(const std::string& data, const Session::Endpoint& endPoint);
+  std::size_t SendWebSocketData(const std::string& data, const Session::Endpoint& endPoint);
 
 protected:
   /**

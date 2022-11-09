@@ -28,7 +28,7 @@ bool TcpClientModule::Start()
   if (m_TcpClient->Connect(m_Config.m_Address, m_Config.m_Port)) {
     // const common::Timer::TimerFunction timerFunc = [this](common::Timer &timer) //
     //{
-    //     m_ChannelInterface->SendData("Hello timer..");
+    //     m_ChannelInterface->SendWebSocketData("Hello timer..");
     //     timer.Restart();
     // };
     //
@@ -38,4 +38,4 @@ bool TcpClientModule::Start()
   return false;
 }
 
-void TcpClientModule::OnWebSocketPayload(const uint64_t tag, const std::string& payload) {}
+void TcpClientModule::OnWebSocketPayload(const boost::beast::flat_buffer& sendBuffer, const boost::asio::ip::tcp::endpoint& endpoint) {}
