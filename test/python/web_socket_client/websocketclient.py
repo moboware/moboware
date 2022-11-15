@@ -16,8 +16,6 @@ async def ReceiveData(websocket):
 async def hello(uri):
     async with connect(uri) as websocket:
         task = asyncio.create_task(ReceiveData(websocket))
-        # await asyncio.gather(            asyncio.to_thread(ReceiveData, websocket),            asyncio.sleep(5))
-
         # for i in range(150000):
         # send bid
         await websocket.send("{\"Action\":\"Insert\","
@@ -46,6 +44,5 @@ async def hello(uri):
                              "}"
                              "}")
         await asyncio.sleep(5)
-
 
 asyncio.run(hello("ws://localhost:4401"))
