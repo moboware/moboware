@@ -22,8 +22,9 @@ set(VCPKG_CMAKE_SYSTEM_NAME Linux)
 
 
 find_package(OpenSSL REQUIRED)
-find_package(websocketpp CONFIG REQUIRED)
+find_package(Threads)
 find_package(Boost)
+
 include_directories(${Boost_INCLUDE_DIRS})
 find_package(jsoncpp CONFIG REQUIRED)
 

@@ -9,6 +9,14 @@
             "Modules": [
                 {
                     "Name": "LogModule"
+                },
+                {
+                    "Name": "MatchingEngineModule",
+                    "Instruments": [
+                        "ABCN",
+                        "ZXY3",
+                        "INGB"
+                    ]
                 }
             ]
         },

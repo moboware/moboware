@@ -84,7 +84,11 @@ void WebSocketSession::ReadData()
   m_WebSocket.async_read(m_ReadBuffer, beast::bind_front_handler(readDataFunc));
 }
 
-auto WebSocketSession::SendWebSocketData(const boost::beast::flat_buffer& sendBuffer) -> bool
+auto WebSocketSession::SendWebSocketData(const boost::asio::const_buffer& sendBuffer) -> bool
 {
-  return m_WebSocket.write(sendBuffer.data()) != 0;
+  beast::error_code ec;
+
+  const auto n = m_WebSocket.write(sendBuffer, ec);
+
+  return n != 0 && !ec;
 }

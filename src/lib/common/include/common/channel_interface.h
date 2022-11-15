@@ -1,7 +1,7 @@
 #pragma once
 #include "common/session.h"
+#include <boost/asio/buffer.hpp>
 #include <boost/asio/ip/tcp.hpp>
-#include <boost/beast/core/flat_buffer.hpp>
 #include <memory>
 #include <string>
 
@@ -17,6 +17,6 @@ public:
   ChannelInterface& operator=(ChannelInterface&&) = default;
   virtual ~ChannelInterface() = default;
 
-  virtual void SendWebSocketData(const boost::beast::flat_buffer& readBuffer, const boost::asio::ip::tcp::endpoint& endpoint) = 0;
+  virtual void SendWebSocketData(const boost::asio::const_buffer& readBuffer, const boost::asio::ip::tcp::endpoint& endpoint) = 0;
 };
 }

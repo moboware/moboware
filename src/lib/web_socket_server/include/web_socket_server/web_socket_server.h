@@ -24,7 +24,7 @@ public:
   ~WebSocketServer() = default;
 
   [[nodiscard]] auto Start(const std::string address, const short port) -> bool;
-  [[nodiscard]] auto SendWebSocketData(const boost::beast::flat_buffer& sendBuffer, const boost::asio::ip::tcp::endpoint& remoteEndPoint) -> bool;
+  [[nodiscard]] auto SendWebSocketData(const boost::asio::const_buffer& sendBuffer, const boost::asio::ip::tcp::endpoint& remoteEndPoint) -> bool;
 
   using WebSocketDataReceivedFn = std::function<void(const boost::beast::flat_buffer& sendBuffer, const boost::asio::ip::tcp::endpoint& endpoint)>;
   void SetWebSocketDataReceived(const WebSocketDataReceivedFn& fn);

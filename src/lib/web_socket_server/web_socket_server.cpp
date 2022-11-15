@@ -102,7 +102,7 @@ void WebSocketServer::Accept()
   m_Acceptor.async_accept(asio::make_strand(m_Service->GetIoService()), beast::bind_front_handler(acceptorFunc));
 }
 
-auto WebSocketServer::SendWebSocketData(const boost::beast::flat_buffer& sendBuffer, const boost::asio::ip::tcp::endpoint& remoteEndPoint) -> bool
+auto WebSocketServer::SendWebSocketData(const boost::asio::const_buffer& sendBuffer, const boost::asio::ip::tcp::endpoint& remoteEndPoint) -> bool
 {
   const auto endPointKey = std::make_pair(remoteEndPoint.address(), remoteEndPoint.port());
   const auto iter = m_Sessions.find(endPointKey);

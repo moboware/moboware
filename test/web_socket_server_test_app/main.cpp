@@ -16,7 +16,8 @@ int main(const int, const char*[])
                                         // LOG("Read data from " << remoteEndPoint.address().to_string() << ":" << remoteEndPoint.port() //
                                         //                       << ", " << std::string((const char*)readBuffer.data().data(), readBuffer.data().size()));
                                         // send data back to the client....
-                                        if (not websocketServer->SendWebSocketData(readBuffer, remoteEndPoint)) {
+                                        const boost::asio::const_buffer sendBuffer(readBuffer.data().data(), readBuffer.size());
+                                        if (not websocketServer->SendWebSocketData(sendBuffer, remoteEndPoint)) {
                                           LOG("Failed to send...");
                                         }
                                       } };

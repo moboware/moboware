@@ -20,7 +20,7 @@ public:
 
   bool LoadConfig(const Json::Value& moduleValue) final;
   bool Start() final;
-  void OnWebSocketPayload(const boost::beast::flat_buffer& readBuffer, const boost::asio::ip::tcp::endpoint& endpoint) final;
+  void OnWebSocketDataReceived(const boost::beast::flat_buffer& readBuffer, const boost::asio::ip::tcp::endpoint& endpoint) final;
 
 private:
   common::Timer m_Timer; /// reconnect timer

@@ -1,6 +1,7 @@
 #pragma once
 #include "common/service.h"
 #include "web_socket_server/web_socket_session_callback.h"
+#include <boost/asio/buffer.hpp>
 #include <boost/beast/core/tcp_stream.hpp>
 #include <boost/beast/websocket.hpp>
 
@@ -20,7 +21,7 @@ public:
    * @return false if closed
    */
   inline auto IsOpen() const -> bool { return m_WebSocket.is_open(); }
-  [[nodiscard]] auto SendWebSocketData(const boost::beast::flat_buffer& sendBuffer) -> bool;
+  [[nodiscard]] auto SendWebSocketData(const boost::asio::const_buffer& sendBuffer) -> bool;
 
 private:
   void ReadData();

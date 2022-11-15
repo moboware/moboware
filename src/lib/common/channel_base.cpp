@@ -20,7 +20,7 @@ bool ChannelBase::LoadConfig(const Json::Value& channelConfig)
 
   m_ChannelName = channelConfig[NAME_VALUE].asString();
   if (!LoadChannelConfig(channelConfig)) {
-    LOG("Faled to load channel config");
+    LOG("Failed to load channel config");
     return false;
   }
 

@@ -29,7 +29,7 @@ public:
   virtual bool Start() = 0;
 
   virtual bool LoadConfig(const Json::Value& moduleValue) = 0;
-  virtual void OnWebSocketPayload(const boost::beast::flat_buffer& readBuffer, const boost::asio::ip::tcp::endpoint& endpoint) = 0;
+  virtual void OnWebSocketDataReceived(const boost::beast::flat_buffer& readBuffer, const boost::asio::ip::tcp::endpoint& endpoint) = 0;
 
 protected:
   const std::shared_ptr<common::ChannelInterface>& GetChannelInterface() const { return m_ChannelInterface; }

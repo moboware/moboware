@@ -3,12 +3,12 @@
   "version-string": "master",
   "builtin-baseline": "5251291e1623eabf5c8f275f456bc95f983cd8eb",
   "dependencies": [
-    "websocketpp",
     "openssl",
     "protobuf",
     "gtest",
     "jsoncpp",
-    "boost"
+    "boost",
+    "pthreads"
   ],
   "overrides": [
     {

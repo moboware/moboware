@@ -4,7 +4,7 @@
 
 using namespace moboware::common;
 
-constexpr auto numberOfServiceThreads{ 1U };
+constexpr auto numberOfServiceThreads{ 5U };
 
 Service::Service()
   : m_IoService(numberOfServiceThreads)
@@ -18,7 +18,9 @@ int Service::Run()
   v.reserve(numberOfServiceThreads - 1);
 
   for (auto i = numberOfServiceThreads - 1; i > 0; --i) {
-    v.emplace_back([this] { m_IoService.run(); });
+    v.emplace_back([this] {
+      m_IoService.run();
+    });
   }
   //
   m_IoService.run();

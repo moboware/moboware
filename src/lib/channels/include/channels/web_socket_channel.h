@@ -28,7 +28,7 @@ public:
 
   [[nodiscard]] auto CreateModule(const std::string& moduleName, const Json::Value& module) -> std::shared_ptr<common::IModule> final;
 
-  void SendWebSocketData(const boost::beast::flat_buffer& readBuffer, const boost::asio::ip::tcp::endpoint& endpoint) final;
+  void SendWebSocketData(const boost::asio::const_buffer& readBuffer, const boost::asio::ip::tcp::endpoint& endpoint) final;
 
   void OnWebSocketDataReceived(const boost::beast::flat_buffer& readBuffer, const boost::asio::ip::tcp::endpoint& endpoint);
 

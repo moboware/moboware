@@ -38,4 +38,4 @@ bool TcpClientModule::Start()
   return false;
 }
 
-void TcpClientModule::OnWebSocketPayload(const boost::beast::flat_buffer& sendBuffer, const boost::asio::ip::tcp::endpoint& endpoint) {}
+void TcpClientModule::OnWebSocketDataReceived(const boost::beast::flat_buffer& sendBuffer, const boost::asio::ip::tcp::endpoint& endpoint) {}
