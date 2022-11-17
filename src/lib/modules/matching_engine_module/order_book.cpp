@@ -59,3 +59,12 @@ std::optional<const OrderLevel*> OrderBook<TCompare>::GetLevelAtPrice(const Pric
 
   return nullptr;
 }
+
+template<typename TCompare>
+void OrderBook<TCompare>::RemoveLevelAtPrice(const PriceType_t& price)
+{
+  const auto iter{ m_OrderBookMap.find(price) };
+  if (iter != m_OrderBookMap.end()) {
+    m_OrderBookMap.erase(iter);
+  }
+}

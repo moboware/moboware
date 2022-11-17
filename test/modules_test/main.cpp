@@ -1,9 +1,10 @@
+#include "common/log_stream.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 int main(int argc, char* argv[])
 {
-  //  LogStream::GetInstance ().SetLevel ( LogStream::DEBUG );
+  LogStream::GetInstance().SetLevel(LogStream::DEBUG);
   // LogStream::GetInstance ().SetLogFile ( "./thread_test.log" );
 
   ::testing::InitGoogleMock(&argc, argv);

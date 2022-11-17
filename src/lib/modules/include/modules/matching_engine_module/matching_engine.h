@@ -17,6 +17,8 @@ public:
   virtual ~MatchingEngine() = default;
 
   void OrderInsert(const OrderData& orderInsert, const boost::asio::ip::tcp::endpoint& endpoint);
+  const OrderBidBook_t& GetBidOrderBook() const { return m_Bids; }
+  const OrderAskBook_t& GetAskOrderBook() const { return m_Asks; }
 
 protected:
 private:
@@ -32,7 +34,7 @@ private:
 
   const std::shared_ptr<common::ChannelInterface> m_ChannelInterface;
 
-  OrderBook<std::greater<uint64_t>> m_Bids; // the order bids are descending sorted
-  OrderBook<std::less<uint64_t>> m_Asks;    // the asks are ascending sorted
+  OrderBidBook_t m_Bids; // the order bids are descending sorted
+  OrderAskBook_t m_Asks; // the asks are ascending sorted
 };
 }

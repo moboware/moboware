@@ -85,8 +85,8 @@ void MatchingEngine::OrderInsert(const OrderData& orderInsert, const boost::asio
 
 void MatchingEngine::CheckMatch(const boost::asio::ip::tcp::endpoint& endpoint)
 {
-  const auto bidsMap{ m_Bids.GetOrderBookMap() };
-  const auto asksMap{ m_Asks.GetOrderBookMap() };
+  const auto& bidsMap{ m_Bids.GetOrderBookMap() };
+  const auto& asksMap{ m_Asks.GetOrderBookMap() };
 
   if (not bidsMap.empty() && not asksMap.empty()) {
     const auto& bestBidLevel = bidsMap.begin()->second;
@@ -125,7 +125,17 @@ void MatchingEngine::CheckMatch(const boost::asio::ip::tcp::endpoint& endpoint)
         {
           const auto tradedVolume{ bestBidLevel.TradeTopLevel(bestBidLevelData.volume, sendTradeFn) };
           // reduce volume on the ask top level
-          bestAskLevel.TradeTopLevel(tradedVolume, sendTradeFn);
+          bestBidLevel.TradeTopLevel(tradedVolume, sendTradeFn);
+        }
+
+        { /// check if the bid/ask levels are empty and remove the top level if so
+          if (bestAskLevel.GetSize() == 0) {
+            m_Asks.RemoveLevelAtPrice(bestAskLevelData.price);
+          }
+
+          if (bestBidLevel.GetSize() == 0) {
+            m_Bids.RemoveLevelAtPrice(bestBidLevelData.price);
+          }
         }
       }
     }

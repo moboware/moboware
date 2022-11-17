@@ -10,7 +10,6 @@ template<typename TCompare>
 class OrderBook
 {
 public:
-  // friend template<typename TCompare>  OrderBook;
   OrderBook() = default;
   OrderBook(const OrderBook&) = delete;
   OrderBook(OrderBook&&) = delete;
@@ -33,8 +32,11 @@ public:
   /// @return order level
   std::optional<const OrderLevel*> GetLevelAtPrice(const PriceType_t& price);
 
+  void RemoveLevelAtPrice(const PriceType_t& price);
+
   using OrderBookMap_t = std::map<PriceType_t, OrderLevel, TCompare>;
   inline OrderBookMap_t& GetOrderBookMap() { return m_OrderBookMap; }
+  inline const OrderBookMap_t& GetOrderBookMap() const { return m_OrderBookMap; }
 
 private:
   OrderBookMap_t m_OrderBookMap;
