@@ -49,7 +49,7 @@ bool WebSocketChannel::LoadChannelConfig(const Json::Value& channelConfig)
 
 std::shared_ptr<IModule> WebSocketChannel::CreateModule(const std::string& moduleName, const Json::Value& module)
 {
-  // todo load modules from module map from factory
+  // todo load modules from module unordered_map from factory
   LOG("Create module " << moduleName);
   if (moduleName == "TcpClientModule") {
     TcpClientModuleFactory factory;

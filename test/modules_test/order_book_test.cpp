@@ -11,12 +11,31 @@ class OrderBookTest : public testing::Test
 public:
 };
 
+class ChannelInterfaceMock : public moboware::common::ChannelInterface
+{
+public:
+  MOCK_METHOD(void, SendWebSocketData, (const boost::asio::const_buffer& readBuffer, const boost::asio::ip::tcp::endpoint& endpoint));
+};
+
+class MatchingEngineMock : public MatchingEngine
+{
+public:
+  explicit MatchingEngineMock(const std::shared_ptr<moboware::common::ChannelInterface>& channelInterface)
+    : MatchingEngine(channelInterface)
+  {
+  }
+
+  MOCK_METHOD(void, CreateAndSendMessage, (const moboware::modules::OrderInsertReply&, const boost::asio::ip::tcp::endpoint&));
+  MOCK_METHOD(void, CreateAndSendMessage, (const moboware::modules::Trade&, const boost::asio::ip::tcp::endpoint& endpoint));
+  MOCK_METHOD(void, CreateAndSendMessage, (const moboware::modules::ErrorReply&, const boost::asio::ip::tcp::endpoint& endpoint));
+};
+
 TEST_F(OrderBookTest, InsertBidOrdersTest)
 {
   OrderBidBook_t orderBook;
   OrderData orderData;
-  const auto MAX_ORDER{ 10U };
-  const PriceType_t price = 10 * 1e6;
+  constexpr auto MAX_ORDER{ 10U };
+  constexpr PriceType_t price{ 10U * std::mega::num };
 
   for (int i = { 0U }; i < MAX_ORDER; i++) {
     orderData.account = "mobo";
@@ -24,7 +43,7 @@ TEST_F(OrderBookTest, InsertBidOrdersTest)
     orderData.price = price;
     orderData.volume = 10;
     orderData.type = "Limit";
-    orderData.orderTime = std::chrono::steady_clock::now();
+    orderData.orderTime = std::chrono::high_resolution_clock::now();
 
     std::stringstream strm;
     strm << i;
@@ -44,7 +63,7 @@ TEST_F(OrderBookTest, InsertAskOrdersTest)
   OrderAskBook_t orderBook;
   OrderData orderData;
   const auto MAX_ORDER{ 10U };
-  const PriceType_t price = 10 * 1e6;
+  constexpr PriceType_t price{ 10U * std::mega::num };
 
   for (int i = { 0U }; i < MAX_ORDER; i++) {
     orderData.account = "mobo";
@@ -52,7 +71,7 @@ TEST_F(OrderBookTest, InsertAskOrdersTest)
     orderData.price = price;
     orderData.volume = 10;
     orderData.type = "Limit";
-    orderData.orderTime = std::chrono::steady_clock::now();
+    orderData.orderTime = std::chrono::high_resolution_clock::now();
 
     std::stringstream strm;
     strm << i;
@@ -67,37 +86,58 @@ TEST_F(OrderBookTest, InsertAskOrdersTest)
   EXPECT_EQ(orderLevel->GetSize(), MAX_ORDER);
 }
 
-class ChannelInterfaceMock : public moboware::common::ChannelInterface
-{
-public:
-  MOCK_METHOD(void, SendWebSocketData, (const boost::asio::const_buffer& readBuffer, const boost::asio::ip::tcp::endpoint& endpoint));
-};
-
 TEST_F(OrderBookTest, MatchOrdersFullTradeAskSideTest)
 {
   const auto channelInterface{ std::make_shared<ChannelInterfaceMock>() };
-  MatchingEngine matchingEngine(channelInterface);
+  MatchingEngineMock matchingEngine(channelInterface);
+
+  const boost::asio::ip::tcp::endpoint endpoint;
+  constexpr PriceType_t price{ 10U * std::mega::num };
 
   // expect 2 order insert replies and 2 trades
-  EXPECT_CALL(*channelInterface, SendWebSocketData(testing::_, testing::_)).Times(4);
-  boost::asio::ip::tcp::endpoint endpoint;
+  // create bid order
+  const OrderData orderDataBid{ "accountBid",
+                                "ABCD",
+                                price,
+                                100,
+                                "Limit",
+                                true,
+                                std::chrono::high_resolution_clock::now(),
+                                std::chrono::milliseconds::duration::zero(),
+                                "id=12938471298",
+                                "clientId=2394857234" };
 
-  OrderData orderData;
-  const PriceType_t price = 10 * 1e6;
+  // create ask order
+  const OrderData orderDataAsk{ "accountAsk",
+                                "ABCD",
+                                price,
+                                10,
+                                "Limit",
+                                false,
+                                std::chrono::high_resolution_clock::now(),
+                                std::chrono::milliseconds::duration::zero(),
+                                "id=129384712934528",
+                                "clientId=23948572456434" };
 
-  // insert bid side
-  orderData.account = "mobo";
-  orderData.IsBuySide = true;
-  orderData.price = price;
-  orderData.volume = 100;
-  orderData.type = "Limit";
-  orderData.orderTime = std::chrono::steady_clock::now();
-  matchingEngine.OrderInsert(orderData, endpoint);
+  const OrderInsertReply bidReply{ orderDataBid.id, orderDataBid.clientId };
+  EXPECT_CALL(matchingEngine, CreateAndSendMessage(bidReply, endpoint));
 
-  // insert ask side
-  orderData.IsBuySide = false;
-  orderData.volume = 10;
-  matchingEngine.OrderInsert(orderData, endpoint);
+  const OrderInsertReply askReply{ orderDataAsk.id, orderDataAsk.clientId };
+  EXPECT_CALL(matchingEngine, CreateAndSendMessage(askReply, endpoint));
+  // trade expectations
+  const Trade tradeBid{ orderDataBid.account, orderDataBid.price, orderDataAsk.volume, orderDataBid.clientId, orderDataBid.id };
+  EXPECT_CALL(matchingEngine, CreateAndSendMessage(tradeBid, endpoint));
+
+  const Trade tradeAsk{ orderDataAsk.account, orderDataAsk.price, orderDataAsk.volume, orderDataAsk.clientId, orderDataAsk.id };
+  EXPECT_CALL(matchingEngine, CreateAndSendMessage(tradeAsk, endpoint));
+
+  // insert bid order
+  ASSERT_TRUE(orderDataBid.Validate());
+  matchingEngine.OrderInsert(orderDataBid, endpoint);
+
+  // insert ask order
+  ASSERT_TRUE(orderDataAsk.Validate());
+  matchingEngine.OrderInsert(orderDataAsk, endpoint);
 
   const auto& bidOrderBook{ matchingEngine.GetBidOrderBook() };
   EXPECT_FALSE(bidOrderBook.GetOrderBookMap().empty());
@@ -109,28 +149,54 @@ TEST_F(OrderBookTest, MatchOrdersFullTradeAskSideTest)
 TEST_F(OrderBookTest, MatchOrdersFullTradeBidSideTest)
 {
   const auto channelInterface{ std::make_shared<ChannelInterfaceMock>() };
-  MatchingEngine matchingEngine(channelInterface);
+  MatchingEngineMock matchingEngine(channelInterface);
+
+  const boost::asio::ip::tcp::endpoint endpoint;
+  constexpr PriceType_t price{ 10U * std::mega::num };
+
+  const OrderData orderDataBid{ "mobo",
+                                "ABCD",
+                                price,
+                                10,
+                                "Limit",
+                                true,
+                                std::chrono::high_resolution_clock::now(),
+                                std::chrono::milliseconds::duration::zero(),
+                                "id=12938471298",
+                                "clientId=2394857234" };
+
+  const OrderData orderDataAsk{ "mobo",
+                                "ABCD",
+                                price,
+                                100,
+                                "Limit",
+                                false,
+                                std::chrono::high_resolution_clock::now(),
+                                std::chrono::milliseconds::duration::zero(),
+                                "id=13894751567856",
+                                "clientId=jko5ynkl345326751389475189" };
 
   // expect 2 order insert replies and 2 trades
-  EXPECT_CALL(*channelInterface, SendWebSocketData(testing::_, testing::_)).Times(4);
-  boost::asio::ip::tcp::endpoint endpoint;
+  const OrderInsertReply bidReply{ orderDataBid.id, orderDataBid.clientId };
+  EXPECT_CALL(matchingEngine, CreateAndSendMessage(bidReply, endpoint));
 
-  OrderData orderData;
-  const PriceType_t price = 10 * 1e6;
+  const OrderInsertReply askReply{ orderDataAsk.id, orderDataAsk.clientId };
+  EXPECT_CALL(matchingEngine, CreateAndSendMessage(askReply, endpoint));
 
-  // insert bid side
-  orderData.account = "mobo";
-  orderData.IsBuySide = true;
-  orderData.price = price;
-  orderData.volume = 10;
-  orderData.type = "Limit";
-  orderData.orderTime = std::chrono::steady_clock::now();
-  matchingEngine.OrderInsert(orderData, endpoint);
+  // trade expectations
+  const Trade tradeBid{ orderDataBid.account, orderDataBid.price, orderDataBid.volume, orderDataBid.clientId, orderDataBid.id };
+  EXPECT_CALL(matchingEngine, CreateAndSendMessage(tradeBid, endpoint));
 
-  // insert ask side
-  orderData.IsBuySide = false;
-  orderData.volume = 100;
-  matchingEngine.OrderInsert(orderData, endpoint);
+  const Trade tradeAsk{ orderDataAsk.account, orderDataAsk.price, orderDataBid.volume, orderDataAsk.clientId, orderDataAsk.id };
+  EXPECT_CALL(matchingEngine, CreateAndSendMessage(tradeAsk, endpoint));
+
+  // insert bid order
+  ASSERT_TRUE(orderDataBid.Validate());
+  matchingEngine.OrderInsert(orderDataBid, endpoint);
+
+  // insert ask order
+  ASSERT_TRUE(orderDataAsk.Validate());
+  matchingEngine.OrderInsert(orderDataAsk, endpoint);
 
   const auto& bidOrderBook{ matchingEngine.GetBidOrderBook() };
   EXPECT_TRUE(bidOrderBook.GetOrderBookMap().empty());
@@ -143,27 +209,54 @@ TEST_F(OrderBookTest, MatchOrdersFullTradeBidSideTest)
 TEST_F(OrderBookTest, MatchOrderFullTradeBidAndAskSideTest)
 {
   const auto channelInterface{ std::make_shared<ChannelInterfaceMock>() };
-  MatchingEngine matchingEngine(channelInterface);
+  MatchingEngineMock matchingEngine(channelInterface);
+
+  const boost::asio::ip::tcp::endpoint endpoint;
+  constexpr PriceType_t price{ 10U * std::mega::num };
+
+  const OrderData orderDataBid{ "mobo",
+                                "ABCD",
+                                price,
+                                100,
+                                "Limit",
+                                true,
+                                std::chrono::high_resolution_clock::now(),
+                                std::chrono::milliseconds::duration::zero(),
+                                "id=12938471298",
+                                "clientId=2394857234" };
+
+  const OrderData orderDataAsk{ "mobo",
+                                "ABCD",
+                                price,
+                                100,
+                                "Limit",
+                                false,
+                                std::chrono::high_resolution_clock::now(),
+                                std::chrono::milliseconds::duration::zero(),
+                                "id=13894751567856",
+                                "clientId=jko5ynkl345326751389475189" };
 
   // expect 2 order insert replies and 2 trades
-  EXPECT_CALL(*channelInterface, SendWebSocketData(testing::_, testing::_)).Times(4);
-  boost::asio::ip::tcp::endpoint endpoint;
+  const OrderInsertReply bidReply{ orderDataBid.id, orderDataBid.clientId };
+  EXPECT_CALL(matchingEngine, CreateAndSendMessage(bidReply, endpoint));
 
-  OrderData orderData;
-  const PriceType_t price = 10 * 1e6;
+  const OrderInsertReply askReply{ orderDataAsk.id, orderDataAsk.clientId };
+  EXPECT_CALL(matchingEngine, CreateAndSendMessage(askReply, endpoint));
+
+  // trade expectations
+  const Trade tradeBid{ orderDataBid.account, orderDataBid.price, orderDataBid.volume, orderDataBid.clientId, orderDataBid.id };
+  EXPECT_CALL(matchingEngine, CreateAndSendMessage(tradeBid, endpoint));
+
+  const Trade tradeAsk{ orderDataAsk.account, orderDataAsk.price, orderDataAsk.volume, orderDataAsk.clientId, orderDataAsk.id };
+  EXPECT_CALL(matchingEngine, CreateAndSendMessage(tradeAsk, endpoint));
 
   // insert bid side
-  orderData.account = "mobo";
-  orderData.IsBuySide = true;
-  orderData.price = price;
-  orderData.volume = 100;
-  orderData.type = "Limit";
-  orderData.orderTime = std::chrono::steady_clock::now();
-  matchingEngine.OrderInsert(orderData, endpoint);
+  ASSERT_TRUE(orderDataBid.Validate());
+  matchingEngine.OrderInsert(orderDataBid, endpoint);
 
   // insert ask side
-  orderData.IsBuySide = false;
-  matchingEngine.OrderInsert(orderData, endpoint);
+  ASSERT_TRUE(orderDataAsk.Validate());
+  matchingEngine.OrderInsert(orderDataAsk, endpoint);
 
   const auto& bidOrderBook{ matchingEngine.GetBidOrderBook() };
   EXPECT_TRUE(bidOrderBook.GetOrderBookMap().empty());

@@ -7,6 +7,7 @@ namespace moboware::modules {
 
 using PriceType_t = std::uint64_t;
 using VolumeType_t = std::uint64_t;
+using OrderTime_t = std::chrono::time_point<std::chrono::high_resolution_clock>;
 
 struct OrderData
 {
@@ -23,7 +24,6 @@ struct OrderData
   /// @brief buy or sell order
   bool IsBuySide{ true };
   /// @brief creation time of the order
-  using OrderTime_t = std::chrono::time_point<std::chrono::steady_clock>;
   OrderTime_t orderTime{};
   /// @brief  time that this order can live in milli seconds
   std::chrono::milliseconds orderDuration{};
@@ -31,6 +31,18 @@ struct OrderData
   std::string id;
   /// @brief order id assigned by the client
   std::string clientId;
+
+  auto Validate() const -> auto
+  {
+    return price > 0 &&                                //
+           volume > 0 &&                               //
+           orderTime.time_since_epoch().count() > 0 && //
+           not id.empty() &&                           //
+           not clientId.empty() &&                     //
+           not account.empty() &&                      //
+           not instrument.empty() &&                   //
+           (IsBuySide == true || IsBuySide == false);
+  }
 };
 
 struct OrderInsertReply
@@ -39,6 +51,7 @@ struct OrderInsertReply
   std::string id;
   /// @brief order id assigned by the client
   std::string clientId;
+  bool operator==(const OrderInsertReply& rhs) const { return id == rhs.id && clientId == clientId; }
 };
 
 struct Trade
@@ -48,6 +61,10 @@ struct Trade
   VolumeType_t tradedVolume{};
   std::string clientId;
   std::string id;
+  bool operator==(const Trade& rhs) const
+  {
+    return account == rhs.account && tradedPrice == rhs.tradedPrice && tradedVolume == rhs.tradedVolume && clientId == rhs.clientId && id == rhs.id;
+  }
 };
 
 struct ErrorReply

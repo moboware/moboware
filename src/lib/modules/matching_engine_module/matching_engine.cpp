@@ -12,9 +12,9 @@ void MatchingEngine::CreateAndSendMessage(const OrderInsertReply& orderInsertRep
 {
   // sendBuffer
   std::ostringstream strm;
-  strm << "{\"OrderInsertReply\":"                      //
-       << "{\"ClientId\":" << orderInsertReply.clientId //
-       << ",\"Id\":" << orderInsertReply.id << "}"      //
+  strm << "{\"OrderInsertReply\":"                                //
+       << "{\"ClientId\":\"" << orderInsertReply.clientId << "\"" //
+       << ",\"Id\":\"" << orderInsertReply.id << "\"}"            //
        << "}";
 
   const std::string s{ strm.str() };
@@ -27,12 +27,13 @@ void MatchingEngine::CreateAndSendMessage(const Trade& trade, const boost::asio:
 {
   // sendBuffer
   std::ostringstream strm;
-  strm << "{\"Trade\":"                              //
-       << "{\"ClientId\":" << trade.clientId         //
-       << ",\"Id\":" << trade.id                     //
-       << ",\"tradedPrice\":" << trade.tradedPrice   //
-       << ",\"tradedVolume\":" << trade.tradedVolume //
-       << "}"                                        //
+  strm << "{\"Trade\":"                                //
+       << "{\"ClientId\":\"" << trade.clientId << "\"" //
+       << ",\"Id\":\"" << trade.id << "\""             //
+       << ",\"Account\":\"" << trade.account << "\""   //
+       << ",\"TradedPrice\":" << trade.tradedPrice     //
+       << ",\"TradedVolume\":" << trade.tradedVolume   //
+       << "}"                                          //
        << "}";
 
   const std::string s{ strm.str() };
@@ -45,8 +46,9 @@ void MatchingEngine::CreateAndSendMessage(const ErrorReply& errorReply, const bo
 {
   // sendBuffer
   std::ostringstream strm;
-  strm << "{\"OrderInsertReply\":"                        //
-       << "{\"ClientId\":" << errorReply.clientId         //
+  strm << "{\"OrderInsertReply\":" //
+       << "{\"ClientId\":"
+       << "\"" << errorReply.clientId << "\""             //
        << ",\"error\":" << errorReply.errorMessage << "}" //
        << "}";
 
@@ -72,7 +74,7 @@ void MatchingEngine::OrderInsert(const OrderData& orderInsert, const boost::asio
 
   if (Insert(orderInsert)) {
     // send order insert reply
-    const OrderInsertReply orderInsertReply{ orderInsert.clientId, orderInsert.id };
+    const OrderInsertReply orderInsertReply{ orderInsert.id, orderInsert.clientId };
     CreateAndSendMessage(orderInsertReply, endpoint);
     // check if the order has match
     CheckMatch(endpoint);
@@ -123,7 +125,7 @@ void MatchingEngine::CheckMatch(const boost::asio::ip::tcp::endpoint& endpoint)
           bestBidLevel.TradeTopLevel(tradedVolume, sendTradeFn);
         } else if (bestAskLevelData.volume >= bestBidLevelData.volume) // full trade on bid side
         {
-          const auto tradedVolume{ bestBidLevel.TradeTopLevel(bestBidLevelData.volume, sendTradeFn) };
+          const auto tradedVolume{ bestAskLevel.TradeTopLevel(bestBidLevelData.volume, sendTradeFn) };
           // reduce volume on the ask top level
           bestBidLevel.TradeTopLevel(tradedVolume, sendTradeFn);
         }

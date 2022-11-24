@@ -38,7 +38,7 @@ public:
   friend std::ostream& operator<<(std::ostream& os, const OrderLevel& level);
 
 private:
-  mutable std::map<OrderData::OrderTime_t, OrderData> m_TimeMap; // order data on this level sorted on time priority
+  mutable std::map<OrderTime_t, OrderData> m_TimeMap; // order data on this level sorted on time priority
 };
 
 /// @brief
@@ -49,7 +49,7 @@ inline std::ostream& operator<<(std::ostream& os, const OrderLevel& level)
 {
   os << "{";
   for (const auto [k, v] : level.m_TimeMap) {
-    os << "{" << v.volume << "@" << static_cast<double>(v.price / 1e6) << "};";
+    os << "{" << v.volume << "@" << static_cast<double>(v.price / std::mega::num) << "};";
   }
   os << "}";
   return os;

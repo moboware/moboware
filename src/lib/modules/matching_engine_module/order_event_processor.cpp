@@ -42,13 +42,17 @@ void OrderEventProcessor::HandleOrderInsert(const Json::Value& data)
   orderInsert.volume = data["Volume"].asUInt64();
   orderInsert.type = data["Type"].asString();
   orderInsert.IsBuySide = data["IsBuy"].asBool();
-  orderInsert.orderTime = std::chrono::steady_clock::now();
+  orderInsert.orderTime = std::chrono::high_resolution_clock::now();
   orderInsert.clientId = data["ClientId"].asString();
   orderInsert.instrument = data["Instrument"].asString();
 
   std::stringstream strm;
   strm << orderInsert.orderTime.time_since_epoch().count();
   orderInsert.id = strm.str();
-  // forward the converted order insert message
-  m_OrderHandler.lock()->HandleOrderInsert(orderInsert, m_Endpoint);
+  if (orderInsert.Validate()) { // forward the converted order insert message
+    m_OrderHandler.lock()->HandleOrderInsert(orderInsert, m_Endpoint);
+  } else {
+    LOG_ERROR("Order data validation failed"
+              << " to do add order error reply");
+  }
 }

@@ -21,12 +21,12 @@ public:
   const OrderAskBook_t& GetAskOrderBook() const { return m_Asks; }
 
 protected:
+  virtual void CreateAndSendMessage(const OrderInsertReply& orderInsertReply, const boost::asio::ip::tcp::endpoint& endpoint);
+  virtual void CreateAndSendMessage(const ErrorReply& errorReply, const boost::asio::ip::tcp::endpoint& endpoint);
+  virtual void CreateAndSendMessage(const Trade& trade, const boost::asio::ip::tcp::endpoint& endpoint);
+
 private:
   bool Insert(const OrderData& orderInsert);
-
-  void CreateAndSendMessage(const OrderInsertReply& orderInsertReply, const boost::asio::ip::tcp::endpoint& endpoint);
-  void CreateAndSendMessage(const ErrorReply& errorReply, const boost::asio::ip::tcp::endpoint& endpoint);
-  void CreateAndSendMessage(const Trade& trade, const boost::asio::ip::tcp::endpoint& endpoint);
 
   void CheckMatch(const boost::asio::ip::tcp::endpoint& endpoint);
 
