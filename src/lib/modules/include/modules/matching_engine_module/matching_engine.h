@@ -29,6 +29,8 @@ private:
   bool Insert(const OrderData& orderInsert);
 
   void CheckMatch(const OrderData& newOrder, const boost::asio::ip::tcp::endpoint& endpoint);
+  template<typename TOrderBook1, typename TOrderBook2>
+  void ExecuteOrder(TOrderBook1& orderBook, TOrderBook2& otherSideOrderBook, const boost::asio::ip::tcp::endpoint& endpoint);
 
   std::mutex m_Mutex;
 

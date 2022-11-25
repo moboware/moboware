@@ -61,11 +61,27 @@ struct Trade
   VolumeType_t tradedVolume{};
   std::string clientId;
   std::string id;
+
   bool operator==(const Trade& rhs) const
   {
-    return account == rhs.account && tradedPrice == rhs.tradedPrice && tradedVolume == rhs.tradedVolume && clientId == rhs.clientId && id == rhs.id;
+    return account == rhs.account &&           //
+           tradedPrice == rhs.tradedPrice &&   //
+           tradedVolume == rhs.tradedVolume && //
+           clientId == rhs.clientId &&         //
+           id == rhs.id;
   }
 };
+
+inline std::ostream& operator<<(std::ostream& os, const Trade& rhs)
+{
+  return os << "{"
+            << "Account:" << rhs.account             //
+            << ", TradedPrice:" << rhs.tradedPrice   //
+            << ", TradedVolume:" << rhs.tradedVolume //
+            << ", ClientId:" << rhs.clientId         //
+            << ", OrderId:" << rhs.id                //
+            << "}";
+}
 
 struct ErrorReply
 {

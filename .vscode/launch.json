@@ -55,31 +55,7 @@
       "request": "launch",
       "program": "${workspaceFolder}/../build/moboware/debug/modules_test",
       "args": [
-        "--gtest_filter=*.MultiLevelMatchOrderBidAndAskSideTest"
-      ],
-      "cwd": "${workspaceFolder}/../build/moboware/debug/",
-      "miDebuggerPath": "/usr/bin/gdb",
-      "MIMode": "gdb",
-      "setupCommands": [
-        {
-          "description": "Enable pretty-printing for gdb",
-          "text": "-enable-pretty-printing",
-          "ignoreFailures": true
-        },
-        {
-          "description": "Set Disassembly Flavor to Intel",
-          "text": "-gdb-set disassembly-flavor intel",
-          "ignoreFailures": true
-        }
-      ]
-    },
-    {
-      "name": "varys_test",
-      "type": "cppdbg",
-      "request": "launch",
-      "program": "${workspaceFolder}/../build/moboware/debug/varys_test",
-      "args": [
-        "--gtest_filter=*.test2"
+        "--gtest_filter=OrderBookTest.MultiLevelMatchOrderBidAndAskSideTest"
       ],
       "cwd": "${workspaceFolder}/../build/moboware/debug/",
       "miDebuggerPath": "/usr/bin/gdb",

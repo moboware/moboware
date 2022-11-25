@@ -36,7 +36,7 @@ public:
 
 private:
   using OrderLevel_t = std::deque<OrderData>;
-  mutable OrderLevel_t m_TimeMap; // order data on this level sorted on time priority
+  mutable OrderLevel_t m_TimeQueue; // order data on this level sorted on time priority
 };
 
 /// @brief
@@ -46,7 +46,7 @@ private:
 inline std::ostream& operator<<(std::ostream& os, const OrderLevel& level)
 {
   os << "{";
-  for (const auto& v : level.m_TimeMap) {
+  for (const auto& v : level.m_TimeQueue) {
     os << "{" << v.volume << "@" << static_cast<double>(v.price / std::mega::num) << "};";
   }
   os << "}";

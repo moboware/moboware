@@ -21,7 +21,8 @@ bool OrderBook<TCompare>::Insert(const OrderData& orderInsert)
     const auto pair{ m_OrderBookMap.emplace(std::make_pair(orderInsert.price, OrderLevel(orderInsert))) };
     if (pair.second) {
 
-      LOG_DEBUG("Order added at price level:" << static_cast<double>(orderInsert.price / std::mega::num) << ", id:" << orderInsert.id);
+      LOG_DEBUG("Order added at price level:" << orderInsert.volume << "@" << static_cast<double>(orderInsert.price / std::mega::num)
+                                              << ", id:" << orderInsert.id);
 
       return true;
     }
