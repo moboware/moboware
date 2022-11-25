@@ -76,8 +76,8 @@ void MatchingEngine::OrderInsert(const OrderData& orderInsert, const boost::asio
     // send order insert reply
     const OrderInsertReply orderInsertReply{ orderInsert.id, orderInsert.clientId };
     CreateAndSendMessage(orderInsertReply, endpoint);
-    // check if the order has match
-    CheckMatch(endpoint);
+    // check if this order has matches
+    CheckMatch(orderInsert, endpoint);
   } else {
     // send error back
     const ErrorReply errorReply{ orderInsert.clientId, "Failed to insert order" };
@@ -85,7 +85,7 @@ void MatchingEngine::OrderInsert(const OrderData& orderInsert, const boost::asio
   }
 }
 
-void MatchingEngine::CheckMatch(const boost::asio::ip::tcp::endpoint& endpoint)
+void MatchingEngine::CheckMatch(const OrderData& newOrder, const boost::asio::ip::tcp::endpoint& endpoint)
 {
   const auto& bidsMap{ m_Bids.GetOrderBookMap() };
   const auto& asksMap{ m_Asks.GetOrderBookMap() };

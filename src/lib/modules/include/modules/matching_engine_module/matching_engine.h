@@ -28,7 +28,7 @@ protected:
 private:
   bool Insert(const OrderData& orderInsert);
 
-  void CheckMatch(const boost::asio::ip::tcp::endpoint& endpoint);
+  void CheckMatch(const OrderData& newOrder, const boost::asio::ip::tcp::endpoint& endpoint);
 
   std::mutex m_Mutex;
 

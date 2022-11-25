@@ -11,7 +11,7 @@ OrderLevel::OrderLevel(const OrderData& orderData)
 
 void OrderLevel::Insert(const OrderData& orderData)
 {
-  m_TimeMap.insert(std::make_pair(orderData.orderTime, orderData));
+  m_TimeMap.push_back(orderData);
 }
 
 auto OrderLevel::GetSize() const -> std::size_t
@@ -23,7 +23,7 @@ auto OrderLevel::GetTopLevel() const -> std::optional<OrderData>
 {
   std::optional<OrderData> topLevel;
   if (not m_TimeMap.empty()) {
-    topLevel = m_TimeMap.begin()->second;
+    topLevel = *m_TimeMap.begin();
   }
   return topLevel;
 }
@@ -32,7 +32,7 @@ auto OrderLevel::TradeTopLevel(const VolumeType_t volume, const std::function<vo
 {
   VolumeType_t tradedVolume{};
   if (not m_TimeMap.empty()) {
-    auto& topLevel = m_TimeMap.begin()->second;
+    auto& topLevel = *m_TimeMap.begin();
     if (topLevel.volume >= volume) {
       topLevel.volume -= volume; // partial trade
       tradedVolume = volume;

@@ -55,7 +55,7 @@
       "request": "launch",
       "program": "${workspaceFolder}/../build/moboware/debug/modules_test",
       "args": [
-        "--gtest_filter=*.MatchOrderFullTradeBidAndAskSideTest"
+        "--gtest_filter=*.MultiLevelMatchOrderBidAndAskSideTest"
       ],
       "cwd": "${workspaceFolder}/../build/moboware/debug/",
       "miDebuggerPath": "/usr/bin/gdb",

@@ -1,6 +1,7 @@
 #pragma once
 #include "modules/matching_engine_module/i_order_handler.h"
 #include <chrono>
+#include <deque>
 #include <map>
 #include <optional>
 #include <ostream>
@@ -21,11 +22,7 @@ public:
   void Insert(const OrderData& orderData);
 
   auto GetSize() const -> std::size_t;
-  struct TopVolumePrice
-  {
-    VolumeType_t volume{};
-    PriceType_t price{};
-  };
+
   /// @brief Get the top level OrderData
   /// @return
   auto GetTopLevel() const -> std::optional<OrderData>;
@@ -38,7 +35,8 @@ public:
   friend std::ostream& operator<<(std::ostream& os, const OrderLevel& level);
 
 private:
-  mutable std::map<OrderTime_t, OrderData> m_TimeMap; // order data on this level sorted on time priority
+  using OrderLevel_t = std::deque<OrderData>;
+  mutable OrderLevel_t m_TimeMap; // order data on this level sorted on time priority
 };
 
 /// @brief
@@ -48,7 +46,7 @@ private:
 inline std::ostream& operator<<(std::ostream& os, const OrderLevel& level)
 {
   os << "{";
-  for (const auto [k, v] : level.m_TimeMap) {
+  for (const auto& v : level.m_TimeMap) {
     os << "{" << v.volume << "@" << static_cast<double>(v.price / std::mega::num) << "};";
   }
   os << "}";
