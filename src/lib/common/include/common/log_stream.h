@@ -1,19 +1,23 @@
 #pragma once
 
 #include "common/singleton.h"
-#include <condition_variable>
-#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <mutex>
+#include <semaphore>
 #include <streambuf>
+#include <thread>
 
 namespace logstrm {
 struct EndOfLine
 {};
 const EndOfLine endl;
+
+struct StartOfLine
+{};
+const StartOfLine startl;
 
 struct Hex
 {};
@@ -33,42 +37,44 @@ const Fixed fixed;
 
 struct SetPrecision
 {
-  SetPrecision(std::streamsize n)
-    : mPrecision(n)
+  SetPrecision(std::streamsize _n)
+    : mPrecision(_n)
   {
   }
 
   std::streamsize mPrecision;
 };
 
-inline SetPrecision setprecision(std::streamsize __n)
+inline SetPrecision setprecision(std::streamsize _n)
 {
-  return SetPrecision(__n);
+  return SetPrecision(_n);
 }
+
 } // namespace logstrm
 
 // @brief LogStreamBuf is een implementatie class voor de std::streambuf en
-// heeft
-//        een log buffer waarin alle log messages worden gestreamed
+// heeft een log buffer waarin alle log messages worden gestreamed
 class LogStreamBuf : public std::streambuf
 {
 public:
-  static const size_t mLogBuffersize = 64 * 1024;
+  static constexpr auto LogBuffersize{ 1'024U * 1'024U };
   LogStreamBuf();
-  ~LogStreamBuf() noexcept = default;
   LogStreamBuf(const LogStreamBuf&) = delete;
-  LogStreamBuf& operator=(const LogStreamBuf&) = delete;
-
   LogStreamBuf(LogStreamBuf&&) = delete;
+  LogStreamBuf& operator=(const LogStreamBuf&) = delete;
   LogStreamBuf& operator=(LogStreamBuf&&) = delete;
+  ~LogStreamBuf() noexcept = default;
+
   bool operator==(const LogStreamBuf&) const = delete;
 
   void Reset();
+  auto Size() -> std::streamsize;
+  auto Empty() -> bool { return (Size() == 0); }
 
   inline const char* GetBuffer() const { return mLogBuffer; }
 
 private:
-  char mLogBuffer[mLogBuffersize]{};
+  char mLogBuffer[LogBuffersize]{};
 };
 
 // @brief
@@ -78,14 +84,13 @@ class LogStream
 {
 public:
   LogStream();
+  LogStream(const LogStream&) = delete;
+  LogStream(LogStream&&) = delete;
+  LogStream& operator=(const LogStream&) const = delete;
+  LogStream& operator=(LogStream&&) const = delete;
   ~LogStream() noexcept = default;
 
-  LogStream(const LogStream&) = delete;
-  LogStream& operator=(const LogStream&) const = delete;
-  LogStream(LogStream&&) = delete;
-  LogStream& operator=(LogStream&&) const = delete;
-
-  bool SetLogFile(const std::string& logFileName);
+  bool SetLogFile(const std::filesystem::path& logFileName);
 
   enum LEVEL
   {
@@ -106,11 +111,16 @@ public:
 
   // het log level waar tegen wordt ge-logged
   inline void SetLevel(LEVEL level) { mGlobalLogLevel = level; }
+  LogStream::LEVEL GetLevel(const std::string& levelStr);
   const char* GetLevelString() const;
+  auto GetLineNumber() const -> std::size_t { return mLineNumber; }
+  auto GetFile() const -> const std::string& { return mFile; }
   inline std::mutex& GetMutex() { return mMutex; };
+
   template<typename TObject>
   friend LogStream& operator<<(LogStream& os, const TObject& obj);
 
+  friend LogStream& operator<<(LogStream& os, const logstrm::StartOfLine& obj);
   friend LogStream& operator<<(LogStream& os, const logstrm::EndOfLine& obj);
   friend LogStream& operator<<(LogStream& os, const logstrm::Hex& obj);
   friend LogStream& operator<<(LogStream& os, const logstrm::Dec& obj);
@@ -126,18 +136,22 @@ public:
   void Flush();
 
 private:
+  void FlushToStream();
+
   void WriteToStream(std::ostream& outStream);
 
-  std::mutex mMutex;
-  LogStreamBuf mLogStreamBuf;
-  LEVEL mGlobalLogLevel = DEBUG;
-  LEVEL mLogLevel = DEBUG;
-  std::string mFunction;
-  std::string mFile;
-  size_t mLineNumber = 0;
-  std::ofstream mOutStream;
+  std::mutex mMutex{};
+  LogStreamBuf mLogStreamBuf{};
+  LEVEL mGlobalLogLevel{ DEBUG };
+  LEVEL mLogLevel{ DEBUG };
+  std::string mFunction{};
+  std::string mFile{};
+  std::size_t mLineNumber{};
+  std::ofstream mOutStream{};
+
+  std::jthread m_Thread;
+  std::binary_semaphore m_ThreadWaitCondition{ 0 };
 };
-//}//EON
 
 inline LogStream& operator<<(LogStream& os, const std::string& obj)
 {
@@ -153,14 +167,14 @@ LogStream& operator<<(LogStream& os, const TObject& obj)
 }
 
 // clang-format off
-#define LOG_STREAM(level, function, file, line, log_line)     \
-{                                                             \
-  LogStream& logStream = LogStream::GetInstance();            \
-  std::lock_guard<std::mutex> lck(logStream.GetMutex());      \
-  if(logStream.TestLevel(level, function, file, line))        \
-  {                                                           \
-      logStream << log_line << logstrm::endl;                 \
-  }                                                           \
+#define LOG_STREAM(level, function, file, line, log_line)        \
+{                                                                \
+  LogStream& logStream = LogStream::GetInstance();               \
+  std::lock_guard<std::mutex> lck(logStream.GetMutex());         \
+  if(logStream.TestLevel(level, function, file, line))           \
+  {                                                              \
+      logStream << logstrm::startl << log_line << logstrm::endl; \
+  }                                                              \
 }
 // clang-format on
 

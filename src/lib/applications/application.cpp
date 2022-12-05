@@ -1,5 +1,5 @@
 #include "applications/application.h"
-#include "common/log.h"
+#include "common/log_stream.h"
 #include <fstream>
 #include <json/json.h>
 
@@ -15,11 +15,11 @@ Application::Application(const std::shared_ptr<common::Service>& service, //
 {
 }
 
-bool Application::LoadConfig(const std::string& configFile)
+bool Application::LoadConfig(const std::string& configFile, const std::filesystem::path& applicationName)
 {
   std::ifstream configStream(configFile.c_str());
-  if (!configStream.is_open()) {
-    LOG("Failed to open file:" << configFile);
+  if (not configStream.is_open()) {
+    LOG_DEBUG("Failed to open file:" << configFile);
     return false;
   }
 
@@ -27,24 +27,38 @@ bool Application::LoadConfig(const std::string& configFile)
   Json::Value rootDocument{};
   auto collectComments{ false };
   Json::String* errors{};
-  if (!Json::parseFromStream(builder, configStream, &rootDocument, errors)) {
-    LOG("Failed to parse config file");
+  if (not Json::parseFromStream(builder, configStream, &rootDocument, errors)) {
+    LOG_DEBUG("Failed to parse config file");
     return false;
   }
+  // read logging settings
+  if (rootDocument.isMember("Logging")) {
+    const auto loggingNode = rootDocument["Logging"];
+    if (loggingNode.isMember("LogDirectory")) {
+      const auto logDirectory{ loggingNode["LogDirectory"].asString() };
+      std::filesystem::path logFile{ logDirectory };
+      logFile += applicationName;
+      logFile += ".log";
+      LogStream::GetInstance().SetLogFile(logFile);
+    }
 
-  if (!rootDocument.isMember(CHANNELS_VALUE)) {
-    LOG("Channel item not found");
+    const auto logLevel{ loggingNode["LogLevel"].asString() };
+    LogStream::GetInstance().SetLevel(LogStream::GetInstance().GetLevel(logLevel));
+  }
+  // read channel settings
+  if (not rootDocument.isMember(CHANNELS_VALUE)) {
+    LOG_DEBUG("Channel item not found");
     return false;
   }
 
   const Json::Value channelsValue = rootDocument[CHANNELS_VALUE];
-  if (!channelsValue.isArray()) {
-    LOG("Channels value is not an array");
+  if (not channelsValue.isArray()) {
+    LOG_DEBUG("Channels value is not an array");
     return false;
   }
 
   if (channelsValue.size() != m_Channels.size()) {
-    LOG("Channel config and channels not same size");
+    LOG_DEBUG("Channel config and channels not same size");
     return false;
   }
 
@@ -68,14 +82,16 @@ int Application::Run(const int argc, const char* argv[])
 
   // load application and channel config
   const std::string configFile = "./config.json";
-  if (!LoadConfig(configFile)) {
-    LOG("Failed to load config");
+  const std::filesystem::path applicationPath = argv[0];
+
+  if (not LoadConfig(configFile, applicationPath.stem())) {
+    LOG_DEBUG("Failed to load config");
     return EXIT_FAILURE;
   }
 
   for (const auto channel : m_Channels) {
     if (!channel->Start()) {
-      LOG("Failed to start channel");
+      LOG_DEBUG("Failed to start channel");
 
       return EXIT_FAILURE;
     }

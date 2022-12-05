@@ -1,6 +1,7 @@
 #pragma once
 #include "common/channel_base.h"
 #include <boost/asio/io_service.hpp>
+#include <filesystem>
 #include <json/json.h>
 #include <vector>
 
@@ -24,7 +25,7 @@ public:
 protected:
   explicit ApplicationBase(const std::shared_ptr<Service>& service);
 
-  [[nodiscard]] virtual bool LoadConfig(const std::string& configFile) = 0;
+  [[nodiscard]] virtual bool LoadConfig(const std::string& configFile, const std::filesystem::path& applicationName) = 0;
 
   [[nodiscard]] virtual bool ReadCommandline(const int argc, const char* argv[]) = 0;
 

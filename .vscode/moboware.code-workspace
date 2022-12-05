@@ -128,6 +128,8 @@
     "editor.tabSize": 2,
     "editor.letterSpacing": 0.2,
     "editor.scrollbar.horizontalScrollbarSize": 12,
-    "editor.lineHeight": 1.4
+    "editor.lineHeight": 1.4,
+    "cSpell.logLevel": "Warning",
+    "cSpell.spellCheckOnlyWorkspaceFiles": true
   }
 }

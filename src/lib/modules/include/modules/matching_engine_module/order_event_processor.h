@@ -7,6 +7,9 @@
 
 namespace moboware::modules {
 
+/**
+ * @brief Event processor class. Converts json message in to events/calls to the matching engine.
+ */
 class OrderEventProcessor
 {
 public:
@@ -22,6 +25,9 @@ public:
 private:
   const std::weak_ptr<IOrderHandler> m_OrderHandler;
   void HandleOrderInsert(const Json::Value& data);
+  void HandleOrderCancel(const Json::Value& data);
+  void HandleOrderAmend(const Json::Value& data);
+  void GetOrderBook(const Json::Value& data);
 
   const boost::asio::ip::tcp::endpoint m_Endpoint;
 };

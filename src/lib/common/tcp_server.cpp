@@ -152,7 +152,7 @@ void TcpServer::SessionDisconnected(const std::shared_ptr<Session>& /*session*/,
 std::size_t TcpServer::SendWebSocketData(const std::string& data, const Session::Endpoint& endPoint)
 {
   const auto iter = m_Sessions.find(endPoint);
-  if (iter != m_Sessions.end()) {
+  if (iter != std::end(m_Sessions)) {
     const auto session = iter->second;
     const_buffer buffer(data.c_str(), data.length()); // make part of the sesion
     return session->Send(buffer);

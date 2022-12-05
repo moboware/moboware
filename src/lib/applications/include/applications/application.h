@@ -12,7 +12,7 @@ public:
 
 private:
   bool ReadCommandline(const int argc, const char* argv[]) final;
-  bool LoadConfig(const std::string& configFile) final;
+  bool LoadConfig(const std::string& configFile, const std::filesystem::path& applicationName) final;
   void Stop() final;
 
   std::vector<std::shared_ptr<common::ChannelBase>> m_Channels{};

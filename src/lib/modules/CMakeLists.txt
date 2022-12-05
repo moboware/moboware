@@ -8,6 +8,7 @@ add_library(${PROJECT_NAME}
     matching_engine_module/order_event_processor.cpp
     matching_engine_module/order_book.cpp
     matching_engine_module/order_level.cpp
+    matching_engine_module/order_data.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/)

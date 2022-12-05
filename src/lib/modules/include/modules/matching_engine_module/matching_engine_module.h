@@ -28,6 +28,12 @@ public:
 private:
   void HandleOrderInsert(const OrderData& orderInsert, const boost::asio::ip::tcp::endpoint& endpoint) final;
 
+  void HandleOrderAmend(const OrderAmendData& orderInsert, const boost::asio::ip::tcp::endpoint& endpoint) final;
+
+  void HandleOrderCancel(const OrderCancelData& orderCancel, const boost::asio::ip::tcp::endpoint& endpoint) final;
+
+  void GetOrderBook(const std::string& instrument, const boost::asio::ip::tcp::endpoint& endpoint) final;
+
   /// @brief map of matching engines per instrument
   std::map<std::string, std::shared_ptr<MatchingEngine>> m_MatchingEngines;
 };

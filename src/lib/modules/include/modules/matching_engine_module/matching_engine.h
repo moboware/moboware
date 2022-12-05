@@ -17,18 +17,21 @@ public:
   virtual ~MatchingEngine() = default;
 
   void OrderInsert(const OrderData& orderInsert, const boost::asio::ip::tcp::endpoint& endpoint);
-  const OrderBidBook_t& GetBidOrderBook() const { return m_Bids; }
-  const OrderAskBook_t& GetAskOrderBook() const { return m_Asks; }
+  void OrderAmend(const OrderAmendData& orderCancel, const boost::asio::ip::tcp::endpoint& endpoint);
+
+  void OrderCancel(const OrderCancelData& orderCancel, const boost::asio::ip::tcp::endpoint& endpoint);
+
+  [[nodiscard]] const OrderBidBook_t& GetBidOrderBook() const { return m_Bids; }
+  [[nodiscard]] const OrderAskBook_t& GetAskOrderBook() const { return m_Asks; }
+
+  void GetOrderBook(const boost::asio::ip::tcp::endpoint& endpoint);
 
 protected:
-  virtual void CreateAndSendMessage(const OrderInsertReply& orderInsertReply, const boost::asio::ip::tcp::endpoint& endpoint);
+  virtual void CreateAndSendMessage(const OrderReply& orderInsertReply, const boost::asio::ip::tcp::endpoint& endpoint);
   virtual void CreateAndSendMessage(const ErrorReply& errorReply, const boost::asio::ip::tcp::endpoint& endpoint);
   virtual void CreateAndSendMessage(const Trade& trade, const boost::asio::ip::tcp::endpoint& endpoint);
 
 private:
-  bool Insert(const OrderData& orderInsert);
-
-  void CheckMatch(const OrderData& newOrder, const boost::asio::ip::tcp::endpoint& endpoint);
   template<typename TOrderBook1, typename TOrderBook2>
   void ExecuteOrder(TOrderBook1& orderBook, TOrderBook2& otherSideOrderBook, const boost::asio::ip::tcp::endpoint& endpoint);
 

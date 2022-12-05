@@ -17,11 +17,11 @@ public:
   OrderBook& operator=(OrderBook&&) = delete;
   ~OrderBook() = default;
 
-  bool Insert(const OrderData& orderInsert);
+  auto Insert(const OrderData& orderInsert) -> bool;
 
-  void Amend(const OrderData& orderInsert);
+  auto Amend(const OrderAmendData& orderAmend) -> bool;
 
-  void Cancel(const std::string& orderId);
+  auto Cancel(const OrderCancelData& orderCancel) -> bool;
 
   /// @brief
   /// @param
@@ -43,8 +43,8 @@ private:
 };
 }
 
-using OrderBidBook_t = moboware::modules::OrderBook<std::greater<uint64_t>>;
-template class moboware::modules::OrderBook<std::greater<uint64_t>>;
+using OrderBidBook_t = moboware::modules::OrderBook<std::greater<uint64_t /*price*/>>;
+template class moboware::modules::OrderBook<std::greater<uint64_t /*price*/>>;
 
-using OrderAskBook_t = moboware::modules::OrderBook<std::less<uint64_t>>;
-template class moboware::modules::OrderBook<std::less<uint64_t>>;
+using OrderAskBook_t = moboware::modules::OrderBook<std::less<uint64_t /*price*/>>;
+template class moboware::modules::OrderBook<std::less<uint64_t /*price*/>>;

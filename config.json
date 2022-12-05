@@ -1,6 +1,8 @@
 {
-    "LogDirectory": "./",
-    "LogLevel": "Debug",
+    "Logging": {
+        "LogDirectory": "./",
+        "LogLevel": "DEBUG"
+    },
     "Channels": [
         {
             "Name": "WebSocketChannel1",

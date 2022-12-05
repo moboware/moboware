@@ -40,10 +40,44 @@ void MatchingEngineModule::OnWebSocketDataReceived(const boost::beast::flat_buff
 void MatchingEngineModule::HandleOrderInsert(const OrderData& orderInsert, const boost::asio::ip::tcp::endpoint& endpoint)
 {
   LOG("Handle order insert...");
-  auto iter = m_MatchingEngines.find(orderInsert.instrument);
-  if (iter == m_MatchingEngines.end()) {
-    LOG_ERROR("Unknown instrument " << orderInsert.instrument);
+  auto iter = m_MatchingEngines.find(orderInsert.GetInstrument());
+  if (iter == std::end(m_MatchingEngines)) {
+    LOG_ERROR("Unknown instrument " << orderInsert.GetInstrument());
     return;
   }
   iter->second->OrderInsert(orderInsert, endpoint);
+}
+
+void MatchingEngineModule::HandleOrderAmend(const OrderAmendData& orderAmend, const boost::asio::ip::tcp::endpoint& endpoint)
+{
+  LOG("Handle order amend...");
+  auto iter = m_MatchingEngines.find(orderAmend.GetInstrument());
+  if (iter == std::end(m_MatchingEngines)) {
+    LOG_ERROR("Unknown instrument " << orderAmend.GetInstrument());
+    return;
+  }
+  iter->second->OrderAmend(orderAmend, endpoint);
+}
+
+void MatchingEngineModule::HandleOrderCancel(const OrderCancelData& orderCancel, const boost::asio::ip::tcp::endpoint& endpoint)
+{
+  LOG("Handle order cancel...");
+  auto iter = m_MatchingEngines.find(orderCancel.GetInstrument());
+  if (iter == std::end(m_MatchingEngines)) {
+    LOG_ERROR("Unknown instrument " << orderCancel.GetInstrument());
+    return;
+  }
+  iter->second->OrderCancel(orderCancel, endpoint);
+}
+
+void MatchingEngineModule::GetOrderBook(const std::string& instrument, const boost::asio::ip::tcp::endpoint& endpoint)
+{
+  LOG("Get Order Book:" << instrument);
+  auto iter = m_MatchingEngines.find(instrument);
+  if (iter == std::end(m_MatchingEngines)) {
+    LOG_ERROR("Unknown instrument " << instrument);
+    return;
+  }
+
+  iter->second->GetOrderBook(endpoint);
 }

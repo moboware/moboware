@@ -67,8 +67,8 @@ auto WebSocketServer::CheckClosedSessions() -> std::size_t
 {
   int numberOfSessions{};
 
-  auto iter = m_Sessions.begin();
-  while (iter != m_Sessions.end()) {
+  auto iter = std::begin(m_Sessions);
+  while (iter != std::end(m_Sessions)) {
     const auto session = iter->second;
     if (not session->IsOpen()) {
       iter = m_Sessions.erase(iter);
@@ -106,7 +106,7 @@ auto WebSocketServer::SendWebSocketData(const boost::asio::const_buffer& sendBuf
 {
   const auto endPointKey = std::make_pair(remoteEndPoint.address(), remoteEndPoint.port());
   const auto iter = m_Sessions.find(endPointKey);
-  if (iter != m_Sessions.end()) {
+  if (iter != std::end(m_Sessions)) {
 
     const auto& session = iter->second;
     return session->SendWebSocketData(sendBuffer);

@@ -97,10 +97,10 @@ void WebSocketChannel::OnWebSocketDataReceived(const boost::beast::flat_buffer& 
                                        << std::string(static_cast<const char*>(readBuffer.data().data()), readBuffer.data().size()));
   // send all received web socket payload data to all modules.
   // could be more specific in sending to the modules when we have an protocol over json e.g.
-  // and implememnt some kind of subscribtion mechanism from the module to the channel wo we can send specific
+  // and implement some kind of subscription mechanism from the module to the channel wo we can send specific
   // message to subscribed modules only.
-  std::for_each(GetModules().begin(),
-                GetModules().end(), //
+  std::for_each(std::begin(GetModules()),
+                std::end(GetModules()), //
                 [&readBuffer, &endpoint](const ModulePtr_t& module) {
                   module->OnWebSocketDataReceived(readBuffer, endpoint);
                 });
