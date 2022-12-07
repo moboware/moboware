@@ -710,7 +710,7 @@ TEST_F(OrderBookTest, AmendBidOrderPriceVolumeTest)
   }
 }
 
-TEST_F(OrderBookTest, AmendBidOrderMatchAskPriceTest)
+TEST_F(OrderBookTest, AmendAskOrderMatchBidPriceTest)
 {
   const auto channelInterface{ std::make_shared<ChannelInterfaceMock>() };
   MatchingEngineMock matchingEngine(channelInterface);
@@ -772,9 +772,78 @@ TEST_F(OrderBookTest, AmendBidOrderMatchAskPriceTest)
   const Trade tradeBid{ orderDataBid1.GetAccount(), orderDataBid1.GetPrice(), orderDataBid1.GetVolume(), orderDataBid1.GetId(), orderDataBid1.GetClientId() };
   EXPECT_CALL(matchingEngine, CreateAndSendMessage(tradeBid, endpoint));
 
-  const Trade tradeAsk{ orderDataAsk1.GetAccount(), orderDataAsk1.GetPrice(), orderDataAsk1.GetVolume(), orderDataAsk1.GetId(), orderDataAsk1.GetClientId() };
+  const Trade tradeAsk{ orderDataAsk1.GetAccount(), orderDataBid1.GetPrice(), orderDataAsk1.GetVolume(), orderDataAsk1.GetId(), orderDataAsk1.GetClientId() };
   EXPECT_CALL(matchingEngine, CreateAndSendMessage(tradeAsk, endpoint));
 
   EXPECT_TRUE(amendAskOrder1.Validate());
   matchingEngine.OrderAmend(amendAskOrder1, endpoint);
+}
+
+TEST_F(OrderBookTest, AmendBidOrderMatchAskPriceTest)
+{
+  const auto channelInterface{ std::make_shared<ChannelInterfaceMock>() };
+  MatchingEngineMock matchingEngine(channelInterface);
+
+  const boost::asio::ip::tcp::endpoint endpoint;
+  const OrderData orderDataBid1{ "mobo",
+                                 "ABCD",
+                                 { 50U * std::mega::num },
+                                 100,
+                                 "Limit",
+                                 true,
+                                 std::chrono::high_resolution_clock::now(),
+                                 std::chrono::milliseconds::duration::zero(),
+                                 "id=BidOrder1",
+                                 "clientId=BidOrder1" };
+  ASSERT_TRUE(orderDataBid1.Validate());
+  //
+  const OrderReply bidReply1{ orderDataBid1.GetId(), orderDataBid1.GetClientId() };
+  EXPECT_CALL(matchingEngine, CreateAndSendMessage(bidReply1, endpoint)).Times(1);
+  matchingEngine.OrderInsert(orderDataBid1, endpoint);
+
+  // insert ask order
+  const OrderData orderDataAsk1{ "mobo",
+                                 "ABCD",
+                                 { 51U * std::mega::num },
+                                 100,
+                                 "Limit",
+                                 false,
+                                 std::chrono::high_resolution_clock::now(),
+                                 std::chrono::milliseconds::duration::zero(),
+                                 "id=AskdOrder1",
+                                 "clientId=AskOrder1" };
+  ASSERT_TRUE(orderDataAsk1.Validate());
+  //
+  const OrderReply askReply1{ orderDataAsk1.GetId(), orderDataAsk1.GetClientId() };
+  EXPECT_CALL(matchingEngine, CreateAndSendMessage(askReply1, endpoint));
+  matchingEngine.OrderInsert(orderDataAsk1, endpoint);
+
+  // amend bid order to match the ask order
+  const auto newBidVolume1{ orderDataAsk1.GetVolume() };
+  const auto newBidPrice1{ orderDataAsk1.GetPrice() };
+  const OrderAmendData amendBidOrder1{ orderDataBid1.GetAccount(),
+                                       orderDataBid1.GetInstrument(),
+                                       orderDataBid1.GetPrice(),
+                                       newBidPrice1,
+                                       orderDataBid1.GetVolume(),
+                                       newBidVolume1,
+                                       orderDataBid1.GetType(),
+                                       orderDataBid1.GetIsBuySide(),
+                                       std::chrono::high_resolution_clock::now(),
+                                       std::chrono::milliseconds::duration::zero(),
+                                       orderDataBid1.GetId(),
+                                       "ClientId=AmendBidOrder1" };
+
+  const OrderReply amendBidReply1{ orderDataBid1.GetId(), amendBidOrder1.GetClientId() };
+  EXPECT_CALL(matchingEngine, CreateAndSendMessage(amendBidReply1, endpoint));
+
+  // create 2 trades expectations
+  const Trade tradeBid{ orderDataBid1.GetAccount(), orderDataAsk1.GetPrice(), orderDataBid1.GetVolume(), orderDataBid1.GetId(), orderDataBid1.GetClientId() };
+  EXPECT_CALL(matchingEngine, CreateAndSendMessage(tradeBid, endpoint));
+
+  const Trade tradeAsk{ orderDataAsk1.GetAccount(), orderDataAsk1.GetPrice(), orderDataAsk1.GetVolume(), orderDataAsk1.GetId(), orderDataAsk1.GetClientId() };
+  EXPECT_CALL(matchingEngine, CreateAndSendMessage(tradeAsk, endpoint));
+
+  EXPECT_TRUE(amendBidOrder1.Validate());
+  matchingEngine.OrderAmend(amendBidOrder1, endpoint);
 }

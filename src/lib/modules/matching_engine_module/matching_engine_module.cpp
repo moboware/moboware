@@ -1,5 +1,5 @@
 #include "modules/matching_engine_module/matching_engine_module.h"
-#include "common/log.h"
+#include "common/log_stream.h"
 #include "modules/matching_engine_module/order_event_processor.h"
 
 using namespace moboware::modules;
@@ -13,12 +13,12 @@ MatchingEngineModule::MatchingEngineModule(const std::shared_ptr<common::Service
 
 bool MatchingEngineModule::LoadConfig(const Json::Value& moduleValue)
 {
-  LOG("Load matching engine module Config");
+  LOG_DEBUG("Load matching engine module Config");
   const Json::Value instrumentsArrayValues{ moduleValue["Instruments"] };
 
   for (Json::ArrayIndex i{ 0 }; i < instrumentsArrayValues.size(); i++) {
     const auto instrument{ instrumentsArrayValues[i].asString() };
-    LOG("Loading instrument " << instrument);
+    LOG_DEBUG("Loading instrument " << instrument);
     m_MatchingEngines[instrument] = std::make_shared<MatchingEngine>(GetChannelInterface());
   }
 
@@ -39,7 +39,7 @@ void MatchingEngineModule::OnWebSocketDataReceived(const boost::beast::flat_buff
 
 void MatchingEngineModule::HandleOrderInsert(const OrderData& orderInsert, const boost::asio::ip::tcp::endpoint& endpoint)
 {
-  LOG("Handle order insert...");
+  LOG_DEBUG("Handle order insert...");
   auto iter = m_MatchingEngines.find(orderInsert.GetInstrument());
   if (iter == std::end(m_MatchingEngines)) {
     LOG_ERROR("Unknown instrument " << orderInsert.GetInstrument());
@@ -50,7 +50,7 @@ void MatchingEngineModule::HandleOrderInsert(const OrderData& orderInsert, const
 
 void MatchingEngineModule::HandleOrderAmend(const OrderAmendData& orderAmend, const boost::asio::ip::tcp::endpoint& endpoint)
 {
-  LOG("Handle order amend...");
+  LOG_DEBUG("Handle order amend...");
   auto iter = m_MatchingEngines.find(orderAmend.GetInstrument());
   if (iter == std::end(m_MatchingEngines)) {
     LOG_ERROR("Unknown instrument " << orderAmend.GetInstrument());
@@ -61,7 +61,7 @@ void MatchingEngineModule::HandleOrderAmend(const OrderAmendData& orderAmend, co
 
 void MatchingEngineModule::HandleOrderCancel(const OrderCancelData& orderCancel, const boost::asio::ip::tcp::endpoint& endpoint)
 {
-  LOG("Handle order cancel...");
+  LOG_DEBUG("Handle order cancel...");
   auto iter = m_MatchingEngines.find(orderCancel.GetInstrument());
   if (iter == std::end(m_MatchingEngines)) {
     LOG_ERROR("Unknown instrument " << orderCancel.GetInstrument());
@@ -72,7 +72,7 @@ void MatchingEngineModule::HandleOrderCancel(const OrderCancelData& orderCancel,
 
 void MatchingEngineModule::GetOrderBook(const std::string& instrument, const boost::asio::ip::tcp::endpoint& endpoint)
 {
-  LOG("Get Order Book:" << instrument);
+  LOG_DEBUG("Get Order Book:" << instrument);
   auto iter = m_MatchingEngines.find(instrument);
   if (iter == std::end(m_MatchingEngines)) {
     LOG_ERROR("Unknown instrument " << instrument);

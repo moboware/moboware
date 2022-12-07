@@ -1,5 +1,5 @@
 #include "web_socket_server/web_socket_session.h"
-#include "common/log.h"
+#include "common/log_stream.h"
 #include <boost/asio/dispatch.hpp>
 
 using namespace boost;
@@ -38,7 +38,7 @@ void WebSocketSession::Start()
       // Accept the websocket handshake
       const auto acceptHandshakeFn{ [this](const beast::error_code& ec) {
         if (ec) {
-          LOG("Failed to accept web socket handshake " << ec);
+          LOG_DEBUG("Failed to accept web socket handshake " << ec);
           return;
         }
 
@@ -62,13 +62,13 @@ void WebSocketSession::ReadData()
 
     // This indicates that the session was closed
     if (ec == websocket::error::closed) {
-      LOG("Web socket closed");
+      LOG_DEBUG("Web socket closed");
       m_DataHandlerCallback->OnSessionClosed();
       return;
     }
 
     if (ec) {
-      LOG("Read error:" << ec << ", open:" << std::boolalpha << m_WebSocket.is_open());
+      LOG_DEBUG("Read error:" << ec << ", open:" << std::boolalpha << m_WebSocket.is_open());
       return;
     }
 

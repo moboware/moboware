@@ -1,8 +1,8 @@
 
 #include "applications/application.h"
 
+#include "common/log_stream.h"
 #include <iostream>
-#include "common/log.h"
 
 /**
  * @brief web socket Server application

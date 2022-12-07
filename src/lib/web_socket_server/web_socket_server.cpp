@@ -1,5 +1,5 @@
 #include "web_socket_server/web_socket_server.h"
-#include "common/log.h"
+#include "common/log_stream.h"
 #include <boost/asio/dispatch.hpp>
 #include <boost/asio/strand.hpp>
 #include <boost/beast/core.hpp>
@@ -25,35 +25,35 @@ auto WebSocketServer::Start(const std::string address, const short port) -> bool
   const ip::tcp::endpoint endpoint(ip::make_address(address, ec), port);
   //
   if (ec) {
-    LOG("Make address failed:" << ec);
+    LOG_DEBUG("Make address failed:" << ec);
     return false;
   }
 
   // Open the acceptor
   m_Acceptor.open(endpoint.protocol(), ec);
   if (ec) {
-    LOG("Open acceptor failed:" << ec);
+    LOG_DEBUG("Open acceptor failed:" << ec);
     return false;
   }
 
   // Allow address reuse
   m_Acceptor.set_option(asio::socket_base::reuse_address(true), ec);
   if (ec) {
-    LOG("set_option failed:" << ec);
+    LOG_DEBUG("set_option failed:" << ec);
     return false;
   }
 
   // Bind to the server address
   m_Acceptor.bind(endpoint, ec);
   if (ec) {
-    LOG("bind failed:" << ec);
+    LOG_DEBUG("bind failed:" << ec);
     return false;
   }
 
   // Start listening for connections
   m_Acceptor.listen(asio::socket_base::max_listen_connections, ec);
   if (ec) {
-    LOG("start listen failed:" << ec);
+    LOG_DEBUG("start listen failed:" << ec);
     return false;
   }
 
@@ -84,9 +84,9 @@ void WebSocketServer::Accept()
 {
   const auto acceptorFunc = [this](beast::error_code ec, tcp::socket webSocket) {
     if (ec) {
-      LOG("Failed to accept connection:" << ec);
+      LOG_DEBUG("Failed to accept connection:" << ec);
     } else {
-      LOG("Connection accepted from " << webSocket.remote_endpoint().address().to_string() << ":" << webSocket.remote_endpoint().port());
+      LOG_DEBUG("Connection accepted from " << webSocket.remote_endpoint().address().to_string() << ":" << webSocket.remote_endpoint().port());
 
       // create session and store in our session list
       const auto endPointKey = std::make_pair(webSocket.remote_endpoint().address(), webSocket.remote_endpoint().port());
@@ -112,7 +112,7 @@ auto WebSocketServer::SendWebSocketData(const boost::asio::const_buffer& sendBuf
     return session->SendWebSocketData(sendBuffer);
   }
 
-  LOG("No endpoint not found to send data to" << remoteEndPoint.address().to_string() << remoteEndPoint.port());
+  LOG_DEBUG("No endpoint not found to send data to" << remoteEndPoint.address().to_string() << remoteEndPoint.port());
   return false;
 }
 

@@ -1,5 +1,5 @@
 #include "modules/log_module.h"
-#include "common/log.h"
+#include "common/log_stream.h"
 
 using namespace moboware::modules;
 using namespace moboware::common;
@@ -12,7 +12,7 @@ LogModule::LogModule(const std::shared_ptr<common::Service>& service,           
 
 bool LogModule::LoadConfig(const Json::Value& moduleValue)
 {
-  LOG("Load module Config");
+  LOG_DEBUG("Load module Config");
 
   return true;
 }

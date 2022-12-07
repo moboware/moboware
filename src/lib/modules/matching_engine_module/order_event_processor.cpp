@@ -1,5 +1,5 @@
 #include "modules/matching_engine_module/order_event_processor.h"
-#include "common/log.h"
+#include "common/log_stream.h"
 
 using namespace moboware::modules;
 
@@ -25,7 +25,7 @@ void OrderEventProcessor::Process(const boost::beast::flat_buffer& readBuffer)
 
   const auto action{ rootDocument["Action"].asString() };
   const auto data{ rootDocument["Data"] };
-  LOG("Action:" << action << ":" << data);
+  LOG_DEBUG("Action:" << action << ":" << data);
   if (action == "Insert") {
     HandleOrderInsert(data);
   } else if (action == "Cancel") {
@@ -108,7 +108,7 @@ void OrderEventProcessor::HandleOrderAmend(const Json::Value& data)
 
 void OrderEventProcessor::GetOrderBook(const Json::Value& data)
 {
-  const auto instrument = data["Instrument"].asString();
+  const auto instrument{ data["Instrument"].asString() };
 
   m_OrderHandler.lock()->GetOrderBook(instrument, m_Endpoint);
 }

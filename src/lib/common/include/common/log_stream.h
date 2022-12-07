@@ -112,9 +112,9 @@ public:
   // het log level waar tegen wordt ge-logged
   inline void SetLevel(LEVEL level) { mGlobalLogLevel = level; }
   LogStream::LEVEL GetLevel(const std::string& levelStr);
-  const char* GetLevelString() const;
-  auto GetLineNumber() const -> std::size_t { return mLineNumber; }
-  auto GetFile() const -> const std::string& { return mFile; }
+  const std::string_view& GetLevelString() const;
+  auto GetLineNumber() const -> std::size_t { return mLogInfo.mLineNumber; }
+  auto GetFile() const -> const std::string& { return mLogInfo.mFile; }
   inline std::mutex& GetMutex() { return mMutex; };
 
   template<typename TObject>
@@ -126,13 +126,6 @@ public:
   friend LogStream& operator<<(LogStream& os, const logstrm::Dec& obj);
   friend LogStream& operator<<(LogStream& os, const logstrm::Oct& obj);
   friend LogStream& operator<<(LogStream& os, const logstrm::SetPrecision prec);
-
-  /*  inline std::ios_base::fmtflags setf ( std::ios_base::fmtflags fmtfl,
-    std::ios_base::fmtflags mask )
-    {
-      return std::ostream::setf( fmtfl, mask );
-    }
-  */
   void Flush();
 
 private:
@@ -143,10 +136,16 @@ private:
   std::mutex mMutex{};
   LogStreamBuf mLogStreamBuf{};
   LEVEL mGlobalLogLevel{ DEBUG };
-  LEVEL mLogLevel{ DEBUG };
-  std::string mFunction{};
-  std::string mFile{};
-  std::size_t mLineNumber{};
+
+  struct LogInfo
+  {
+    LEVEL mLogLevel{ DEBUG };
+    std::string mFunction{};
+    std::string mFile{};
+    std::size_t mLineNumber{};
+  };
+
+  LogInfo mLogInfo;
   std::ofstream mOutStream{};
 
   std::jthread m_Thread;
@@ -170,7 +169,7 @@ LogStream& operator<<(LogStream& os, const TObject& obj)
 #define LOG_STREAM(level, function, file, line, log_line)        \
 {                                                                \
   LogStream& logStream = LogStream::GetInstance();               \
-  std::lock_guard<std::mutex> lck(logStream.GetMutex());         \
+  const std::lock_guard<std::mutex> lck(logStream.GetMutex());   \
   if(logStream.TestLevel(level, function, file, line))           \
   {                                                              \
       logStream << logstrm::startl << log_line << logstrm::endl; \

@@ -1,5 +1,5 @@
 #include "modules/matching_engine_module/order_level.h"
-#include "common/log.h"
+#include "common/log_stream.h"
 
 using namespace moboware::modules;
 

@@ -1,4 +1,4 @@
-#include "common/log.h"
+#include "common/log_stream.h"
 #include "common/service.h"
 #include "common/timer.h"
 #include "web_socket_server/web_socket_server.h"
@@ -13,12 +13,12 @@ int main(const int, const char*[])
   const auto OnWebSocketDataReceived{ [&websocketServer](const boost::beast::flat_buffer& readBuffer,          //
                                                          const boost::asio::ip::tcp::endpoint& remoteEndPoint) //
                                       {
-                                        // LOG("Read data from " << remoteEndPoint.address().to_string() << ":" << remoteEndPoint.port() //
+                                        // LOG_DEBUG("Read data from " << remoteEndPoint.address().to_string() << ":" << remoteEndPoint.port() //
                                         //                       << ", " << std::string((const char*)readBuffer.data().data(), readBuffer.data().size()));
                                         // send data back to the client....
                                         const boost::asio::const_buffer sendBuffer(readBuffer.data().data(), readBuffer.size());
                                         if (not websocketServer->SendWebSocketData(sendBuffer, remoteEndPoint)) {
-                                          LOG("Failed to send...");
+                                          LOG_DEBUG("Failed to send...");
                                         }
                                       } };
 
@@ -27,7 +27,7 @@ int main(const int, const char*[])
     return EXIT_FAILURE;
   }
 
-  LOG("Running waiting for connections");
+  LOG_DEBUG("Running waiting for connections");
 
   service->Run();
   //

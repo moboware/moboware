@@ -1,5 +1,5 @@
 #include "modules/matching_engine_module/order_book.h"
-#include "common/log.h"
+#include "common/log_stream.h"
 
 using namespace moboware::modules;
 
@@ -58,7 +58,7 @@ bool OrderBook<TCompare>::Amend(const OrderAmendData& orderAmend)
     }
   } else {
     //// The change is on a other price level. Means we need to move the order from the original price level and insert a new order in the new price level with
-    ///a / original order id
+    /// a / original order id
     /// move the order from one price level to the new price level
 
     const auto moveOrderFn{ [&](OrderData&& orderData) {

@@ -35,7 +35,7 @@ LogStream::LogStream()
   , Singleton<LogStream>()
 {
   rdbuf(&mLogStreamBuf);
-
+  // log stream thread setup...
   const auto threadFunction{ [&](const std::stop_token& stop_token) {
     while (not stop_token.stop_requested()) {
 
@@ -43,6 +43,7 @@ LogStream::LogStream()
         while (mLogStreamBuf.Size()) {
           FlushToStream();
         }
+        mOutStream.flush();
       }
     }
   } };
@@ -68,10 +69,10 @@ bool LogStream::TestLevel(const LEVEL level, const std::string& function, const 
 {
   if (mGlobalLogLevel != NONE && level >= mGlobalLogLevel) {
     // split the file name of the module
-    mFunction = function;
-    mFile = fileName.filename();
-    mLineNumber = lineNumber;
-    mLogLevel = level;
+    mLogInfo.mFunction = function;
+    mLogInfo.mFile = fileName.filename();
+    mLogInfo.mLineNumber = lineNumber;
+    mLogInfo.mLogLevel = level;
     return true;
   }
 
@@ -96,12 +97,16 @@ void LogStream::FlushToStream()
     WriteToStream(std::cout);
   }
 }
+
 void LogStream::WriteToStream(std::ostream& outStream)
 {
-  std::lock_guard<std::mutex> lck(mMutex);
+  // this is called from the thread to write to the logstream
+  // lock here to prevent raise conditions with the calling thread.
 
   if (not mLogStreamBuf.Empty()) {
+    std::lock_guard<std::mutex> lck(mMutex);
     outStream << mLogStreamBuf.GetBuffer();
+
     mLogStreamBuf.Reset();
   }
 }
@@ -123,26 +128,32 @@ LogStream::LEVEL LogStream::GetLevel(const std::string& levelStr)
   return LEVEL::INFO;
 }
 
-const char* LogStream::GetLevelString() const
+const std::string_view& LogStream::GetLevelString() const
 {
-  switch (mLogLevel) {
+  static const std::string_view _DEBUG{ "DEBUG" };
+  static const std::string_view _INFO{ "INFO" };
+  static const std::string_view _ERROR{ "ERROR" };
+  static const std::string_view _FATAL{ "FATAL" };
+  static const std::string_view _NONE{ "" };
+
+  switch (mLogInfo.mLogLevel) {
     case NONE:
-      return "";
+      return _NONE;
       break;
     case DEBUG:
-      return "DEBUG";
+      return _DEBUG;
       break;
     case INFO:
-      return "INFO ";
+      return _INFO;
       break;
     case ERROR:
-      return "ERROR";
+      return _ERROR;
       break;
     case FATAL:
-      return "FATAL";
+      return _FATAL;
       break;
   }
-  return "";
+  return _NONE;
 }
 
 LogStream& operator<<(LogStream& os, const logstrm::StartOfLine&)
@@ -151,24 +162,25 @@ LogStream& operator<<(LogStream& os, const logstrm::StartOfLine&)
   gettimeofday(&tv, nullptr);
 
   struct tm* timeinfo = localtime(&tv.tv_sec);
-  os << "[" << std::setfill('0') << std::dec                 //
-     << std::setw(4) << timeinfo->tm_year + 1900 << "-"      //
-     << std::setw(2) << timeinfo->tm_mon + 1 << "-"          //
-     << std::setw(2) << timeinfo->tm_mday << ","             //
-     << std::setw(2) << timeinfo->tm_hour << ":"             //
-     << std::setw(2) << timeinfo->tm_min << ":"              //
-     << std::setw(2) << timeinfo->tm_sec << "."              //
-     << std::setw(6) << tv.tv_usec << "]"                    //
-     << "[" << os.GetLevelString() << "]"                    //
-     << "[" << std::hex << std::this_thread::get_id() << "]" //
-     << "[" << os.GetFile() << "," << std::dec << os.GetLineNumber() << "]";
+  os << "[" << std::setfill('0') << std::dec                          //
+     << std::setw(4) << (timeinfo->tm_year + 1900) << "-"             //
+     << timeinfo->tm_mon + 1 << "-"                                   //
+     << timeinfo->tm_mday << ","                                      //
+     << timeinfo->tm_hour << ":"                                      //
+     << timeinfo->tm_min << ":"                                       //
+     << timeinfo->tm_sec << "."                                       //
+     << tv.tv_usec                                                    //
+     << "][" << os.GetLevelString()                                   //
+     << "][" << std::hex << std::this_thread::get_id()                //
+     << "][" << os.GetFile() << "," << std::dec << os.GetLineNumber() //
+     << "]";
   return os;
 }
 
 LogStream& operator<<(LogStream& os, const logstrm::EndOfLine&)
 {
   // flush here....
-  os << "\n";
+  os << std::endl;
   os.Flush();
 
   return os;

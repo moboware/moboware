@@ -1,5 +1,5 @@
 #include "modules/tcp_client_module.h"
-#include "common/log.h"
+#include "common/log_stream.h"
 
 using namespace moboware::modules;
 using namespace moboware::common;
@@ -15,7 +15,7 @@ TcpClientModule::TcpClientModule(const std::shared_ptr<common::Service>& service
 
 bool TcpClientModule::LoadConfig(const Json::Value& moduleValue)
 {
-  LOG("Load module Config");
+  LOG_DEBUG("Load module Config");
 
   m_Config.m_Address = moduleValue["Address"].asString();
   m_Config.m_Port = moduleValue["Port"].asUInt();

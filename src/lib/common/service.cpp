@@ -1,5 +1,5 @@
 #include "common/service.h"
-#include "common/log.h"
+#include "common/log_stream.h"
 #include <thread>
 
 using namespace moboware::common;

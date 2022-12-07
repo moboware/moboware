@@ -1,5 +1,5 @@
 #include "common/session.h"
-#include "common/log.h"
+#include "common/log_stream.h"
 #include <boost/asio.hpp>
 
 using namespace boost;
@@ -29,7 +29,7 @@ tcp::socket& Session::Socket()
 
 void Session::Start()
 {
-  LOG("Start session");
+  LOG_DEBUG("Start session");
 
   Session::AsyncReceive();
 
@@ -50,14 +50,14 @@ void Session::AsyncReceive()
 bool Session::ReadData(const system::error_code& errorCode)
 {
   if (errorCode.failed()) {
-    LOG("Read data failed " << errorCode);
+    LOG_DEBUG("Read data failed " << errorCode);
     return false;
   }
 
   system::error_code readError;
   const auto bytesAvailable = m_Socket.available(readError);
   if (readError.failed()) {
-    LOG("Read bytes available failed " << readError);
+    LOG_DEBUG("Read bytes available failed " << readError);
     return false;
   }
 
@@ -65,11 +65,11 @@ bool Session::ReadData(const system::error_code& errorCode)
     readError.clear();
     std::array<char, maxBufferSize> readBuffer;
 
-    // LOG(bytesAvailable << " bytes available...");
+    // LOG_DEBUG(bytesAvailable << " bytes available...");
     const auto bytesRead = asio::read(m_Socket, asio::buffer(readBuffer.data(), readBuffer.size()), asio::transfer_at_least(bytesAvailable), readError);
 
     if (readError.failed()) {
-      LOG("Read data bytes failed " << readError);
+      LOG_DEBUG("Read data bytes failed " << readError);
       return false;
     }
 
@@ -99,11 +99,11 @@ std::size_t Session::Send(const asio::const_buffer& sendBuffer)
       }
       CloseSocket();
     } else {
-      LOG("send failed " << errorCode);
+      LOG_DEBUG("send failed " << errorCode);
     }
     return 0;
   }
-  // LOG("Socket write " << bytesSend << " bytes");
+  // LOG_DEBUG("Socket write " << bytesSend << " bytes");
   return bytesSend;
 }
 

@@ -217,7 +217,7 @@ void MatchingEngine::GetOrderBook(const boost::asio::ip::tcp::endpoint& endpoint
 {
   const auto printOrderLevel{ [](const OrderLevel& orderLevel) {
     const auto printOrderData{ [](const OrderData& orderData) {
-      LOG_DEBUG("OrderData:" << orderData);
+      // LOG_DEBUG("OrderData:" << orderData);
       return true;
     } };
 

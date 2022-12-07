@@ -1,5 +1,5 @@
 #include "common/channel_base.h"
-#include "common/log.h"
+#include "common/log_stream.h"
 
 using namespace moboware::common;
 
@@ -20,7 +20,7 @@ bool ChannelBase::LoadConfig(const Json::Value& channelConfig)
 
   m_ChannelName = channelConfig[NAME_VALUE].asString();
   if (!LoadChannelConfig(channelConfig)) {
-    LOG("Failed to load channel config");
+    LOG_DEBUG("Failed to load channel config");
     return false;
   }
 

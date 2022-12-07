@@ -1,5 +1,5 @@
 #include "common/timer.h"
-#include "common/log.h"
+#include "common/log_stream.h"
 #include <cstdlib>
 
 using namespace boost;

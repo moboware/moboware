@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common/log.h"
+#include "common/log_stream.h"
 #include "common/session.h"
 #include <array>
 #include <boost/asio.hpp>
