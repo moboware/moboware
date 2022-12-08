@@ -3,7 +3,7 @@
 
 using namespace moboware::modules;
 
-OrderLevel::OrderLevel(const OrderData& orderData)
+OrderLevel::OrderLevel(const OrderInsertData& orderData)
 {
   // ??? what in case the order time is already available? Very small change the we have 2 order with the same insertion time, but.....
   Insert(orderData);
@@ -19,9 +19,9 @@ auto OrderLevel::IsEmpty() const -> bool
   return m_TimeQueue.empty();
 }
 
-auto OrderLevel::GetTopLevel() const -> std::optional<OrderData>
+auto OrderLevel::GetTopLevel() const -> std::optional<OrderInsertData>
 {
-  std::optional<OrderData> topLevel;
+  std::optional<OrderInsertData> topLevel;
   if (not m_TimeQueue.empty()) {
     topLevel = *m_TimeQueue.begin();
   }
@@ -51,7 +51,7 @@ auto OrderLevel::TradeTopLevel(const VolumeType_t volume, const std::function<vo
   return tradedVolume;
 }
 
-auto OrderLevel::GetLevels(const std::function<bool(const OrderData&)>& orderLevelFunction) const -> bool
+auto OrderLevel::GetLevels(const std::function<bool(const OrderInsertData&)>& orderLevelFunction) const -> bool
 {
   for (const auto& orderData : m_TimeQueue) {
     if (not orderLevelFunction(orderData)) {
@@ -61,7 +61,7 @@ auto OrderLevel::GetLevels(const std::function<bool(const OrderData&)>& orderLev
   return true;
 }
 
-void OrderLevel::Insert(const OrderData& orderData)
+void OrderLevel::Insert(const OrderInsertData& orderData)
 {
   m_TimeQueue.push_back(orderData);
 }
@@ -81,7 +81,7 @@ bool OrderLevel::CancelOrder(const Id_t& orderId)
 
 bool OrderLevel::ChangeOrderVolume(const Id_t& orderId, const VolumeType_t newVolume)
 {
-  /*const auto p{ [&orderId](const OrderData& orderData) {
+  /*const auto p{ [&orderId](const OrderInsertData& orderData) {
     return orderId == orderData.GetId();
   } };
 
@@ -97,15 +97,15 @@ bool OrderLevel::ChangeOrderVolume(const Id_t& orderId, const VolumeType_t newVo
 
   return false;
 */
-  const auto orderFoundFn{ [newVolume](OrderData& orderData) {
+  const auto orderFoundFn{ [newVolume](OrderInsertData& orderData) {
     orderData.SetVolume(newVolume);
   } };
   return Find(orderId, orderFoundFn);
 }
 
-auto OrderLevel::Find(const Id_t& orderId, const std::function<void(OrderData&)>& orderFoundFn) -> bool
+auto OrderLevel::Find(const Id_t& orderId, const std::function<void(OrderInsertData&)>& orderFoundFn) -> bool
 {
-  const auto p{ [&orderId](const OrderData& orderData) {
+  const auto p{ [&orderId](const OrderInsertData& orderData) {
     return orderId == orderData.GetId();
   } };
 
@@ -122,10 +122,10 @@ auto OrderLevel::Find(const Id_t& orderId, const std::function<void(OrderData&)>
   return false;
 }
 
-auto OrderLevel::MoveOrder(const Id_t& orderId, const std::function<void(OrderData&& orderData)>& moveOrderFn) -> bool
+auto OrderLevel::MoveOrder(const Id_t& orderId, const std::function<void(OrderInsertData&& orderData)>& moveOrderFn) -> bool
 {
   // find the order in this level and move it to the other level
-  const auto p{ [&orderId](const OrderData& orderData) {
+  const auto p{ [&orderId](const OrderInsertData& orderData) {
     return orderId == orderData.GetId();
   } };
 

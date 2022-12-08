@@ -84,9 +84,9 @@ void WebSocketServer::Accept()
 {
   const auto acceptorFunc = [this](beast::error_code ec, tcp::socket webSocket) {
     if (ec) {
-      LOG_DEBUG("Failed to accept connection:" << ec);
+      LOG_ERROR("Failed to accept connection:" << ec);
     } else {
-      LOG_DEBUG("Connection accepted from " << webSocket.remote_endpoint().address().to_string() << ":" << webSocket.remote_endpoint().port());
+      LOG_INFO("Connection accepted from " << webSocket.remote_endpoint().address().to_string() << ":" << webSocket.remote_endpoint().port());
 
       // create session and store in our session list
       const auto endPointKey = std::make_pair(webSocket.remote_endpoint().address(), webSocket.remote_endpoint().port());

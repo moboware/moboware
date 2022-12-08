@@ -97,6 +97,7 @@ public:
     NONE,
     DEBUG,
     INFO,
+    WARN,
     ERROR,
     FATAL
   };
@@ -188,5 +189,6 @@ LogStream& operator<<(LogStream& os, const TObject& obj)
 #endif
 
 #define LOG_INFO(log_line) LOG_STREAM(LogStream::INFO, __FUNCTION__, __FILE__, __LINE__, log_line)
+#define LOG_WARN(log_line) LOG_STREAM(LogStream::WARN, __FUNCTION__, __FILE__, __LINE__, log_line)
 #define LOG_ERROR(log_line) LOG_STREAM(LogStream::ERROR, __FUNCTION__, __FILE__, __LINE__, log_line)
 #define LOG_FATAL(log_line) LOG_STREAM(LogStream::FATAL, __FUNCTION__, __FILE__, __LINE__, log_line)

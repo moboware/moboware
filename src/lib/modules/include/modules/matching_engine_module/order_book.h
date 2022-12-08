@@ -17,7 +17,7 @@ public:
   OrderBook& operator=(OrderBook&&) = delete;
   ~OrderBook() = default;
 
-  auto Insert(const OrderData& orderInsert) -> bool;
+  auto Insert(const OrderInsertData& orderInsert) -> bool;
 
   auto Amend(const OrderAmendData& orderAmend) -> bool;
 

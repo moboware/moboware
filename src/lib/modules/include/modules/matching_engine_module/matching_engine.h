@@ -16,7 +16,7 @@ public:
   MatchingEngine& operator=(MatchingEngine&&) = delete;
   virtual ~MatchingEngine() = default;
 
-  void OrderInsert(const OrderData& orderInsert, const boost::asio::ip::tcp::endpoint& endpoint);
+  void OrderInsert(const OrderInsertData& orderInsert, const boost::asio::ip::tcp::endpoint& endpoint);
   void OrderAmend(const OrderAmendData& orderCancel, const boost::asio::ip::tcp::endpoint& endpoint);
 
   void OrderCancel(const OrderCancelData& orderCancel, const boost::asio::ip::tcp::endpoint& endpoint);

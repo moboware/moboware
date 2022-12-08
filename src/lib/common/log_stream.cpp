@@ -117,6 +117,7 @@ LogStream::LEVEL LogStream::GetLevel(const std::string& levelStr)
     { "", LEVEL::NONE },       //
     { "DEBUG", LEVEL::DEBUG }, //
     { "INFO", LEVEL::INFO },   //
+    { "WARN", LEVEL::WARN },   //
     { "ERROR", LEVEL::ERROR }, //
     { "FATAL", LEVEL::FATAL }  //
   };
@@ -132,6 +133,7 @@ const std::string_view& LogStream::GetLevelString() const
 {
   static const std::string_view _DEBUG{ "DEBUG" };
   static const std::string_view _INFO{ "INFO" };
+  static const std::string_view _WARN{ "WARN" };
   static const std::string_view _ERROR{ "ERROR" };
   static const std::string_view _FATAL{ "FATAL" };
   static const std::string_view _NONE{ "" };
@@ -145,6 +147,9 @@ const std::string_view& LogStream::GetLevelString() const
       break;
     case INFO:
       return _INFO;
+      break;
+    case WARN:
+      return _WARN;
       break;
     case ERROR:
       return _ERROR;
@@ -169,7 +174,7 @@ LogStream& operator<<(LogStream& os, const logstrm::StartOfLine&)
      << timeinfo->tm_hour << ":"                                      //
      << timeinfo->tm_min << ":"                                       //
      << timeinfo->tm_sec << "."                                       //
-     << tv.tv_usec                                                    //
+     << std::setw(4) << tv.tv_usec                                    //
      << "][" << os.GetLevelString()                                   //
      << "][" << std::hex << std::this_thread::get_id()                //
      << "][" << os.GetFile() << "," << std::dec << os.GetLineNumber() //

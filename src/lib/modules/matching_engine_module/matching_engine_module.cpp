@@ -37,7 +37,7 @@ void MatchingEngineModule::OnWebSocketDataReceived(const boost::beast::flat_buff
   orderEventProcessor.Process(readBuffer);
 }
 
-void MatchingEngineModule::HandleOrderInsert(const OrderData& orderInsert, const boost::asio::ip::tcp::endpoint& endpoint)
+void MatchingEngineModule::HandleOrderInsert(const OrderInsertData& orderInsert, const boost::asio::ip::tcp::endpoint& endpoint)
 {
   LOG_DEBUG("Handle order insert...");
   auto iter = m_MatchingEngines.find(orderInsert.GetInstrument());

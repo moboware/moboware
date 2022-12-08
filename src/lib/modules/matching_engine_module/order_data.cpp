@@ -14,14 +14,20 @@ static timeval ConvertToTimeval(const OrderTime_t& orderTime)
   return tv;
 }
 
+std::ostream& operator<<(std::ostream& os, const OrderReply& rhs)
+{
+  return os << "{" << Fields::Id << ":" << rhs.GetId()             //
+            << "," << Fields::ClientId << ":" << rhs.GetClientId() //
+            << "}";
+}
+
 std::ostream& operator<<(std::ostream& os, const Trade& rhs)
 {
-  return os << "{"
-            << "Account:" << rhs.GetAccount()             //
-            << ", TradedPrice:" << rhs.GetTradedPrice()   //
-            << ", TradedVolume:" << rhs.GetTradedVolume() //
-            << ", ClientId:" << rhs.GetClientId()         //
-            << ", OrderId:" << rhs.GetId()                //
+  return os << "{" << Fields::Account << ":" << rhs.GetAccount()           //
+            << "," << Fields::TradedPrice << ":" << rhs.GetTradedPrice()   //
+            << "," << Fields::TradedVolume << ":" << rhs.GetTradedVolume() //
+            << "," << Fields::Id << ":" << rhs.GetId()                     //
+            << "," << Fields::ClientId << ":" << rhs.GetClientId()         //
             << "}";
 }
 
@@ -35,21 +41,53 @@ std::ostream& operator<<(std::ostream& os, const OrderTime_t& rhs)
   return os << gmTime->tm_hour << ":" << gmTime->tm_min << ":" << gmTime->tm_sec << "." << tv.tv_usec;
 }
 
-std::ostream& operator<<(std::ostream& os, const OrderData& rhs)
+std::ostream& operator<<(std::ostream& os, const OrderInsertData& rhs)
 {
-  return os << "Instrument:" << rhs.GetInstrument()             //
-            << ",Price:" << rhs.GetPrice()                      //
-            << ",Volume:" << rhs.GetVolume()                    //
-            << ",Side:" << (rhs.GetIsBuySide() ? "Bid" : "Ask") //
-            << ",Id:" << rhs.GetId()                            //
-            << ",ClientId:" << rhs.GetClientId()                //
-            << ",Account:" << rhs.GetAccount()                  //
-            << ",Type:" << rhs.GetType()                        //
-            << ",Time:" << rhs.GetOrderTime()                   //
+  return os << Fields::Instrument << ":" << rhs.GetInstrument()                   //
+            << "," << Fields::Price << ":" << rhs.GetPrice()                      //
+            << "," << Fields::Volume << ":" << rhs.GetVolume()                    //
+            << "," << Fields::Side << ":" << (rhs.GetIsBuySide() ? "Bid" : "Ask") //
+            << "," << Fields::Id << ":" << rhs.GetId()                            //
+            << "," << Fields::ClientId << ":" << rhs.GetClientId()                //
+            << "," << Fields::Account << ":" << rhs.GetAccount()                  //
+            << "," << Fields::Type << ":" << rhs.GetType()                        //
+            << "," << Fields::Time << ":" << rhs.GetOrderTime()                   //
             << "";
 }
 
+std::ostringstream& operator<<(std::ostringstream& os, const OrderReply& orderReply)
+{
+  os << "{\"" << Fields::OrderReply                                      //
+     << "\":{\"" << Fields::Id << "\":\"" << orderReply.GetId() << "\""  //
+     << ",\"" << Fields::ClientId << "\":\"" << orderReply.GetClientId() //
+     << "\"}}";
+  return os;
 }
+
+std::ostringstream& operator<<(std::ostringstream& os, const Trade& trade)
+{
+  os << "{\"" << Fields::Trade << "\":"                                     //
+     << ",\"" << Fields::Id << "\":\"" << trade.GetId() << "\""             //
+     << "{\"" << Fields::ClientId << "\":\"" << trade.GetClientId() << "\"" //
+     << ",\"" << Fields::Account << "\":\"" << trade.GetAccount() << "\""   //
+     << ",\"" << Fields::TradedPrice << "\":" << trade.GetTradedPrice()     //
+     << ",\"" << Fields::TradedVolume << "\":" << trade.GetTradedVolume()   //
+     << "}"                                                                 //
+     << "}";
+
+  return os;
+}
+
+std::ostringstream& operator<<(std::ostringstream& os, const ErrorReply& errorReply)
+{
+  os << "{\"" << Fields::ErrorReply                                         //
+     << "\":{\"" << Fields::ClientId << "\":\"" << errorReply.GetClientId() //
+     << "\",\"" << Fields::Error << "\":" << errorReply.GetErrorMessage()   //
+     << "}}";
+  return os;
+}
+}
+
 using namespace moboware::modules;
 
 auto OrderReply::operator==(const OrderReply& rhs) const -> bool
@@ -80,6 +118,21 @@ auto Trade::operator==(const Trade& rhs) const -> bool
          id == rhs.id;
 }
 
+auto OrderDataBase::SetData(const Json::Value& data) -> bool
+{
+  SetAccount(data[Fields::Account].asString());
+  SetPrice(data[Fields::Price].asUInt64());
+  SetVolume(data[Fields::Volume].asUInt64());
+  SetType(data[Fields::Type].asString());
+  SetIsBuySide(data[Fields::IsBuy].asBool());
+  SetOrderTime(std::chrono::high_resolution_clock::now());
+  SetClientId(data[Fields::ClientId].asString());
+  SetInstrument(data[Fields::Instrument].asString());
+  SetId(std::to_string(GetOrderTime().time_since_epoch().count()));
+
+  return Validate();
+}
+
 auto OrderDataBase::Validate() const -> bool
 {
   return price > 0 &&                                //
@@ -90,6 +143,23 @@ auto OrderDataBase::Validate() const -> bool
          not account.empty() &&                      //
          not instrument.empty() &&                   //
          (isBuySide == true || isBuySide == false);
+}
+
+auto OrderAmendData::SetData(const Json::Value& data) -> bool
+{
+  SetAccount(data[Fields::Account].asString());
+  SetPrice(data[Fields::Price].asUInt64());
+  SetNewPrice(data[Fields::NewPrice].asUInt64());
+  SetVolume(data[Fields::Volume].asUInt64());
+  SetNewVolume(data[Fields::NewVolume].asUInt64());
+  SetType(data[Fields::Type].asString());
+  SetIsBuySide(data[Fields::IsBuy].asBool());
+  SetOrderTime(std::chrono::high_resolution_clock::now());
+  SetClientId(data[Fields::ClientId].asString());
+  SetInstrument(data[Fields::Instrument].asString());
+  SetId(std::to_string(GetOrderTime().time_since_epoch().count()));
+
+  return Validate();
 }
 
 auto OrderAmendData::Validate() const -> bool
@@ -111,6 +181,17 @@ OrderCancelData::OrderCancelData(const std::string& _instrument, //
   , id(_id)
   , clientId(_clientId)
 {
+}
+
+auto OrderCancelData::SetData(const Json::Value& data) -> bool
+{
+  SetInstrument(data[Fields::Instrument].asString());
+  SetPrice(data[Fields::Price].asDouble());
+  SetIsBuySide(data[Fields::IsBuy].asBool());
+  SetId(data[Fields::Id].asString());
+  SetClientId(data[Fields::ClientId].asString());
+
+  return Validate();
 }
 
 auto OrderCancelData::Validate() const -> bool
@@ -140,17 +221,17 @@ OrderAmendData::OrderAmendData(const std::string& _account,                     
 {
 }
 
-OrderData::OrderData(const std::string& _account,                     //
-                     const std::string& _instrument,                  //
-                     const PriceType_t& _price,                       //
-                     const VolumeType_t& _volume,                     //
-                     const std::string& _type,                        //
-                     const bool _isBuySide,                           //
-                     const OrderTime_t& _orderTime,                   //
-                     const std::chrono::milliseconds& _orderDuration, //
-                     const Id_t& _id,                                 //
-                     const ClientId_t& _clientId                      //
-                     )
+OrderInsertData::OrderInsertData(const std::string& _account,                     //
+                                 const std::string& _instrument,                  //
+                                 const PriceType_t& _price,                       //
+                                 const VolumeType_t& _volume,                     //
+                                 const std::string& _type,                        //
+                                 const bool _isBuySide,                           //
+                                 const OrderTime_t& _orderTime,                   //
+                                 const std::chrono::milliseconds& _orderDuration, //
+                                 const Id_t& _id,                                 //
+                                 const ClientId_t& _clientId                      //
+                                 )
   : OrderDataBase(_account, _instrument, _price, _volume, _type, _isBuySide, _orderTime, _orderDuration, _id, _clientId)
 {
 }

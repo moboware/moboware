@@ -23,37 +23,25 @@ void OrderEventProcessor::Process(const boost::beast::flat_buffer& readBuffer)
     LOG_ERROR("Failed to parse message ");
   };
 
-  const auto action{ rootDocument["Action"].asString() };
-  const auto data{ rootDocument["Data"] };
-  LOG_DEBUG("Action:" << action << ":" << data);
-  if (action == "Insert") {
+  const auto action{ rootDocument[Fields::Action].asString() };
+  const auto data{ rootDocument[Fields::Data] };
+  LOG_DEBUG(Fields::Action << ":" << action << ":" << data);
+  if (action == Fields::Insert) {
     HandleOrderInsert(data);
-  } else if (action == "Cancel") {
+  } else if (action == Fields::Cancel) {
     HandleOrderCancel(data);
-  } else if (action == "Amend") {
+  } else if (action == Fields::Amend) {
     HandleOrderAmend(data);
-  } else if (action == "GetBook") {
+  } else if (action == Fields::GetBook) {
     GetOrderBook(data);
   }
 }
 
 void OrderEventProcessor::HandleOrderInsert(const Json::Value& data)
 {
-  OrderData orderInsert;
+  OrderInsertData orderInsert;
 
-  orderInsert.SetAccount(data["Account"].asString());
-  orderInsert.SetPrice(data["Price"].asUInt64());
-  orderInsert.SetVolume(data["Volume"].asUInt64());
-  orderInsert.SetType(data["Type"].asString());
-  orderInsert.SetIsBuySide(data["IsBuy"].asBool());
-  orderInsert.SetOrderTime(std::chrono::high_resolution_clock::now());
-  orderInsert.SetClientId(data["ClientId"].asString());
-  orderInsert.SetInstrument(data["Instrument"].asString());
-
-  std::stringstream strm;
-  strm << orderInsert.GetOrderTime().time_since_epoch().count();
-  orderInsert.SetId(strm.str());
-  if (orderInsert.Validate()) { // forward the converted order insert message
+  if (orderInsert.SetData(data)) { // forward the converted order insert message
     m_OrderHandler.lock()->HandleOrderInsert(orderInsert, m_Endpoint);
   } else {
     LOG_ERROR("Order data validation failed"
@@ -63,16 +51,10 @@ void OrderEventProcessor::HandleOrderInsert(const Json::Value& data)
 
 void OrderEventProcessor::HandleOrderCancel(const Json::Value& data)
 {
-  const auto instrument = data["Instrument"].asString();
 
   OrderCancelData orderCancel;
 
-  orderCancel.SetInstrument(data["Instrument"].asString());
-  orderCancel.SetPrice(data["Price"].asDouble());
-  orderCancel.SetIsBuySide(data["IsBuy"].asBool());
-  orderCancel.SetId(data["Id"].asString());
-  orderCancel.SetClientId(data["ClientId"].asString());
-  if (orderCancel.Validate()) {
+  if (orderCancel.SetData(data)) {
     m_OrderHandler.lock()->HandleOrderCancel(orderCancel, m_Endpoint);
   } else {
     LOG_ERROR("Order data validation failed"
@@ -84,21 +66,7 @@ void OrderEventProcessor::HandleOrderAmend(const Json::Value& data)
 {
   OrderAmendData orderAmend;
 
-  orderAmend.SetAccount(data["Account"].asString());
-  orderAmend.SetPrice(data["Price"].asUInt64());
-  orderAmend.SetNewPrice(data["NewPrice"].asUInt64());
-  orderAmend.SetVolume(data["Volume"].asUInt64());
-  orderAmend.SetNewVolume(data["NewVolume"].asUInt64());
-  orderAmend.SetType(data["Type"].asString());
-  orderAmend.SetIsBuySide(data["IsBuy"].asBool());
-  orderAmend.SetOrderTime(std::chrono::high_resolution_clock::now());
-  orderAmend.SetClientId(data["ClientId"].asString());
-  orderAmend.SetInstrument(data["Instrument"].asString());
-
-  std::stringstream strm;
-  strm << orderAmend.GetOrderTime().time_since_epoch().count();
-  orderAmend.SetId(strm.str());
-  if (orderAmend.Validate()) { // forward the converted order amend message
+  if (orderAmend.SetData(data)) { // forward the converted order amend message
     m_OrderHandler.lock()->HandleOrderAmend(orderAmend, m_Endpoint);
   } else {
     LOG_ERROR("Order data validation failed"
@@ -108,7 +76,7 @@ void OrderEventProcessor::HandleOrderAmend(const Json::Value& data)
 
 void OrderEventProcessor::GetOrderBook(const Json::Value& data)
 {
-  const auto instrument{ data["Instrument"].asString() };
+  const auto instrument{ data[Fields::Instrument].asString() };
 
   m_OrderHandler.lock()->GetOrderBook(instrument, m_Endpoint);
 }

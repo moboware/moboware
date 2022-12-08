@@ -4,7 +4,7 @@
 using namespace moboware::modules;
 
 template<typename TCompare>
-bool OrderBook<TCompare>::Insert(const OrderData& orderInsert)
+bool OrderBook<TCompare>::Insert(const OrderInsertData& orderInsert)
 {
   auto iter{ m_OrderBookMap.find(orderInsert.GetPrice()) };
   if (iter != std::end(m_OrderBookMap)) {
@@ -61,7 +61,7 @@ bool OrderBook<TCompare>::Amend(const OrderAmendData& orderAmend)
     /// a / original order id
     /// move the order from one price level to the new price level
 
-    const auto moveOrderFn{ [&](OrderData&& orderData) {
+    const auto moveOrderFn{ [&](OrderInsertData&& orderData) {
       // set new price and volume
       orderData.SetPrice(orderAmend.GetNewPrice());
       orderData.SetVolume(orderAmend.GetNewVolume());

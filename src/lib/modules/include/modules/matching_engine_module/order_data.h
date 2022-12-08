@@ -1,7 +1,9 @@
 #pragma once
 #include <chrono>
 #include <ctime>
+#include <json/json.h>
 #include <ostream>
+#include <sstream>
 #include <string>
 
 namespace moboware::modules {
@@ -12,6 +14,36 @@ using OrderTime_t = std::chrono::time_point<std::chrono::high_resolution_clock>;
 using Id_t = std::string;
 using ClientId_t = std::string;
 
+namespace Fields {
+static const std::string Action{ "Action" };
+static const std::string Data{ "Data" };
+static const std::string Insert{ "Insert" };
+static const std::string Cancel{ "Cancel" };
+static const std::string Amend{ "Amend" };
+static const std::string GetBook{ "GetBook" };
+static const std::string Account{ "Account" };
+static const std::string Price{ "Price" };
+static const std::string NewPrice{ "NewPrice" };
+static const std::string TradedPrice{ "TradedPrice" };
+static const std::string Volume{ "Volume" };
+static const std::string NewVolume{ "NewVolume" };
+static const std::string TradedVolume{ "TradedVolume" };
+static const std::string Type{ "Type" };
+static const std::string IsBuy{ "IsBuy" };
+static const std::string ClientId{ "ClientId" };
+static const std::string Id{ "Id" };
+static const std::string Instrument{ "Instrument" };
+static const std::string Error{ "Error" };
+static const std::string Trade{ "Trade" };
+static const std::string Time{ "Time" };
+static const std::string Side{ "Side" };
+static const std::string OrderReply{ "OrderReply" };
+static const std::string ErrorReply{ "ErrorReply" };
+
+}
+/**
+ * @brief base class for order data
+ */
 class OrderDataBase
 {
 public:
@@ -28,6 +60,8 @@ public:
                          const Id_t& _id,                                 //
                          const ClientId_t& _clientId                      //
   );
+
+  [[nodiscard]] auto SetData(const Json::Value& data) -> bool;
 
   [[nodiscard]] auto Validate() const -> bool;
 
@@ -89,20 +123,20 @@ private:
 /**
  * @brief Order data struct used for insert and amend orders
  */
-class OrderData : public OrderDataBase
+class OrderInsertData : public OrderDataBase
 {
 public:
-  OrderData() = default;
-  explicit OrderData(const std::string& _account,                     //
-                     const std::string& _instrument,                  //
-                     const PriceType_t& _price,                       //
-                     const VolumeType_t& _volume,                     //
-                     const std::string& _type,                        //
-                     const bool _isBuySide,                           //
-                     const OrderTime_t& _orderTime,                   //
-                     const std::chrono::milliseconds& _orderDuration, //
-                     const Id_t& _id,                                 //
-                     const ClientId_t& _clientId                      //
+  OrderInsertData() = default;
+  explicit OrderInsertData(const std::string& _account,                     //
+                           const std::string& _instrument,                  //
+                           const PriceType_t& _price,                       //
+                           const VolumeType_t& _volume,                     //
+                           const std::string& _type,                        //
+                           const bool _isBuySide,                           //
+                           const OrderTime_t& _orderTime,                   //
+                           const std::chrono::milliseconds& _orderDuration, //
+                           const Id_t& _id,                                 //
+                           const ClientId_t& _clientId                      //
   );
 };
 
@@ -123,6 +157,8 @@ public:
                           const Id_t& _id,                                 //
                           const ClientId_t& _clientId                      //
   );
+
+  [[nodiscard]] auto SetData(const Json::Value& data) -> bool;
 
   [[nodiscard]] auto Validate() const -> bool;
 
@@ -157,9 +193,9 @@ public:
 
 private:
   /// @brief generated order id
-  Id_t id;
+  Id_t id{};
   /// @brief order id assigned by the client
-  ClientId_t clientId;
+  ClientId_t clientId{};
 };
 
 /**
@@ -175,6 +211,8 @@ public:
                            const Id_t& _id,                //
                            const ClientId_t& _clientId     //
   );
+
+  [[nodiscard]] auto SetData(const Json::Value& data) -> bool;
 
   [[nodiscard]] auto GetInstrument() const -> const std::string& { return instrument; }
   void SetInstrument(const std::string& _instrument) { instrument = _instrument; }
@@ -281,7 +319,13 @@ private:
 
 // ostream operators
 std::ostream& operator<<(std::ostream& os, const OrderTime_t& rhs);
-std::ostream& operator<<(std::ostream& os, const OrderData& rhs);
+std::ostream& operator<<(std::ostream& os, const OrderInsertData& rhs);
+std::ostream& operator<<(std::ostream& os, const OrderReply& rhs);
 std::ostream& operator<<(std::ostream& os, const Trade& rhs);
+
+// message construction operators
+std::ostringstream& operator<<(std::ostringstream& os, const OrderReply& orderReply);
+std::ostringstream& operator<<(std::ostringstream& os, const ErrorReply& errorReply);
+std::ostringstream& operator<<(std::ostringstream& os, const Trade& orderReply);
 
 }

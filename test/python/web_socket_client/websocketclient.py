@@ -22,7 +22,7 @@ async def hello(uri):
   async with connect(uri) as websocket:
       task = asyncio.create_task(ReceiveData(websocket))
 
-      for i in range(250):
+      for i in range(500):
 
         i = 123894792180
 

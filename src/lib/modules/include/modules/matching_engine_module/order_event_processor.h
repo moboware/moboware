@@ -1,6 +1,7 @@
 #pragma once
 
 #include "modules/matching_engine_module/i_order_handler.h"
+#include "modules/matching_engine_module/order_data.h"
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/beast/core/flat_buffer.hpp>
 #include <json/json.h>

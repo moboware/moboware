@@ -26,7 +26,7 @@ public:
   void OnWebSocketDataReceived(const boost::beast::flat_buffer& readBuffer, const boost::asio::ip::tcp::endpoint& endpoint) final;
 
 private:
-  void HandleOrderInsert(const OrderData& orderInsert, const boost::asio::ip::tcp::endpoint& endpoint) final;
+  void HandleOrderInsert(const OrderInsertData& orderInsert, const boost::asio::ip::tcp::endpoint& endpoint) final;
 
   void HandleOrderAmend(const OrderAmendData& orderInsert, const boost::asio::ip::tcp::endpoint& endpoint) final;
 

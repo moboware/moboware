@@ -1,7 +1,7 @@
 {
     "Logging": {
         "LogDirectory": "./",
-        "LogLevel": "DEBUG"
+        "LogLevel": "INFO"
     },
     "Channels": [
         {

@@ -62,13 +62,13 @@ void WebSocketSession::ReadData()
 
     // This indicates that the session was closed
     if (ec == websocket::error::closed) {
-      LOG_DEBUG("Web socket closed");
+      LOG_INFO("Web socket closed");
       m_DataHandlerCallback->OnSessionClosed();
       return;
     }
 
     if (ec) {
-      LOG_DEBUG("Read error:" << ec << ", open:" << std::boolalpha << m_WebSocket.is_open());
+      LOG_ERROR("Read error:" << ec << ", open:" << std::boolalpha << m_WebSocket.is_open());
       return;
     }
 

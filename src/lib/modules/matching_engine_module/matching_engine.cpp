@@ -12,10 +12,7 @@ void MatchingEngine::CreateAndSendMessage(const OrderReply& orderInsertReply, co
 {
   // sendBuffer
   std::ostringstream strm;
-  strm << "{\"OrderReply\":"                                           //
-       << "{\"ClientId\":\"" << orderInsertReply.GetClientId() << "\"" //
-       << ",\"Id\":\"" << orderInsertReply.GetId() << "\"}"            //
-       << "}";
+  strm << orderInsertReply;
 
   const auto&& s{ strm.str() };
   const boost::asio::const_buffer sendBuffer(s.c_str(), s.length());
@@ -27,14 +24,7 @@ void MatchingEngine::CreateAndSendMessage(const Trade& trade, const boost::asio:
 {
   // sendBuffer
   std::ostringstream strm;
-  strm << "{\"Trade\":"                                     //
-       << "{\"ClientId\":\"" << trade.GetClientId() << "\"" //
-       << ",\"Id\":\"" << trade.GetId() << "\""             //
-       << ",\"Account\":\"" << trade.GetAccount() << "\""   //
-       << ",\"TradedPrice\":" << trade.GetTradedPrice()     //
-       << ",\"TradedVolume\":" << trade.GetTradedVolume()   //
-       << "}"                                               //
-       << "}";
+  strm << trade;
 
   const auto&& s{ strm.str() };
   const boost::asio::const_buffer sendBuffer(s.c_str(), s.length());
@@ -46,11 +36,7 @@ void MatchingEngine::CreateAndSendMessage(const ErrorReply& errorReply, const bo
 {
   // sendBuffer
   std::ostringstream strm;
-  strm << "{\"OrderReply\":"                                   //
-       << "{\"ClientId\":"                                     //
-       << "\"" << errorReply.GetClientId() << "\""             //
-       << ",\"error\":" << errorReply.GetErrorMessage() << "}" //
-       << "}";
+  strm << errorReply;
 
   const auto&& s{ strm.str() };
 
@@ -59,11 +45,11 @@ void MatchingEngine::CreateAndSendMessage(const ErrorReply& errorReply, const bo
   m_ChannelInterface->SendWebSocketData(sendBuffer, endpoint);
 }
 
-void MatchingEngine::OrderInsert(const OrderData& orderInsert, const boost::asio::ip::tcp::endpoint& endpoint)
+void MatchingEngine::OrderInsert(const OrderInsertData& orderInsert, const boost::asio::ip::tcp::endpoint& endpoint)
 {
   std::scoped_lock lock(m_Mutex);
 
-  const auto Insert{ [&](const OrderData& orderInsert) {
+  const auto Insert{ [&](const OrderInsertData& orderInsert) {
     return (orderInsert.GetIsBuySide() ? m_Bids.Insert(orderInsert) : m_Asks.Insert(orderInsert));
   } };
 
@@ -71,6 +57,7 @@ void MatchingEngine::OrderInsert(const OrderData& orderInsert, const boost::asio
     // send order insert reply
     const OrderReply orderInsertReply{ orderInsert.GetId(), orderInsert.GetClientId() };
     CreateAndSendMessage(orderInsertReply, endpoint);
+    LOG_INFO("OrderReply:" << orderInsertReply);
 
     // check if this order has matches
     const auto CheckMatch{ [&](const OrderDataBase& newOrder, const boost::asio::ip::tcp::endpoint& endpoint) {
@@ -146,19 +133,19 @@ void MatchingEngine::ExecuteOrder(TOrderBook1& oppositeSideOrderBook, TOrderBook
     auto& mySideOrderBookMap = mySideOrderBook.GetOrderBookMap();
     if (mySideOrderBookMap.empty()) {
       // should never happen if we just inserted an new order
-      LOG_ERROR("Other sides order book is empty");
+      LOG_DEBUG("Other sides order book is empty");
       return;
     }
 
     const auto& mySideBestOrderLevel = std::begin(mySideOrderBookMap)->second;
     if (mySideBestOrderLevel.IsEmpty()) {
-      LOG_ERROR("Other side top level is empty");
+      LOG_DEBUG("Other side top level is empty");
       return;
     }
 
     const auto mySideBestTopLevel = mySideBestOrderLevel.GetTopLevel();
     if (not mySideBestTopLevel) {
-      LOG_ERROR("No best price on other side PriceLevel found");
+      LOG_DEBUG("No best price on other side PriceLevel found");
       return;
     }
 
@@ -172,18 +159,18 @@ void MatchingEngine::ExecuteOrder(TOrderBook1& oppositeSideOrderBook, TOrderBook
 
     const auto& oppositeBestOrderLevel = std::begin(oppositeSideOrderBookMap)->second;
     if (oppositeBestOrderLevel.IsEmpty()) {
-      LOG_ERROR("Best top level is empty");
+      LOG_DEBUG("Best top level is empty");
       return;
     }
 
     const auto oppositeBestTopLevel = oppositeBestOrderLevel.GetTopLevel();
     if (not oppositeBestTopLevel) {
-      LOG_ERROR("No best price on PriceLevel found");
+      LOG_DEBUG("No best price on PriceLevel found");
       return;
     }
 
     const auto& oppositeBestOrderData = oppositeBestTopLevel.value();
-    const auto matchPricePredicate{ [](const OrderData& newOrder, const OrderData& bestOrder) -> bool {
+    const auto matchPricePredicate{ [](const OrderInsertData& newOrder, const OrderInsertData& bestOrder) -> bool {
       return (newOrder.GetIsBuySide() ? (newOrder.GetPrice() >= bestOrder.GetPrice()) : (bestOrder.GetPrice() >= newOrder.GetPrice()));
     } };
 
@@ -195,7 +182,7 @@ void MatchingEngine::ExecuteOrder(TOrderBook1& oppositeSideOrderBook, TOrderBook
                        << oppositeBestOrderData.GetVolume() << "@" << oppositeBestOrderData.GetPrice());
     // trade execution callback function
     const auto sendTradeFn{ [this, &endpoint](const Trade& trade) {
-      LOG_DEBUG("Create and send trade:" << trade);
+      LOG_INFO("Trade:" << trade);
       CreateAndSendMessage(trade, endpoint);
     } };
 
@@ -216,8 +203,8 @@ void MatchingEngine::ExecuteOrder(TOrderBook1& oppositeSideOrderBook, TOrderBook
 void MatchingEngine::GetOrderBook(const boost::asio::ip::tcp::endpoint& endpoint)
 {
   const auto printOrderLevel{ [](const OrderLevel& orderLevel) {
-    const auto printOrderData{ [](const OrderData& orderData) {
-      // LOG_DEBUG("OrderData:" << orderData);
+    const auto printOrderData{ [](const OrderInsertData& orderData) {
+      // LOG_DEBUG("OrderInsertData:" << orderData);
       return true;
     } };
 
