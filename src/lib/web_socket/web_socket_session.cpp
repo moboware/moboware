@@ -1,5 +1,7 @@
-#include "web_socket_server/web_socket_session.h"
+#include "web_socket/web_socket_session.h"
 #include "common/log_stream.h"
+#include <boost/asio.hpp>
+#include <boost/asio/connect.hpp>
 #include <boost/asio/dispatch.hpp>
 
 using namespace boost;
@@ -17,7 +19,7 @@ WebSocketSession::WebSocketSession(const std::shared_ptr<moboware::common::Servi
 {
 }
 
-void WebSocketSession::Start()
+void WebSocketSession::Accept()
 {
   // Get on the correct executor
   // We need to be executing within a strand to perform async operations
@@ -91,4 +93,46 @@ auto WebSocketSession::SendWebSocketData(const boost::asio::const_buffer& sendBu
   const auto n = m_WebSocket.write(sendBuffer, ec);
 
   return n != 0 && !ec;
+}
+
+auto WebSocketSession::Connect(const std::string& address, const short port) -> bool
+{
+  // Set the timeout for the operation. Look up the domain name
+  tcp::resolver resolver(m_Service->GetIoService());
+  system::error_code ec;
+  const auto results{ resolver.resolve(address, std::to_string(port), ec) };
+  if (ec.failed()) {
+    LOG_ERROR("Resolving address failed:" << address << ":" << port << "," << ec);
+    return false;
+  }
+
+  // Make the connection on the IP address we get from a lookup
+  const ip::tcp::endpoint endpoint(ip::make_address(address, ec), port);
+
+  m_WebSocket.next_layer().connect(endpoint, ec);
+
+  if (ec.failed()) {
+    LOG_ERROR("Connect to Web socket failed:" << address << ":" << port << "," << ec);
+    return false;
+  }
+  // Update the host_ string. This will provide the value of the
+  // Host HTTP header during the WebSocket handshake.
+  // See https://tools.ietf.org/html/rfc7230#section-5.4
+  const auto host{ address + ':' + std::to_string(port) };
+
+  // Set a decorator to change the User-Agent of the handshake
+  m_WebSocket.set_option(websocket::stream_base::decorator([](websocket::request_type& req) {
+    req.set(http::field::user_agent, std::string(BOOST_BEAST_VERSION_STRING) + " websocket-client");
+  }));
+
+  // Perform the websocket handshake
+  m_WebSocket.handshake(host, "/", ec);
+
+  if (ec.failed()) {
+    LOG_ERROR("Web socket handshake failed:" << address << ":" << port << "," << ec);
+    return false;
+  }
+
+  ReadData();
+  return true;
 }

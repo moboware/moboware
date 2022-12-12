@@ -39,6 +39,7 @@ BENCHMARK_F(MatchingEngineBenchmark, InsertOrder)(benchmark::State& state)
 
   for (const auto _ : state) {
 
+    state.PauseTiming();
     const OrderInsertData orderInsertData{ "mobo",
                                            "ABCD",
                                            { priceDistribution(gen) * std::mega::num },
@@ -53,6 +54,7 @@ BENCHMARK_F(MatchingEngineBenchmark, InsertOrder)(benchmark::State& state)
       state.SkipWithError("Order data validation failed");
       return;
     }
+    state.ResumeTiming();
 
     matchingEngine.OrderInsert(orderInsertData, endpoint);
   }

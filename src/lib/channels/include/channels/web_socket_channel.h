@@ -4,7 +4,7 @@
 #include "common/session.h"
 #include "common/tcp_server.h"
 #include "common/timer.h"
-#include "web_socket_server/web_socket_server.h"
+#include "web_socket/web_socket_server.h"
 #include <array>
 #include <memory>
 

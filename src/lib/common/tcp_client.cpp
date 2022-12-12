@@ -24,7 +24,7 @@ bool TcpClient::Connect(const std::string& address, const std::uint16_t port)
 {
   LOG_DEBUG("Connecting to: " << address << ":" << port);
 
-  ip::tcp::resolver tcpResolver(_service->GetIoService());
+  // ip::tcp::resolver tcpResolver(_service->GetIoService());
 
   try { // todo change to errorCode
     const ip::tcp::endpoint endpoint(asio::ip::address::from_string(address), port);

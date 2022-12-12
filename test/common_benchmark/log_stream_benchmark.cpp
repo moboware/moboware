@@ -11,7 +11,10 @@ int main(int argc, char** argv)
 
 static void BM_LogStream(benchmark::State& state)
 {
-  LogStream::GetInstance().SetLogFile("./logstream_benchmark.log");
+  std::filesystem::path logFilePath{ "./logstream_benchmark.log" };
+  std::filesystem::remove(logFilePath);
+
+  LogStream::GetInstance().SetLogFile(logFilePath);
   LogStream::GetInstance().SetLevel(LogStream::DEBUG);
 
   const auto intValue{ 82345923745U };

@@ -48,7 +48,7 @@ BENCHMARK_F(OrderEventProcessorBenchmark, InsertOrder)(benchmark::State& state)
   buffer.clear();
 }
 
-BENCHMARK_REGISTER_F(OrderEventProcessorBenchmark, InsertOrder);
+BENCHMARK_REGISTER_F(OrderEventProcessorBenchmark, InsertOrder)->DenseThreadRange(1, 8, 1);
 
 BENCHMARK_F(OrderEventProcessorBenchmark, CancelOrder)(benchmark::State& state)
 {
@@ -63,7 +63,7 @@ BENCHMARK_F(OrderEventProcessorBenchmark, CancelOrder)(benchmark::State& state)
   buffer.clear();
 }
 
-BENCHMARK_REGISTER_F(OrderEventProcessorBenchmark, CancelOrder);
+BENCHMARK_REGISTER_F(OrderEventProcessorBenchmark, CancelOrder)->DenseThreadRange(1, 8, 1);
 
 BENCHMARK_F(OrderEventProcessorBenchmark, AmendOrder)(benchmark::State& state)
 {
@@ -94,4 +94,4 @@ BENCHMARK_F(OrderEventProcessorBenchmark, GetBook)(benchmark::State& state)
   buffer.clear();
 }
 
-BENCHMARK_REGISTER_F(OrderEventProcessorBenchmark, GetBook);
+BENCHMARK_REGISTER_F(OrderEventProcessorBenchmark, GetBook)->DenseThreadRange(1, 8, 1);

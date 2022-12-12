@@ -1,4 +1,4 @@
-project(web_socket_server_test_app)
+project(web_socket_client_test_app)
 
 add_executable(${PROJECT_NAME} main.cpp)
 

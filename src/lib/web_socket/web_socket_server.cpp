@@ -1,4 +1,4 @@
-#include "web_socket_server/web_socket_server.h"
+#include "web_socket/web_socket_server.h"
 #include "common/log_stream.h"
 #include <boost/asio/dispatch.hpp>
 #include <boost/asio/strand.hpp>
@@ -18,7 +18,7 @@ WebSocketServer::WebSocketServer(const std::shared_ptr<moboware::common::Service
 {
 }
 
-auto WebSocketServer::Start(const std::string address, const short port) -> bool
+auto WebSocketServer::Start(const std::string& address, const short port) -> bool
 {
   // create end point
   beast::error_code ec;
@@ -92,7 +92,7 @@ void WebSocketServer::Accept()
       const auto endPointKey = std::make_pair(webSocket.remote_endpoint().address(), webSocket.remote_endpoint().port());
 
       const auto session = std::make_shared<WebSocketSession>(m_Service, shared_from_this(), std::move(webSocket));
-      session->Start();
+      session->Accept();
       m_Sessions[endPointKey] = session;
     }
     Accept();
@@ -114,11 +114,6 @@ auto WebSocketServer::SendWebSocketData(const boost::asio::const_buffer& sendBuf
 
   LOG_DEBUG("No endpoint not found to send data to" << remoteEndPoint.address().to_string() << remoteEndPoint.port());
   return false;
-}
-
-void WebSocketServer::SetWebSocketDataReceived(const WebSocketDataReceivedFn& fn)
-{
-  m_WebSocketDataReceivedFn = fn;
 }
 
 void WebSocketServer::OnDataRead(const boost::beast::flat_buffer& readBuffer, const boost::asio::ip::tcp::endpoint& remoteEndPoint)
