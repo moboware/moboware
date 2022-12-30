@@ -26,7 +26,7 @@ public:
   {
   }
 
-  void SetUp(const ::benchmark::State& state) { LogStream::GetInstance().SetLevel(LogStream::ERROR); }
+  void SetUp(const ::benchmark::State& state) { LogStream::GetInstance().SetLevel(LogStream::LEVEL::ERROR); }
 
   void TearDown(const ::benchmark::State& state) {}
 

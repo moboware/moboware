@@ -92,9 +92,9 @@ public:
 
   bool SetLogFile(const std::filesystem::path& logFileName);
 
-  enum LEVEL
+  enum class LEVEL : std::int64_t
   {
-    NONE,
+    NONE = 0,
     DEBUG,
     INFO,
     WARN,
@@ -136,11 +136,11 @@ private:
 
   std::mutex mMutex{};
   LogStreamBuf mLogStreamBuf{};
-  LEVEL mGlobalLogLevel{ DEBUG };
+  LEVEL mGlobalLogLevel{ LEVEL::DEBUG };
 
   struct LogInfo
   {
-    LEVEL mLogLevel{ DEBUG };
+    LEVEL mLogLevel{ LEVEL::DEBUG };
     std::string mFunction{};
     std::string mFile{};
     std::size_t mLineNumber{};
@@ -185,10 +185,11 @@ LogStream& operator<<(LogStream& os, const TObject& obj)
 #define LOG_DEBUG(log_line) { // empty
 }
 #else
-#define LOG_DEBUG(log_line) LOG_STREAM(LogStream::DEBUG, __FUNCTION__, __FILE__, __LINE__, log_line)
+#define LOG_DEBUG(log_line) LOG_STREAM(LogStream::LEVEL::DEBUG, __FUNCTION__, __FILE__, __LINE__, log_line);
 #endif
 
-#define LOG_INFO(log_line) LOG_STREAM(LogStream::INFO, __FUNCTION__, __FILE__, __LINE__, log_line)
-#define LOG_WARN(log_line) LOG_STREAM(LogStream::WARN, __FUNCTION__, __FILE__, __LINE__, log_line)
-#define LOG_ERROR(log_line) LOG_STREAM(LogStream::ERROR, __FUNCTION__, __FILE__, __LINE__, log_line)
-#define LOG_FATAL(log_line) LOG_STREAM(LogStream::FATAL, __FUNCTION__, __FILE__, __LINE__, log_line)
+#define LOG(level, log_line) LOG_STREAM(level, __FUNCTION__, __FILE__, __LINE__, log_line);
+#define LOG_INFO(log_line) LOG_STREAM(LogStream::LEVEL::INFO, __FUNCTION__, __FILE__, __LINE__, log_line);
+#define LOG_WARN(log_line) LOG_STREAM(LogStream::LEVEL::WARN, __FUNCTION__, __FILE__, __LINE__, log_line);
+#define LOG_ERROR(log_line) LOG_STREAM(LogStream::LEVEL::ERROR, __FUNCTION__, __FILE__, __LINE__, log_line);
+#define LOG_FATAL(log_line) LOG_STREAM(LogStream::LEVEL::FATAL, __FUNCTION__, __FILE__, __LINE__, log_line);

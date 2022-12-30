@@ -20,7 +20,7 @@ auto LogStreamBuf::Size() -> std::streamsize
 
 void LogStreamBuf::Reset()
 {
-  // afhankelijk van de lengte van de buffer wordt de memset uitgevoerd
+  // depending on the length of the buffer as memset is executed
   const char* startOfBuffer = &mLogBuffer[0];
   const size_t bufSize = (pptr() ? size_t(pptr() - startOfBuffer) : LogBuffersize);
   memset(mLogBuffer, 0, bufSize);
@@ -67,7 +67,7 @@ bool LogStream::SetLogFile(const std::filesystem::path& logFileName)
 
 bool LogStream::TestLevel(const LEVEL level, const std::string& function, const std::filesystem::path& fileName, const size_t lineNumber)
 {
-  if (mGlobalLogLevel != NONE && level >= mGlobalLogLevel) {
+  if (mGlobalLogLevel != LEVEL::NONE && level >= mGlobalLogLevel) {
     // split the file name of the module
     mLogInfo.mFunction = function;
     mLogInfo.mFile = fileName.filename();
@@ -81,12 +81,8 @@ bool LogStream::TestLevel(const LEVEL level, const std::string& function, const 
 
 void LogStream::Flush()
 {
-#if 0
-  FlushToStream();
-#else
-  // ping the thread to flush
+  // ping the log thread to flush
   m_ThreadWaitCondition.release();
-#endif
 }
 
 void LogStream::FlushToStream()
@@ -100,7 +96,7 @@ void LogStream::FlushToStream()
 
 void LogStream::WriteToStream(std::ostream& outStream)
 {
-  // this is called from the thread to write to the logstream
+  // this is called from the thread to write to the logStream
   // lock here to prevent raise conditions with the calling thread.
 
   if (not mLogStreamBuf.Empty()) {
@@ -139,22 +135,22 @@ const std::string_view& LogStream::GetLevelString() const
   static const std::string_view _NONE{ "" };
 
   switch (mLogInfo.mLogLevel) {
-    case NONE:
+    case LEVEL::NONE:
       return _NONE;
       break;
-    case DEBUG:
+    case LEVEL::DEBUG:
       return _DEBUG;
       break;
-    case INFO:
+    case LEVEL::INFO:
       return _INFO;
       break;
-    case WARN:
+    case LEVEL::WARN:
       return _WARN;
       break;
-    case ERROR:
+    case LEVEL::ERROR:
       return _ERROR;
       break;
-    case FATAL:
+    case LEVEL::FATAL:
       return _FATAL;
       break;
   }

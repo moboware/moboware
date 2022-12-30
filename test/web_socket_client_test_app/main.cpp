@@ -8,7 +8,7 @@ using namespace moboware;
 
 int main(const int, const char*[])
 {
-  LogStream::GetInstance().SetLevel(LogStream::DEBUG);
+  LogStream::GetInstance().SetLevel(LogStream::LEVEL::DEBUG);
   const auto service{ std::make_shared<moboware::common::Service>() };
   const auto websocketClient{ std::make_shared<moboware::web_socket::WebSocketClient>(service) };
 
