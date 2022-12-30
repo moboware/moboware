@@ -22,11 +22,11 @@ public:
   WebSocketChannel& operator=(WebSocketChannel&&);
   virtual ~WebSocketChannel() = default;
 
-  bool LoadChannelConfig(const Json::Value& channelConfig) final;
+  bool LoadChannelConfig(const boost::json::value& channelConfig) final;
 
   bool Start() final;
 
-  [[nodiscard]] auto CreateModule(const std::string& moduleName, const Json::Value& module) -> std::shared_ptr<common::IModule> final;
+  [[nodiscard]] auto CreateModule(const std::string& moduleName, const boost::json::value& module) -> std::shared_ptr<common::IModule> final;
 
   void SendWebSocketData(const boost::asio::const_buffer& readBuffer, const boost::asio::ip::tcp::endpoint& endpoint) final;
 

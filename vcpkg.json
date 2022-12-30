@@ -7,7 +7,6 @@
     "protobuf",
     "gtest",
     "benchmark",
-    "jsoncpp",
     "boost",
     "pthreads"
   ],
@@ -15,10 +14,6 @@
     {
       "name": "boost",
       "version": "1.80.0"
-    },
-    {
-      "name": "jsoncpp",
-      "version": "1.9.4"
     }
   ]
 }

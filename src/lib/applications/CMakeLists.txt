@@ -9,4 +9,4 @@ add_library(moboware::applications ALIAS ${PROJECT_NAME})
 
 target_link_libraries(${PROJECT_NAME}
     moboware::channels
-    jsoncpp_lib)
+    )

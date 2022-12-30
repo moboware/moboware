@@ -49,6 +49,8 @@ void MatchingEngine::OrderInsert(const OrderInsertData& orderInsert, const boost
 {
   std::scoped_lock lock(m_Mutex);
 
+  LOG_INFO("OrderInsert:" << orderInsert);
+
   const auto Insert{ [&](const OrderInsertData& orderInsert) {
     return (orderInsert.GetIsBuySide() ? m_Bids.Insert(orderInsert) : m_Asks.Insert(orderInsert));
   } };
@@ -78,6 +80,8 @@ void MatchingEngine::OrderInsert(const OrderInsertData& orderInsert, const boost
 void MatchingEngine::OrderAmend(const OrderAmendData& orderAmend, const boost::asio::ip::tcp::endpoint& endpoint)
 {
   std::scoped_lock lock(m_Mutex);
+
+  LOG_INFO("OrderAmend:" << orderAmend);
 
   const auto Amend{ [&](const OrderAmendData& orderAmend) {
     return (orderAmend.GetIsBuySide() ? //
@@ -110,6 +114,8 @@ void MatchingEngine::OrderAmend(const OrderAmendData& orderAmend, const boost::a
 void MatchingEngine::OrderCancel(const OrderCancelData& orderCancel, const boost::asio::ip::tcp::endpoint& endpoint)
 {
   std::scoped_lock lock(m_Mutex);
+
+  LOG_INFO("OrderCancel:" << orderCancel);
 
   const auto Cancel{ [&](const OrderCancelData& orderCancel) {
     return orderCancel.GetIsBuySide() ? m_Bids.Cancel(orderCancel) : m_Asks.Cancel(orderCancel);

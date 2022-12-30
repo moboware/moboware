@@ -14,4 +14,4 @@ add_library(moboware::web_socket ALIAS ${PROJECT_NAME})
 
 target_link_libraries(${PROJECT_NAME}
     moboware::common
-    jsoncpp_lib)
+    )

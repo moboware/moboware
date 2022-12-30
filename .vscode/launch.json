@@ -76,7 +76,7 @@
       "request": "launch",
       "program": "${workspaceFolder}/../build/moboware/debug/modules_test",
       "args": [
-        "--gtest_filter=OrderBookTest.AmendBidOrderMatchAskPriceTest"
+        "--gtest_filter=OrderEventProcessorTest.CancelOrderTest"
       ],
       "cwd": "${workspaceFolder}/../build/moboware/debug/",
       "miDebuggerPath": "/usr/bin/gdb",

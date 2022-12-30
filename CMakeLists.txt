@@ -22,10 +22,9 @@ set(VCPKG_CMAKE_SYSTEM_NAME Linux)
 
 find_package(OpenSSL REQUIRED)
 find_package(Threads)
-find_package(Boost)
 
+find_package(Boost REQUIRED )
 include_directories(${Boost_INCLUDE_DIRS})
-find_package(jsoncpp CONFIG REQUIRED)
 
 add_subdirectory(src)
 add_subdirectory(test)

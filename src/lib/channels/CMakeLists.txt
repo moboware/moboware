@@ -11,4 +11,4 @@ target_link_libraries(${PROJECT_NAME}
     moboware::common
     moboware::modules
     moboware::web_socket
-    jsoncpp_lib)
+    )

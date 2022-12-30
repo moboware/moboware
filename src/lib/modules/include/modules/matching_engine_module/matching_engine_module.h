@@ -21,7 +21,7 @@ public:
   MatchingEngineModule& operator=(MatchingEngineModule&&) = delete;
   virtual ~MatchingEngineModule() = default;
 
-  bool LoadConfig(const Json::Value& moduleValue) final;
+  bool LoadConfig(const boost::json::value& moduleValue) final;
   bool Start() final;
   void OnWebSocketDataReceived(const boost::beast::flat_buffer& readBuffer, const boost::asio::ip::tcp::endpoint& endpoint) final;
 

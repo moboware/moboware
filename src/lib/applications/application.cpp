@@ -1,10 +1,10 @@
 #include "applications/application.h"
 #include "common/log_stream.h"
 #include <fstream>
-#include <json/json.h>
 
 using namespace moboware::common;
 using namespace moboware::applications;
+using namespace boost;
 
 const std::string CHANNELS_VALUE{ "Channels" };
 
@@ -23,48 +23,62 @@ bool Application::LoadConfig(const std::string& configFile, const std::filesyste
     return false;
   }
 
-  Json::CharReaderBuilder builder{};
-  Json::Value rootDocument{};
-  auto collectComments{ false };
-  Json::String* errors{};
-  if (not Json::parseFromStream(builder, configStream, &rootDocument, errors)) {
-    LOG_DEBUG("Failed to parse config file");
+  json::stream_parser parser;
+  system::error_code ec;
+
+  while (not configStream.eof()) {
+    std::string c;
+    std::getline(configStream, c);
+
+    if (0 == parser.write_some(c, ec)) {
+      LOG_DEBUG("Failed to parse config file");
+      return false;
+    }
+  }
+
+  if (not parser.done()) {
+    LOG_ERROR("Parser is not done yet!");
     return false;
   }
+
+  const boost::json::value& rootDocument{ parser.release() };
+
   // read logging settings
-  if (rootDocument.isMember("Logging")) {
-    const auto loggingNode = rootDocument["Logging"];
-    if (loggingNode.isMember("LogDirectory")) {
-      const auto logDirectory{ loggingNode["LogDirectory"].asString() };
+  if (rootDocument.as_object().contains("Logging")) {
+    const auto loggingNode = rootDocument.at("Logging");
+    if (loggingNode.as_object().contains("LogDirectory")) {
+      const auto logDirectory{ loggingNode.at("LogDirectory").as_string().c_str() };
       std::filesystem::path logFile{ logDirectory };
       logFile += applicationName;
       logFile += ".log";
       LogStream::GetInstance().SetLogFile(logFile);
     }
 
-    const auto logLevel{ loggingNode["LogLevel"].asString() };
+    const auto logLevel{ loggingNode.at("LogLevel").as_string().c_str() };
     LogStream::GetInstance().SetLevel(LogStream::GetInstance().GetLevel(logLevel));
   }
+
   // read channel settings
-  if (not rootDocument.isMember(CHANNELS_VALUE)) {
+  if (not rootDocument.as_object().contains(CHANNELS_VALUE)) {
     LOG_DEBUG("Channel item not found");
     return false;
   }
 
-  const Json::Value channelsValue = rootDocument[CHANNELS_VALUE];
-  if (not channelsValue.isArray()) {
+  const auto& channelsValues = rootDocument.at(CHANNELS_VALUE);
+  if (not channelsValues.is_array()) {
     LOG_DEBUG("Channels value is not an array");
     return false;
   }
 
-  if (channelsValue.size() != m_Channels.size()) {
-    LOG_DEBUG("Channel config and channels not same size");
+  const auto& channelsValuesArray{ channelsValues.as_array() };
+  if (channelsValuesArray.size() != m_Channels.size()) {
+    LOG_DEBUG("Channel config and channels not same size " << channelsValuesArray.size() << "!=" << m_Channels.size());
     return false;
   }
 
-  for (Json::ArrayIndex i = 0; i < channelsValue.size(); i++) {
-    const auto channelValue = channelsValue[i];
-    const auto channel = m_Channels[i];
+  int i{};
+  for (const auto& channelValue : channelsValuesArray) {
+    const auto& channel = m_Channels[i++];
     if (!channel->LoadConfig(channelValue)) {
       return false;
     }

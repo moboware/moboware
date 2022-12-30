@@ -13,41 +13,41 @@ WebSocketChannel::WebSocketChannel(const std::shared_ptr<Service>& service)
 {
 }
 
-bool WebSocketChannel::LoadChannelConfig(const Json::Value& channelConfig)
+bool WebSocketChannel::LoadChannelConfig(const boost::json::value& channelConfig)
 {
   // load web socket server config settings
   {
-    if (!channelConfig.isMember("Port")) {
+    if (not channelConfig.as_object().contains("Port")) {
       LOG_DEBUG("Missing Port in channel config");
       return false;
     }
 
-    if (!channelConfig["Port"].isInt()) {
+    if (not channelConfig.at("Port").is_int64()) {
       LOG_DEBUG("Port is not int value");
       return false;
     }
 
-    m_Port = channelConfig["Port"].asInt();
+    m_Port = channelConfig.at("Port").as_int64();
   }
 
   {
     const std::string AddressKey{ "Address" };
-    if (!channelConfig.isMember(AddressKey)) {
+    if (not channelConfig.as_object().contains(AddressKey)) {
       LOG_DEBUG("Missing " << AddressKey << " in channel config");
       return false;
     }
 
-    if (!channelConfig[AddressKey].isString()) {
-      LOG_DEBUG(AddressKey << " is not int value");
+    if (not channelConfig.at(AddressKey).is_string()) {
+      LOG_DEBUG(AddressKey << " is not string value");
       return false;
     }
 
-    m_Address = channelConfig[AddressKey].asString();
+    m_Address = channelConfig.at(AddressKey).as_string().c_str();
   }
   return true;
 }
 
-std::shared_ptr<IModule> WebSocketChannel::CreateModule(const std::string& moduleName, const Json::Value& module)
+std::shared_ptr<IModule> WebSocketChannel::CreateModule(const std::string& moduleName, const boost::json::value& module)
 {
   // todo load modules from module unordered_map from factory
   LOG_DEBUG("Create module " << moduleName);

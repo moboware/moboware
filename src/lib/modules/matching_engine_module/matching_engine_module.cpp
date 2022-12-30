@@ -11,13 +11,14 @@ MatchingEngineModule::MatchingEngineModule(const std::shared_ptr<common::Service
 {
 }
 
-bool MatchingEngineModule::LoadConfig(const Json::Value& moduleValue)
+bool MatchingEngineModule::LoadConfig(const boost::json::value& moduleValue)
 {
   LOG_DEBUG("Load matching engine module Config");
-  const Json::Value instrumentsArrayValues{ moduleValue["Instruments"] };
+  const auto& instrumentsArrayValues{ moduleValue.at("Instruments").as_array() };
 
-  for (Json::ArrayIndex i{ 0 }; i < instrumentsArrayValues.size(); i++) {
-    const auto instrument{ instrumentsArrayValues[i].asString() };
+  for (const auto& instrumentValue : instrumentsArrayValues) {
+    const auto instrument{ instrumentValue.as_string().c_str() };
+
     LOG_DEBUG("Loading instrument " << instrument);
     m_MatchingEngines[instrument] = std::make_shared<MatchingEngine>(GetChannelInterface());
   }
@@ -72,10 +73,10 @@ void MatchingEngineModule::HandleOrderCancel(const OrderCancelData& orderCancel,
 
 void MatchingEngineModule::GetOrderBook(const std::string& instrument, const boost::asio::ip::tcp::endpoint& endpoint)
 {
-  LOG_DEBUG("Get Order Book:" << instrument);
+  LOG_DEBUG("GetOrderBook:" << instrument);
   auto iter = m_MatchingEngines.find(instrument);
   if (iter == std::end(m_MatchingEngines)) {
-    LOG_ERROR("Unknown instrument " << instrument);
+    LOG_WARN("GetOrderBook, unknown instrument " << instrument);
     return;
   }
 

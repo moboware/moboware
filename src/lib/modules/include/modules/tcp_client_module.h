@@ -18,7 +18,7 @@ public:
   TcpClientModule& operator=(const TcpClientModule&) = delete;
   TcpClientModule& operator=(TcpClientModule&&) = delete;
 
-  bool LoadConfig(const Json::Value& moduleValue) final;
+  bool LoadConfig(const boost::json::value& moduleValue) final;
   bool Start() final;
   void OnWebSocketDataReceived(const boost::beast::flat_buffer& readBuffer, const boost::asio::ip::tcp::endpoint& endpoint) final;
 

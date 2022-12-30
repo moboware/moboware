@@ -1,5 +1,6 @@
 #include "common/channel_base.h"
 #include "common/log_stream.h"
+#include <boost/json/src.hpp>
 
 using namespace moboware::common;
 
@@ -12,26 +13,27 @@ void ChannelBase::Stop() {}
 
 const std::string MODULES_VALUE{ "Modules" };
 
-bool ChannelBase::LoadConfig(const Json::Value& channelConfig)
+bool ChannelBase::LoadConfig(const boost::json::value& channelConfig)
 {
-  if (!channelConfig.isMember(NAME_VALUE) || !channelConfig.isMember(MODULES_VALUE)) {
+  if (not channelConfig.as_object().contains(NAME_VALUE) || //
+      not channelConfig.as_object().contains(MODULES_VALUE)) {
     return false;
   }
 
-  m_ChannelName = channelConfig[NAME_VALUE].asString();
-  if (!LoadChannelConfig(channelConfig)) {
+  m_ChannelName = channelConfig.at(NAME_VALUE).as_string().c_str();
+  if (not LoadChannelConfig(channelConfig)) {
     LOG_DEBUG("Failed to load channel config");
     return false;
   }
 
-  const auto modules = channelConfig[MODULES_VALUE];
-  if (modules.isArray()) {
-    for (const auto& moduleValue : modules) {
-      if (!moduleValue.isMember(NAME_VALUE)) {
+  const auto modules = channelConfig.at(MODULES_VALUE);
+  if (modules.is_array()) {
+    for (const auto& moduleValue : modules.as_array()) {
+      if (not moduleValue.as_object().contains(NAME_VALUE)) {
         return false;
       }
 
-      const auto moduleName = moduleValue[NAME_VALUE].asString();
+      const auto moduleName = moduleValue.at(NAME_VALUE).as_string().c_str();
       const auto module = CreateModule(moduleName, moduleValue);
       if (module) {
         if (module->LoadConfig(moduleValue)) {
@@ -40,13 +42,13 @@ bool ChannelBase::LoadConfig(const Json::Value& channelConfig)
       }
     }
   }
-  return !m_Modules.empty();
+  return not m_Modules.empty();
 }
 
 bool ChannelBase::StartModules()
 {
   for (const auto module : m_Modules) {
-    if (!module->Start()) {
+    if (not module->Start()) {
       return false;
     }
   }

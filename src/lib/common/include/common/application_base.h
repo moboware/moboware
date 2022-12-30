@@ -2,7 +2,6 @@
 #include "common/channel_base.h"
 #include <boost/asio/io_service.hpp>
 #include <filesystem>
-#include <json/json.h>
 #include <vector>
 
 namespace moboware::common {

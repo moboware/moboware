@@ -1,6 +1,5 @@
 #include "common/application_base.h"
 #include "common/log_stream.h"
-#include <json/json.h>
 
 using namespace moboware::common;
 

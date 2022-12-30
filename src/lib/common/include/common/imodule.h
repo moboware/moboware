@@ -3,7 +3,7 @@
 #include "common/service.h"
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/beast/core/flat_buffer.hpp>
-#include <json/json.h>
+#include <boost/json.hpp>
 #include <string>
 
 namespace moboware::common {
@@ -28,7 +28,7 @@ public:
 
   virtual bool Start() = 0;
 
-  virtual bool LoadConfig(const Json::Value& moduleValue) = 0;
+  virtual bool LoadConfig(const boost::json::value& moduleValue) = 0;
   virtual void OnWebSocketDataReceived(const boost::beast::flat_buffer& readBuffer, const boost::asio::ip::tcp::endpoint& endpoint) = 0;
 
 protected:

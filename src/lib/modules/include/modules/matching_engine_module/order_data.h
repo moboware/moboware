@@ -1,7 +1,7 @@
 #pragma once
+#include <boost/json.hpp>
 #include <chrono>
 #include <ctime>
-#include <json/json.h>
 #include <ostream>
 #include <sstream>
 #include <string>
@@ -61,7 +61,7 @@ public:
                          const ClientId_t& _clientId                      //
   );
 
-  [[nodiscard]] auto SetData(const Json::Value& data) -> bool;
+  [[nodiscard]] auto SetData(const boost::json::value& data) -> bool;
 
   [[nodiscard]] auto Validate() const -> bool;
 
@@ -158,7 +158,7 @@ public:
                           const ClientId_t& _clientId                      //
   );
 
-  [[nodiscard]] auto SetData(const Json::Value& data) -> bool;
+  [[nodiscard]] auto SetData(const boost::json::value& data) -> bool;
 
   [[nodiscard]] auto Validate() const -> bool;
 
@@ -212,7 +212,7 @@ public:
                            const ClientId_t& _clientId     //
   );
 
-  [[nodiscard]] auto SetData(const Json::Value& data) -> bool;
+  [[nodiscard]] auto SetData(const boost::json::value& data) -> bool;
 
   [[nodiscard]] auto GetInstrument() const -> const std::string& { return instrument; }
   void SetInstrument(const std::string& _instrument) { instrument = _instrument; }
@@ -322,6 +322,8 @@ std::ostream& operator<<(std::ostream& os, const OrderTime_t& rhs);
 std::ostream& operator<<(std::ostream& os, const OrderInsertData& rhs);
 std::ostream& operator<<(std::ostream& os, const OrderReply& rhs);
 std::ostream& operator<<(std::ostream& os, const Trade& rhs);
+std::ostream& operator<<(std::ostream& os, const OrderCancelData& rhs);
+std::ostream& operator<<(std::ostream& os, const OrderAmendData& rhs);
 
 // message construction operators
 std::ostringstream& operator<<(std::ostringstream& os, const OrderReply& orderReply);

@@ -13,12 +13,12 @@ TcpClientModule::TcpClientModule(const std::shared_ptr<common::Service>& service
 {
 }
 
-bool TcpClientModule::LoadConfig(const Json::Value& moduleValue)
+bool TcpClientModule::LoadConfig(const boost::json::value& moduleValue)
 {
   LOG_DEBUG("Load module Config");
 
-  m_Config.m_Address = moduleValue["Address"].asString();
-  m_Config.m_Port = moduleValue["Port"].asUInt();
+  m_Config.m_Address = moduleValue.at("Address").as_string().c_str();
+  m_Config.m_Port = moduleValue.at("Port").as_int64();
 
   return true;
 }

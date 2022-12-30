@@ -10,7 +10,7 @@ LogModule::LogModule(const std::shared_ptr<common::Service>& service,           
 {
 }
 
-bool LogModule::LoadConfig(const Json::Value& moduleValue)
+bool LogModule::LoadConfig(const boost::json::value& moduleValue)
 {
   LOG_DEBUG("Load module Config");
 

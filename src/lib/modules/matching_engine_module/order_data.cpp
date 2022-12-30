@@ -1,5 +1,5 @@
 #include "modules/matching_engine_module/order_data.h"
-
+using namespace boost;
 namespace moboware::modules {
 
 static timeval ConvertToTimeval(const OrderTime_t& orderTime)
@@ -52,7 +52,34 @@ std::ostream& operator<<(std::ostream& os, const OrderInsertData& rhs)
             << "," << Fields::Account << ":" << rhs.GetAccount()                  //
             << "," << Fields::Type << ":" << rhs.GetType()                        //
             << "," << Fields::Time << ":" << rhs.GetOrderTime()                   //
-            << "";
+    ;
+}
+
+std::ostream& operator<<(std::ostream& os, const OrderAmendData& rhs)
+{
+  return os << Fields::Instrument << ":" << rhs.GetInstrument()                   //
+            << "," << Fields::Price << ":" << rhs.GetPrice()                      //
+            << "," << Fields::NewPrice << ":" << rhs.GetNewPrice()                //
+            << "," << Fields::Volume << ":" << rhs.GetVolume()                    //
+            << "," << Fields::NewVolume << ":" << rhs.GetNewVolume()              //
+            << "," << Fields::Side << ":" << (rhs.GetIsBuySide() ? "Bid" : "Ask") //
+            << "," << Fields::Id << ":" << rhs.GetId()                            //
+            << "," << Fields::ClientId << ":" << rhs.GetClientId()                //
+            << "," << Fields::Account << ":" << rhs.GetAccount()                  //
+            << "," << Fields::Type << ":" << rhs.GetType()                        //
+            << "," << Fields::Time << ":" << rhs.GetOrderTime()                   //
+    ;
+}
+
+std::ostream& operator<<(std::ostream& os, const OrderCancelData& rhs)
+{
+
+  return os << Fields::Instrument << ":" << rhs.GetInstrument()                   //
+            << "," << Fields::Price << ":" << rhs.GetPrice()                      //
+            << "," << Fields::Side << ":" << (rhs.GetIsBuySide() ? "Bid" : "Ask") //
+            << "," << Fields::Id << ":" << rhs.GetId()                            //
+            << "," << Fields::ClientId << ":" << rhs.GetClientId()                //
+    ;
 }
 
 std::ostringstream& operator<<(std::ostringstream& os, const OrderReply& orderReply)
@@ -118,16 +145,16 @@ auto Trade::operator==(const Trade& rhs) const -> bool
          id == rhs.id;
 }
 
-auto OrderDataBase::SetData(const Json::Value& data) -> bool
+auto OrderDataBase::SetData(const boost::json::value& data) -> bool
 {
-  SetAccount(data[Fields::Account].asString());
-  SetPrice(data[Fields::Price].asUInt64());
-  SetVolume(data[Fields::Volume].asUInt64());
-  SetType(data[Fields::Type].asString());
-  SetIsBuySide(data[Fields::IsBuy].asBool());
+  SetAccount(data.at(Fields::Account).as_string().c_str());
+  SetPrice(data.at(Fields::Price).as_int64());
+  SetVolume(data.at(Fields::Volume).as_int64());
+  SetType(data.at(Fields::Type).as_string().c_str());
+  SetIsBuySide(data.at(Fields::IsBuy).as_bool());
   SetOrderTime(std::chrono::high_resolution_clock::now());
-  SetClientId(data[Fields::ClientId].asString());
-  SetInstrument(data[Fields::Instrument].asString());
+  SetClientId(data.at(Fields::ClientId).as_string().c_str());
+  SetInstrument(data.at(Fields::Instrument).as_string().c_str());
   SetId(std::to_string(GetOrderTime().time_since_epoch().count()));
 
   return Validate();
@@ -145,18 +172,18 @@ auto OrderDataBase::Validate() const -> bool
          (isBuySide == true || isBuySide == false);
 }
 
-auto OrderAmendData::SetData(const Json::Value& data) -> bool
+auto OrderAmendData::SetData(const boost::json::value& data) -> bool
 {
-  SetAccount(data[Fields::Account].asString());
-  SetPrice(data[Fields::Price].asUInt64());
-  SetNewPrice(data[Fields::NewPrice].asUInt64());
-  SetVolume(data[Fields::Volume].asUInt64());
-  SetNewVolume(data[Fields::NewVolume].asUInt64());
-  SetType(data[Fields::Type].asString());
-  SetIsBuySide(data[Fields::IsBuy].asBool());
+  SetAccount(data.at(Fields::Account).as_string().c_str());
+  SetPrice(data.at(Fields::Price).as_int64());
+  SetNewPrice(data.at(Fields::NewPrice).as_int64());
+  SetVolume(data.at(Fields::Volume).as_int64());
+  SetNewVolume(data.at(Fields::NewVolume).as_int64());
+  SetType(data.at(Fields::Type).as_string().c_str());
+  SetIsBuySide(data.at(Fields::IsBuy).as_bool());
   SetOrderTime(std::chrono::high_resolution_clock::now());
-  SetClientId(data[Fields::ClientId].asString());
-  SetInstrument(data[Fields::Instrument].asString());
+  SetClientId(data.at(Fields::ClientId).as_string().c_str());
+  SetInstrument(data.at(Fields::Instrument).as_string().c_str());
   SetId(std::to_string(GetOrderTime().time_since_epoch().count()));
 
   return Validate();
@@ -183,13 +210,13 @@ OrderCancelData::OrderCancelData(const std::string& _instrument, //
 {
 }
 
-auto OrderCancelData::SetData(const Json::Value& data) -> bool
+auto OrderCancelData::SetData(const boost::json::value& data) -> bool
 {
-  SetInstrument(data[Fields::Instrument].asString());
-  SetPrice(data[Fields::Price].asDouble());
-  SetIsBuySide(data[Fields::IsBuy].asBool());
-  SetId(data[Fields::Id].asString());
-  SetClientId(data[Fields::ClientId].asString());
+  SetInstrument(data.at(Fields::Instrument).as_string().c_str());
+  SetPrice(data.at(Fields::Price).as_int64());
+  SetIsBuySide(data.at(Fields::IsBuy).as_bool());
+  SetId(data.at(Fields::Id).as_string().c_str());
+  SetClientId(data.at(Fields::ClientId).as_string().c_str());
 
   return Validate();
 }

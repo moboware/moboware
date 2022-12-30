@@ -1,7 +1,9 @@
 #include "modules/matching_engine_module/order_event_processor.h"
 #include "common/log_stream.h"
+//#include <boost/json/src.hpp>
 
 using namespace moboware::modules;
+using namespace boost;
 
 OrderEventProcessor::OrderEventProcessor(const std::weak_ptr<IOrderHandler>& orderHandler, const boost::asio::ip::tcp::endpoint& endpoint)
   : m_OrderHandler(orderHandler)
@@ -11,33 +13,33 @@ OrderEventProcessor::OrderEventProcessor(const std::weak_ptr<IOrderHandler>& ord
 
 void OrderEventProcessor::Process(const boost::beast::flat_buffer& readBuffer)
 {
-  Json::CharReaderBuilder builder{};
-  const auto reader = std::unique_ptr<Json::CharReader>(builder.newCharReader());
-  Json::Value rootDocument{};
-  Json::String* errors{};
+  json::stream_parser parser;
+  system::error_code ec;
+  if (0 == parser.write((const char*)readBuffer.data().data(), //
+                        readBuffer.data().size(),              //
+                        ec)) {
+    LOG_ERROR("Failed to parse message " << ec);
+    return;
+  }
 
-  if (not reader->parse((const char*)readBuffer.data().data(),                            //
-                        (const char*)readBuffer.data().data() + readBuffer.data().size(), //
-                        &rootDocument,
-                        errors)) {
-    LOG_ERROR("Failed to parse message ");
-  };
+  const json::value& rootDocument{ parser.release() };
+  LOG_DEBUG("Root doc:" << rootDocument);
 
-  const auto action{ rootDocument[Fields::Action].asString() };
-  const auto data{ rootDocument[Fields::Data] };
+  const auto& action{ rootDocument.at(Fields::Action) };
+  const auto& data{ rootDocument.at(Fields::Data) };
   LOG_DEBUG(Fields::Action << ":" << action << ":" << data);
-  if (action == Fields::Insert) {
+  if (action.as_string() == Fields::Insert) {
     HandleOrderInsert(data);
-  } else if (action == Fields::Cancel) {
+  } else if (action.as_string() == Fields::Cancel) {
     HandleOrderCancel(data);
-  } else if (action == Fields::Amend) {
+  } else if (action.as_string() == Fields::Amend) {
     HandleOrderAmend(data);
-  } else if (action == Fields::GetBook) {
+  } else if (action.as_string() == Fields::GetBook) {
     GetOrderBook(data);
   }
 }
 
-void OrderEventProcessor::HandleOrderInsert(const Json::Value& data)
+void OrderEventProcessor::HandleOrderInsert(const boost::json::value& data)
 {
   OrderInsertData orderInsert;
 
@@ -49,7 +51,7 @@ void OrderEventProcessor::HandleOrderInsert(const Json::Value& data)
   }
 }
 
-void OrderEventProcessor::HandleOrderCancel(const Json::Value& data)
+void OrderEventProcessor::HandleOrderCancel(const boost::json::value& data)
 {
 
   OrderCancelData orderCancel;
@@ -62,7 +64,7 @@ void OrderEventProcessor::HandleOrderCancel(const Json::Value& data)
   }
 }
 
-void OrderEventProcessor::HandleOrderAmend(const Json::Value& data)
+void OrderEventProcessor::HandleOrderAmend(const boost::json::value& data)
 {
   OrderAmendData orderAmend;
 
@@ -74,9 +76,10 @@ void OrderEventProcessor::HandleOrderAmend(const Json::Value& data)
   }
 }
 
-void OrderEventProcessor::GetOrderBook(const Json::Value& data)
+void OrderEventProcessor::GetOrderBook(const boost::json::value& data)
 {
-  const auto instrument{ data[Fields::Instrument].asString() };
+
+  const auto instrument{ data.at(Fields::Instrument).as_string().c_str() };
 
   m_OrderHandler.lock()->GetOrderBook(instrument, m_Endpoint);
 }

@@ -16,7 +16,7 @@ public:
   LogModule& operator=(const LogModule&) = delete;
   LogModule& operator=(LogModule&&) = delete;
 
-  bool LoadConfig(const Json::Value& moduleValue) final;
+  bool LoadConfig(const boost::json::value& moduleValue) final;
   bool Start() final;
   void OnWebSocketDataReceived(const boost::beast::flat_buffer& readBuffer, const boost::asio::ip::tcp::endpoint& endpoint) final;
 

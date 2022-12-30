@@ -3,8 +3,8 @@
 #include "modules/matching_engine_module/i_order_handler.h"
 #include "modules/matching_engine_module/order_data.h"
 #include <boost/asio/ip/tcp.hpp>
+#include <boost/json.hpp>
 #include <boost/beast/core/flat_buffer.hpp>
-#include <json/json.h>
 
 namespace moboware::modules {
 
@@ -25,10 +25,10 @@ public:
 
 private:
   const std::weak_ptr<IOrderHandler> m_OrderHandler;
-  void HandleOrderInsert(const Json::Value& data);
-  void HandleOrderCancel(const Json::Value& data);
-  void HandleOrderAmend(const Json::Value& data);
-  void GetOrderBook(const Json::Value& data);
+  void HandleOrderInsert(const boost::json::value& data);
+  void HandleOrderCancel(const boost::json::value& data);
+  void HandleOrderAmend(const boost::json::value& data);
+  void GetOrderBook(const boost::json::value& data);
 
   const boost::asio::ip::tcp::endpoint m_Endpoint;
 };

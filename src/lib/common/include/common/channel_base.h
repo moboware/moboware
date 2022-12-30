@@ -3,7 +3,6 @@
 #include "common/imodule_factory.h"
 #include "common/service.h"
 #include <deque>
-#include <json/json.h>
 #include <memory>
 
 namespace moboware::common {
@@ -23,10 +22,10 @@ public:
   ChannelBase& operator=(const ChannelBase&);
   ChannelBase& operator=(ChannelBase&&);
 
-  bool LoadConfig(const Json::Value& channelConfig);
-  [[nodiscard]] virtual bool LoadChannelConfig(const Json::Value& channelConfig) = 0;
+  bool LoadConfig(const boost::json::value& channelConfig);
+  [[nodiscard]] virtual bool LoadChannelConfig(const boost::json::value& channelConfig) = 0;
   [[nodiscard]] virtual bool Start() = 0;
-  [[nodiscard]] virtual std::shared_ptr<common::IModule> CreateModule(const std::string& moduleName, const Json::Value& module) = 0;
+  [[nodiscard]] virtual std::shared_ptr<common::IModule> CreateModule(const std::string& moduleName, const boost::json::value& module) = 0;
 
   virtual void Stop();
 
