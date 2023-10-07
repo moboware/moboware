@@ -19,12 +19,14 @@ set(VCPKG_CRT_LINKAGE static)
 set(VCPKG_LIBRARY_LINKAGE dynamic) # This changed from static to dynamic
 set(VCPKG_CMAKE_SYSTEM_NAME Linux)
 
+add_compile_options(-Ofast)
 
 find_package(OpenSSL REQUIRED)
 find_package(Threads)
 
-find_package(Boost REQUIRED )
+find_package(Boost REQUIRED COMPONENTS python3.10 )
 include_directories(${Boost_INCLUDE_DIRS})
 
 add_subdirectory(src)
 add_subdirectory(test)
+# add_subdirectory(playground)

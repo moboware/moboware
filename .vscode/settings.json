@@ -2,5 +2,7 @@
   "files.associations": {
     "chrono": "cpp"
   },
-  "cmake.sourceDirectory": "${workspaceFolder}/."
+  "workbench.settings.openDefaultKeybindings": true,
+  "cmake.sourceDirectory": "${workspaceFolder}/.",
+  "cmake.configureOnOpen": false
 }

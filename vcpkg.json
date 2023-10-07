@@ -1,19 +1,25 @@
 {
   "name": "moboware",
   "version-string": "master",
-  "builtin-baseline": "5251291e1623eabf5c8f275f456bc95f983cd8eb",
+  "builtin-baseline": "8b04a7bd93bef991818fc372bb83ce00ec1c1c16",
   "dependencies": [
     "openssl",
     "protobuf",
     "gtest",
     "benchmark",
     "boost",
-    "pthreads"
+    "python3",
+    "pthreads",
+    "cppzmq"
   ],
   "overrides": [
     {
       "name": "boost",
-      "version": "1.80.0"
+      "version": "1.82.0#1"
+    },
+    {
+      "name": "python3",
+      "version": "3.10.5"
     },
     {
       "name": "benchmark",

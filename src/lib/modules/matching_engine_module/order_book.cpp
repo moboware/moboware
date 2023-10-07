@@ -3,13 +3,12 @@
 
 using namespace moboware::modules;
 
-template<typename TCompare>
-bool OrderBook<TCompare>::Insert(const OrderInsertData& orderInsert)
+template <typename TCompare> bool OrderBook<TCompare>::Insert(const OrderInsertData &orderInsert)
 {
-  auto iter{ m_OrderBookMap.find(orderInsert.GetPrice()) };
+  auto iter{m_OrderBookMap.find(orderInsert.GetPrice())};
   if (iter != std::end(m_OrderBookMap)) {
     /// already more orders on this price level, add this one to it.
-    auto& orderPriceLevel{ iter->second };
+    auto &orderPriceLevel{iter->second};
     orderPriceLevel.Insert(orderInsert);
 
     LOG_DEBUG("Order added at price level:" << orderInsert.GetPriceAsDouble() << ", id:" << orderInsert.GetId());
@@ -17,10 +16,11 @@ bool OrderBook<TCompare>::Insert(const OrderInsertData& orderInsert)
     return true;
   } else {
     /// add new order to the price level
-    const auto pair{ m_OrderBookMap.emplace(std::make_pair(orderInsert.GetPrice(), OrderLevel(orderInsert))) };
+    const auto pair{m_OrderBookMap.emplace(orderInsert.GetPrice(), orderInsert)};
     if (pair.second) {
 
-      LOG_DEBUG("Order added at price level:" << orderInsert.GetVolume() << "@" << orderInsert.GetPriceAsDouble() << ", id:" << orderInsert.GetId());
+      LOG_DEBUG("Order added at price level:" << orderInsert.GetVolume() << "@" << orderInsert.GetPriceAsDouble()
+                                              << ", id:" << orderInsert.GetId());
 
       return true;
     }
@@ -28,21 +28,21 @@ bool OrderBook<TCompare>::Insert(const OrderInsertData& orderInsert)
   return false;
 }
 
-template<typename TCompare>
-bool OrderBook<TCompare>::Amend(const OrderAmendData& orderAmend)
+template <typename TCompare> bool OrderBook<TCompare>::Amend(const OrderAmendData &orderAmend)
 {
-  auto iter{ m_OrderBookMap.find(orderAmend.GetPrice()) };
+  auto iter{m_OrderBookMap.find(orderAmend.GetPrice())};
   if (iter == std::end(m_OrderBookMap)) {
     LOG_ERROR("Price level not found at price " << orderAmend.GetPrice());
     return false;
   }
 
-  auto& orderPriceLevel{ iter->second };
+  auto &orderPriceLevel{iter->second};
 
-  if (orderAmend.GetNewVolume() == 0) { // cancel order when  volume is zero
+  if (orderAmend.GetNewVolume() == 0) {   // cancel order when  volume is zero
     if (orderPriceLevel.CancelOrder(orderAmend.GetId())) {
       // cancel the order when new volume is zero
-      LOG_DEBUG("Order amend volume is zero, order is cancelled at price level:" << orderAmend.GetPriceAsDouble() << ", id:" << orderAmend.GetId());
+      LOG_DEBUG("Order amend volume is zero, order is cancelled at price level:" << orderAmend.GetPriceAsDouble()
+                                                                                 << ", id:" << orderAmend.GetId());
       if (orderPriceLevel.IsEmpty()) {
         RemoveLevelAtPrice(orderAmend.GetPrice());
       }
@@ -57,20 +57,21 @@ bool OrderBook<TCompare>::Amend(const OrderAmendData& orderAmend)
       return true;
     }
   } else {
-    //// The change is on a other price level. Means we need to move the order from the original price level and insert a new order in the new price level with
+    //// The change is on a other price level. Means we need to move the order from the original price level and insert a new
+    /// order in the new price level with
     /// a / original order id
     /// move the order from one price level to the new price level
 
-    const auto moveOrderFn{ [&](OrderInsertData&& orderData) {
+    const auto moveOrderFn{[&](OrderInsertData &&orderData) {
       // set new price and volume
       orderData.SetPrice(orderAmend.GetNewPrice());
       orderData.SetVolume(orderAmend.GetNewVolume());
 
-      const auto pair{ m_OrderBookMap.emplace(std::make_pair(orderAmend.GetNewPrice(), OrderLevel(orderData))) };
+      const auto pair{m_OrderBookMap.emplace(orderAmend.GetNewPrice(), orderData)};
       if (pair.second) {
         LOG_DEBUG("Order moved to new price level:" << orderData);
       }
-    } };
+    }};
 
     if (orderPriceLevel.MoveOrder(orderAmend.GetId(), moveOrderFn)) {
       // check if the order level is empty and needs to be removed
@@ -84,13 +85,12 @@ bool OrderBook<TCompare>::Amend(const OrderAmendData& orderAmend)
   return false;
 }
 
-template<typename TCompare>
-bool OrderBook<TCompare>::Cancel(const OrderCancelData& orderCancel)
+template <typename TCompare> bool OrderBook<TCompare>::Cancel(const OrderCancelData &orderCancel)
 {
-  auto iter{ m_OrderBookMap.find(orderCancel.GetPrice()) };
+  auto iter{m_OrderBookMap.find(orderCancel.GetPrice())};
   if (iter != std::end(m_OrderBookMap)) {
     /// cancel the order at price level
-    auto& orderPriceLevel{ iter->second };
+    auto &orderPriceLevel{iter->second};
     if (orderPriceLevel.CancelOrder(orderCancel.GetId())) {
       LOG_DEBUG("Order cancelled at price level:" << orderCancel.GetPriceAsDouble() << ", id:" << orderCancel.GetId());
 
@@ -100,20 +100,19 @@ bool OrderBook<TCompare>::Cancel(const OrderCancelData& orderCancel)
   return false;
 }
 
-template<typename TCompare>
-void OrderBook<TCompare>::GetBook(const std::function<bool(const OrderLevel&)>& orderBookFunction)
+template <typename TCompare>
+void OrderBook<TCompare>::GetBook(const std::function<bool(const OrderLevel &)> &orderBookFunction)
 {
-  for (const auto& [k, v] : m_OrderBookMap) {
+  for (const auto &[k, v] : m_OrderBookMap) {
     if (not orderBookFunction(v)) {
       return;
     }
   }
 }
 
-template<typename TCompare>
-std::optional<const OrderLevel*> OrderBook<TCompare>::GetLevelAtPrice(const PriceType_t& price)
+template <typename TCompare> std::optional<const OrderLevel *> OrderBook<TCompare>::GetLevelAtPrice(const PriceType_t &price)
 {
-  const auto iter{ m_OrderBookMap.find(price) };
+  const auto iter{m_OrderBookMap.find(price)};
   if (iter != std::end(m_OrderBookMap)) {
     return &iter->second;
   }
@@ -121,10 +120,9 @@ std::optional<const OrderLevel*> OrderBook<TCompare>::GetLevelAtPrice(const Pric
   return nullptr;
 }
 
-template<typename TCompare>
-void OrderBook<TCompare>::RemoveLevelAtPrice(const PriceType_t& price)
+template <typename TCompare> void OrderBook<TCompare>::RemoveLevelAtPrice(const PriceType_t &price)
 {
-  const auto iter{ m_OrderBookMap.find(price) };
+  const auto iter{m_OrderBookMap.find(price)};
   if (iter != std::end(m_OrderBookMap)) {
     m_OrderBookMap.erase(iter);
   }

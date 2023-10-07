@@ -16,7 +16,6 @@ int Service::Run()
   // Run the I/O service on the requested number of threads
   std::vector<std::thread> v;
   v.reserve(numberOfServiceThreads - 1);
-
   for (auto i = numberOfServiceThreads - 1; i > 0; --i) {
     v.emplace_back([this] {
       m_IoService.run();

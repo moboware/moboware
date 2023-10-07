@@ -130,6 +130,7 @@
     "editor.scrollbar.horizontalScrollbarSize": 12,
     "editor.lineHeight": 1.4,
     "cSpell.logLevel": "Warning",
-    "cSpell.spellCheckOnlyWorkspaceFiles": true
+    "cSpell.spellCheckOnlyWorkspaceFiles": true,
+    "workbench.settings.openDefaultKeybindings": true
   }
 }

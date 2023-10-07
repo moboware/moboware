@@ -1,6 +1,7 @@
 #pragma once
 
 #include <boost/asio/io_service.hpp>
+#include <boost/asio/thread_pool.hpp>
 
 namespace moboware::common {
 class Service

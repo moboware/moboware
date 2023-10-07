@@ -1,6 +1,10 @@
 find_package(GTest CONFIG REQUIRED)
 find_package(benchmark CONFIG REQUIRED)
 
+add_subdirectory(decimal_benchmark)
+add_subdirectory(decimal_test)
+add_subdirectory(object_copy_benchmark)
+add_subdirectory(smart_search_benchmark)
 add_subdirectory(common_test)
 add_subdirectory(common_benchmark)
 add_subdirectory(modules_test)
