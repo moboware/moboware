@@ -19,7 +19,8 @@ set(VCPKG_CRT_LINKAGE static)
 set(VCPKG_LIBRARY_LINKAGE dynamic) # This changed from static to dynamic
 set(VCPKG_CMAKE_SYSTEM_NAME Linux)
 
-add_compile_options(-Ofast)
+set(CMAKE_CXX_FLAGS "-DNDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -DNDEBUG")
 
 find_package(OpenSSL REQUIRED)
 find_package(Threads)

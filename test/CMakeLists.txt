@@ -1,6 +1,7 @@
 find_package(GTest CONFIG REQUIRED)
 find_package(benchmark CONFIG REQUIRED)
 
+add_subdirectory(share_memory)
 add_subdirectory(decimal_benchmark)
 add_subdirectory(decimal_test)
 add_subdirectory(object_copy_benchmark)
