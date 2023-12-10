@@ -5,7 +5,6 @@
 #include <functional>
 #include <memory>
 #include <stdexcept>
-#include <string_view>
 
 namespace moboware::common {
 
@@ -42,7 +41,7 @@ public:
   return the max free buffer size above the write buffer. Does not count in any
   freed data below the write buffer.
   */
-  std::size_t GetFreeWriteBufferSize() const
+  std::size_t GetFreeWriteBufferSize() const noexcept
   {
     return m_BufferSize - GetWriteBufferSize();
   }
@@ -50,7 +49,7 @@ public:
   /**
   Returns the total number of bytes that write buffer contains.
   */
-  std::size_t GetWriteBufferSize() const
+  std::size_t GetWriteBufferSize() const noexcept
   {
     return std::size_t(m_WriteBuffer - m_Buffer.data());
   }
@@ -60,7 +59,7 @@ public:
    * @param data
    * @return std::size_t, return the bytes written if successful otherwise 0ul when there is no space to write
    */
-  std::size_t WriteBuffer(const BufferType *data, const std::size_t dataSize)
+  std::size_t WriteBuffer(const BufferType *data, const std::size_t dataSize) noexcept
   {
     auto *ptr{GetWriteBuffer(dataSize)};
     if (ptr) {
@@ -76,7 +75,7 @@ public:
   /**
   GetReadBufferSize returns the total number of bytes in the read buffer
   */
-  std::size_t GetReadBufferSize() const
+  std::size_t GetReadBufferSize() const noexcept
   {
     return std::size_t(m_WriteBuffer - m_ReadBuffer);
   }
@@ -90,7 +89,8 @@ public:
    * @return true, if there is data to read and a flush is successful
    * @return false, when there is no data to read or a failed flush
    */
-  bool ReadBuffer(const std::function<std::size_t(const BufferType *data, const std::size_t bytesAvailable)> &readFn)
+  bool
+  ReadBuffer(const std::function<std::size_t(const BufferType *data, const std::size_t bytesAvailable)> &readFn)
   {
     const auto readBytesAvailable{GetReadBufferSize()};
     const auto *readPtr{GetReadBuffer(readBytesAvailable)};
@@ -111,7 +111,7 @@ protected:
     Commit will commit written data, forwards the write pointer and increases
     write buffer size.
   */
-  void Commit(const std::size_t size) const
+  void Commit(const std::size_t size) const noexcept
   {
     m_WriteBuffer += size;
   }
@@ -140,7 +140,7 @@ protected:
     Returns a pointer to the write buffer if enough free size is available,
     otherwise nullptr
   */
-  BufferType *GetWriteBuffer(const std::size_t size)
+  BufferType *GetWriteBuffer(const std::size_t size) noexcept
   {
     if (std::size_t(m_WriteBuffer + size) <= std::size_t(m_Buffer.data() + m_BufferSize)) {
       return m_WriteBuffer;
@@ -161,7 +161,7 @@ protected:
     return nullptr;
   }
 
-  const BufferType *GetReadBuffer(const std::size_t size) const
+  const BufferType *GetReadBuffer(const std::size_t size) const noexcept
   {
     if (size <= std::size_t(m_WriteBuffer - m_ReadBuffer)) {
       return m_ReadBuffer;
