@@ -3,6 +3,7 @@ project(common_test)
 enable_testing()
 
 add_executable(${PROJECT_NAME}
+    ring_buffer_test.cpp
     main.cpp
 )
 

@@ -1,7 +1,9 @@
 project(common_benchmark)
 
 add_executable(${PROJECT_NAME}
-    log_stream_benchmark.cpp
+    main.cpp
+    # log_stream_benchmark.cpp
+    fast_map_benchmark.cpp
 )
 
 

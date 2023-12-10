@@ -111,7 +111,8 @@
       "typeindex": "cpp",
       "typeinfo": "cpp",
       "valarray": "cpp",
-      "variant": "cpp"
+      "variant": "cpp",
+      "*.inc": "cpp"
     },
     "cmake.enabledOutputParsers": [
       "cmake",
@@ -131,6 +132,7 @@
     "editor.lineHeight": 1.4,
     "cSpell.logLevel": "Warning",
     "cSpell.spellCheckOnlyWorkspaceFiles": true,
-    "workbench.settings.openDefaultKeybindings": true
+    "workbench.settings.openDefaultKeybindings": true,
+    "cmake.options.statusBarVisibility": "visible"
   }
 }
