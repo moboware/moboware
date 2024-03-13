@@ -19,9 +19,10 @@ namespace moboware::common {
   In this case the data will be moved to the beginning of the buffer to create a
   new continues write space.
 */
-template <typename BufferType, std::size_t BufferSize>   //
+template <typename BufferType, const std::size_t BufferSize>   //
 class RingBuffer final {
 public:
+  using BufferType_t = BufferType;
   ~RingBuffer() noexcept = default;
 
   RingBuffer(const RingBuffer &) = delete;
@@ -59,7 +60,7 @@ public:
    * @param data
    * @return std::size_t, return the bytes written if successful otherwise 0ul when there is no space to write
    */
-  std::size_t WriteBuffer(const BufferType *data, const std::size_t dataSize) noexcept
+  std::size_t WriteBuffer(const BufferType *data, const std::size_t dataSize) const noexcept
   {
     auto *ptr{GetWriteBuffer(dataSize)};
     if (ptr) {
@@ -70,6 +71,21 @@ public:
       return dataSize;
     }
     return 0ul;
+  }
+
+  bool WriteBuffer(const std::function<std::size_t(BufferType *data, const std::size_t bufferSize)> writeFn,
+                   const std::size_t requestedSize) const noexcept
+  {
+    auto *ptr{GetWriteBuffer(requestedSize)};
+    if (ptr) {
+      // call the write fn and commit when written bytes is > 0
+      if (const auto bytesToCommit = writeFn(ptr, requestedSize); bytesToCommit > 0 and               //
+                                                                  bytesToCommit <= requestedSize) {   // commit
+        Commit(bytesToCommit);
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
@@ -89,8 +105,7 @@ public:
    * @return true, if there is data to read and a flush is successful
    * @return false, when there is no data to read or a failed flush
    */
-  bool
-  ReadBuffer(const std::function<std::size_t(const BufferType *data, const std::size_t bytesAvailable)> &readFn)
+  bool ReadBuffer(const std::function<std::size_t(const BufferType *data, const std::size_t bytesAvailable)> &readFn) const
   {
     const auto readBytesAvailable{GetReadBufferSize()};
     const auto *readPtr{GetReadBuffer(readBytesAvailable)};
@@ -106,7 +121,6 @@ public:
     return false;
   }
 
-protected:
   /**
     Commit will commit written data, forwards the write pointer and increases
     write buffer size.
@@ -117,30 +131,10 @@ protected:
   }
 
   /**
-  Flush the read bytes out of the read buffer by forwarding the readBuffer with
-  the size.
-  Incase the write and read buffer are empty, means pointers are equal, we can
-  reset all pointer back to the beginning of the buffer
-  */
-  void Flush(const std::size_t size) const
-  {
-    if ((m_ReadBuffer + size) > m_Buffer.data() + m_BufferSize) {
-      std::runtime_error("ReadBuffer flush exceeds the max buffer size");
-    }
-
-    m_ReadBuffer += size;
-
-    if (m_WriteBuffer == m_ReadBuffer) {
-      // reset to the beginning of the buffer..
-      m_WriteBuffer = m_ReadBuffer = const_cast<BufferType *>(m_Buffer.data());
-    }
-  }
-
-  /**
     Returns a pointer to the write buffer if enough free size is available,
     otherwise nullptr
   */
-  BufferType *GetWriteBuffer(const std::size_t size) noexcept
+  BufferType *GetWriteBuffer(const std::size_t size) const noexcept
   {
     if (std::size_t(m_WriteBuffer + size) <= std::size_t(m_Buffer.data() + m_BufferSize)) {
       return m_WriteBuffer;
@@ -161,6 +155,7 @@ protected:
     return nullptr;
   }
 
+protected:
   const BufferType *GetReadBuffer(const std::size_t size) const noexcept
   {
     if (size <= std::size_t(m_WriteBuffer - m_ReadBuffer)) {
@@ -169,9 +164,29 @@ protected:
     return {};
   }
 
+  /**
+  Flush the read bytes out of the read buffer by forwarding the readBuffer with
+  the size.
+  Incase the write and read buffer are empty, means pointers are equal, we can
+  reset all pointer back to the beginning of the buffer
+  */
+  void Flush(const std::size_t size) const
+  {
+    if ((m_ReadBuffer + size) > m_Buffer.data() + m_BufferSize) {
+      std::runtime_error("ReadBuffer flush exceeds the max buffer size");
+    }
+
+    m_ReadBuffer += size;
+
+    if (m_WriteBuffer == m_ReadBuffer) {
+      // reset to the beginning of the buffer..
+      m_WriteBuffer = m_ReadBuffer = m_Buffer.data();
+    }
+  }
+
 private:
   const std::size_t m_BufferSize{};
-  std::array<BufferType, BufferSize> m_Buffer;
+  mutable std::array<BufferType, BufferSize> m_Buffer;
   mutable BufferType *m_WriteBuffer{};
   mutable BufferType *m_ReadBuffer{};
 };

@@ -4,6 +4,7 @@ enable_testing()
 
 add_executable(${PROJECT_NAME}
     ring_buffer_test.cpp
+    lock_less_ring_buffer_test.cpp
     main.cpp
 )
 

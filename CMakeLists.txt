@@ -25,9 +25,11 @@ set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -DNDEBUG")
 find_package(OpenSSL REQUIRED)
 find_package(Threads)
 
+#find_package(intel_decimal128 REQUIRED)
+
 find_package(Boost REQUIRED COMPONENTS python3.10 )
 include_directories(${Boost_INCLUDE_DIRS})
 
 add_subdirectory(src)
 add_subdirectory(test)
-# add_subdirectory(playground)
+add_subdirectory(playground)

@@ -3,9 +3,9 @@ project(decimal_test)
 enable_testing()
 
 add_executable(${PROJECT_NAME}
-decimal_test.cpp
+    decimal_test.cpp
+    std_decimal_test.cpp
 )
-
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
                         GTest::gmock

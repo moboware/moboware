@@ -1,1 +1,1 @@
-add_subdirectory(embedded)
+add_subdirectory(lockfree_ringbuffer)

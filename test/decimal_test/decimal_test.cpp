@@ -4,6 +4,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+
 using namespace boost::multiprecision;
 
 int main(int argc, char *argv[])
