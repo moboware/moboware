@@ -38,7 +38,7 @@ std::ostream &operator<<(std::ostream &os, const UnorderedFastMap_t &rhs)
 
 int main(const int argc, const char **argv)
 {
-  LogStream::GetInstance().SetLevel(LogStream::LEVEL::INFO);
+  LogStream::GetInstance().SetLevel(moboware::common::NewLogStream::LEVEL::INFO);
 
   UnorderedFastMap_t fastMap{};
   const auto i987{fastMap.find("987")};

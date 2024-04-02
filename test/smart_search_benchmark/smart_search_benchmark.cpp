@@ -15,7 +15,7 @@ int main(int argc, char **argv)
   std::filesystem::remove(logFilePath);
 
   LogStream::GetInstance().SetLogFile(logFilePath);
-  LogStream::GetInstance().SetLevel(LogStream::LEVEL::DEBUG);
+  LogStream::GetInstance().SetLevel(moboware::common::NewLogStream::LEVEL::DEBUG);
 
   benchmark::Initialize(&argc, argv);
   benchmark::RunSpecifiedBenchmarks();

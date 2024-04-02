@@ -134,6 +134,9 @@
     "cSpell.logLevel": "Warning",
     "cSpell.spellCheckOnlyWorkspaceFiles": true,
     "workbench.settings.openDefaultKeybindings": true,
-    "cmake.options.statusBarVisibility": "visible"
+    "cmake.options.statusBarVisibility": "visible",
+    "cSpell.words": [
+      "moboware"
+    ]
   }
 }

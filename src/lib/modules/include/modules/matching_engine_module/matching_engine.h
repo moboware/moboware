@@ -18,7 +18,6 @@ public:
 
   void OrderInsert(const OrderInsertData& orderInsert, const boost::asio::ip::tcp::endpoint& endpoint);
   void OrderAmend(const OrderAmendData& orderCancel, const boost::asio::ip::tcp::endpoint& endpoint);
-
   void OrderCancel(const OrderCancelData& orderCancel, const boost::asio::ip::tcp::endpoint& endpoint);
 
   [[nodiscard]] const OrderBidBook_t& GetBidOrderBook() const { return m_Bids; }

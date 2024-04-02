@@ -1,115 +1,130 @@
-#include <array>
-#include <atomic>
+#include "common/lock_less_ring_buffer.h"
+//#include "common/log_stream.h"
+#include <atomic_queue/atomic_queue.h>
 #include <chrono>
-#include <condition_variable>
+#include <cstring>
 #include <iostream>
-#include <mutex>
 #include <thread>
-#include <vector>
 
-template <typename T, size_t Capacity> class LockFreeRingBuffer {
-public:
-  LockFreeRingBuffer()
-  {
-  }
+using namespace moboware;
 
-  bool enqueue(T &&item)
-  {
-    // push element on the queue
-    const size_t head_snapshot{head.load(std::memory_order_acquire)};
-    const size_t next_head{(head_snapshot + 1) % Capacity};
+#pragma pack(push)
 
-    if (next_head == tail.load(std::memory_order_acquire)) {
-      return false;   // Buffer full
-    }
-
-    buffer[head_snapshot] = std::move(item);
-    // update the head pointer
-    head.store(next_head, std::memory_order_release);
-
-    return true;
-  }
-
-  bool dequeue(T &item)
-  {
-    // pop/pull element from the queue
-    const size_t tail_snapshot{tail.load(std::memory_order_acquire)};
-
-    if (tail_snapshot == head.load(std::memory_order_acquire)) {
-      return false;   // Buffer empty
-    }
-
-    item = buffer[tail_snapshot];
-    // update the tail pointer
-    tail.store((tail_snapshot + 1) % Capacity, std::memory_order_release);
-
-    return true;
-  }
-
-  std::size_t size() const
-  {
-    const auto head_snapshot = head.load(std::memory_order_acquire);
-    const auto tail_snapshot = tail.load(std::memory_order_acquire);
-    return (head_snapshot - tail_snapshot + Capacity) % Capacity;
-  }
-
-  void signal()
-  {
-    cv.notify_all();
-  }
-
-  bool wait()
-  {
-    std::unique_lock lock(mutex);
-    return not(cv.wait_for(lock, std::chrono::seconds(20)) == std::cv_status::timeout);
-  }
-
-private:
-  std::array<T, Capacity> buffer{};
-  std::atomic<size_t> head{};
-  std::atomic<size_t> tail{};
-  std::condition_variable cv;
-  std::mutex mutex;
+struct Header {
+  std::uint64_t m_PayloadSize{};
+  std::uint8_t m_Type{};
+  std::uint64_t m_SequenceNumber{};
+  std::uint64_t m_Timepoint{};
 };
 
-int main(int, char **)
-{
-  const auto capacity{5000u};
-  LockFreeRingBuffer<int, capacity> buffer;
+#pragma pack(pop)
 
-  // producer thread
-  std::thread producer([&]() {
-    int n{};
+const auto capacity{5000u};
+const auto length{25u};
+using ArrayBuffer_t = std::array<char, capacity>;
+using LockLessRingBuffer_t = common::LockLessRingBuffer<ArrayBuffer_t, length>;
+std::mutex producerMutex;
+std::uint64_t producerSequenceNumber{};
+
+void producerThreadFunction(LockLessRingBuffer_t &buffer)
+{
+  {
+    // std::scoped_lock lock(producerMutex);
+
+    const auto pushFn{
+        [&](LockLessRingBuffer_t::Buffer_t &element, const moboware::common::QueueLengthType_t &headPosition) {   //
+          const auto str{std::to_string(producerSequenceNumber)};
+
+          Header header;
+          header.m_PayloadSize = str.size();
+          header.m_Type = 1;
+          header.m_SequenceNumber = producerSequenceNumber;
+          header.m_Timepoint = std::chrono::system_clock::now().time_since_epoch().count();
+
+          // copy header
+          std::memcpy(element.data(), &header, sizeof(header));
+
+          // copy payload
+          std::memcpy(&element.data()[sizeof(header)], str.c_str(), str.size());
+
+          std::cout << "Pushed #seq:" << header.m_SequenceNumber << ", Head position:" << headPosition << std::endl;
+
+          producerSequenceNumber++;
+          return true;
+        }};
+
     while (true) {
       // fill the queue
       for (int i = 0; i < std::rand() % capacity; i++) {
-        if (buffer.enqueue(n++)) {
+        if (buffer.Push(pushFn)) {
+          std::cout << "Produced: " << producerSequenceNumber - 1 << "," << i << ", used:" << buffer.Size() << "/"
+                    << buffer.Capacity() << std::endl;
+          buffer.Signal();
 
-          std::cout << "Produced: " << n << ", size:" << buffer.size() << std::endl;
         } else {
-          std::cout << "Produced waiting for space " << std::endl;
-          std::this_thread::sleep_for(std::chrono::milliseconds(80));   // Wait for space in buffer
+          std::cout << "Producer no space! "
+                    << " #seq:" << producerSequenceNumber - 1 << " Used: " << buffer.Size() << "/" << buffer.Capacity()
+                    << std::endl;
+          buffer.Signal();
+
+          std::this_thread::sleep_for(std::chrono::milliseconds(10));   // Wait for space in buffer
         }
-        buffer.signal();
       }
     }
-  });
+  }
+}
+
+int main(int, char **)
+{
+
+  LockLessRingBuffer_t buffer;
+
+  // producer thread
+  std::vector<std::jthread> producers;
+  for (int i = 0; i < 1; i++) {
+    producers.emplace_back(std::jthread([&]() {
+      producerThreadFunction(buffer);
+    }));
+  }
 
   // consumer thread
-  std::thread consumer([&]() {
-    while (true) {
-      std::cout << "Consumer waiting for data size:" << buffer.size() << std::endl;
-      buffer.wait();
+  std::jthread consumer([&]() {
+    std::uint64_t sequenceNumber{};
 
-      int item{};
-      while (buffer.dequeue(item)) {
-        std::cout << "Consumed: " << item << ", size:" << buffer.size() << std::endl;
+    const auto popFn{[&](const LockLessRingBuffer_t::Buffer_t &element) {
+      // read the header
+      Header header;
+      std::memcpy(&header, element.data(), sizeof(Header));
+      if (header.m_PayloadSize == 0) {
+        std::cout << "Payload size is zero" << std::endl;
+        return;
+      }
+      // read the payload
+      const auto str{std::string(&element.data()[sizeof(Header)], header.m_PayloadSize)};
+
+      const auto delta{std::chrono::system_clock::now().time_since_epoch().count() - header.m_Timepoint};
+
+      if (sequenceNumber++ != header.m_SequenceNumber) {
+        std::cout << "Invalid sequence:" << sequenceNumber - 1 << ", != " << header.m_SequenceNumber << std::endl;
+      } else {
+        std::cout << "Consumed: " << str << ", Seq#:" << header.m_SequenceNumber << ", delta:" << delta << std::endl;
+      }
+    }};
+
+    while (true) {
+      std::cout << "Consumer waiting for data" << std::endl;
+
+      if (buffer.Wait()) {
+        std::cout << "Wakeup for data, queue size: " << buffer.Size() << std::endl;
+
+        while (not buffer.Empty()) {   // read everything from the ring buffer
+          std::cout << "Queue size: " << buffer.Size() << std::endl;
+          buffer.Pop(popFn);
+        }
+        //        std::this_thread::sleep_for(std::chrono::milliseconds(5000));   // slow down reading....
       }
     }
   });
-
-  producer.join();
-  consumer.join();
 
   return 0;
 }

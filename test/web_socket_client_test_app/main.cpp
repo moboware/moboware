@@ -6,19 +6,20 @@
 
 using namespace moboware;
 
-int main(const int, const char*[])
+int main(const int, const char *[])
 {
-  LogStream::GetInstance().SetLevel(LogStream::LEVEL::DEBUG);
-  const auto service{ std::make_shared<moboware::common::Service>() };
-  const auto websocketClient{ std::make_shared<moboware::web_socket::WebSocketClient>(service) };
+  LogStream::GetInstance().SetLevel(moboware::common::NewLogStream::LEVEL::DEBUG);
+  const auto service{std::make_shared<moboware::common::Service>()};
+  const auto websocketClient{std::make_shared<moboware::web_socket::WebSocketClient>(service)};
 
-  const auto OnWebSocketDataReceived{ [](const boost::beast::flat_buffer& readBuffer,          //
-                                         const boost::asio::ip::tcp::endpoint& remoteEndPoint) //
-                                      {
-                                        LOG_DEBUG("Read data from " << remoteEndPoint.address().to_string() //
-                                                                    << ":" << remoteEndPoint.port() << ", "
-                                                                    << std::string((const char*)readBuffer.data().data(), readBuffer.data().size()));
-                                      } };
+  const auto OnWebSocketDataReceived{
+      [](const boost::beast::flat_buffer &readBuffer,            //
+         const boost::asio::ip::tcp::endpoint &remoteEndPoint)   //
+      {
+        LOG_DEBUG("Read data from " << remoteEndPoint.address().to_string()   //
+                                    << ":" << remoteEndPoint.port() << ", "
+                                    << std::string((const char *)readBuffer.data().data(), readBuffer.data().size()));
+      }};
 
   websocketClient->SetWebSocketDataReceived(OnWebSocketDataReceived);
 
@@ -30,8 +31,8 @@ int main(const int, const char*[])
   LOG_DEBUG("Running...");
   common::Timer timer(service);
 
-  common::Timer::TimerFunction tmf{ [&websocketClient, service](common::Timer& timer) {
-    const std::string sendString{ "3984trhjnkfrzvkfd.jhghfliowueryht9o 4h" };
+  common::Timer::TimerFunction tmf{[&websocketClient, service](common::Timer &timer) {
+    const std::string sendString{"3984trhjnkfrzvkfd.jhghfliowueryht9o 4h"};
     const boost::asio::const_buffer sendBuffer(sendString.c_str(), sendString.size());
     const std::size_t size = websocketClient->SendWebSocketData(sendBuffer);
     if (size > 0) {
@@ -40,7 +41,7 @@ int main(const int, const char*[])
     } else {
       service->Stop();
     }
-  } };
+  }};
 
   timer.Start(tmf, std::chrono::milliseconds(100));
 

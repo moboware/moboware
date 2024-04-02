@@ -40,7 +40,7 @@ public:
   [[nodiscard]] auto Find(const Id_t& id, const std::function<void(OrderInsertData&)>&) -> bool;
   [[nodiscard]] auto MoveOrder(const Id_t& orderId, const std::function<void(OrderInsertData&& orderData)>& moveOrderFn) -> bool;
 
-  [[nodiscard]] friend std::ostream& operator<<(std::ostream& os, const OrderLevel& level);
+  friend std::ostream& operator<<(std::ostream& os, const OrderLevel& level);
 
 private:
   using OrderLevel_t = std::deque<OrderInsertData>;

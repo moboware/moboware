@@ -15,7 +15,7 @@ void SignalInt(int sig)
 int main(const int argc, const char **argv)
 {
   signal(SIGINT, SignalInt);
-  LogStream::GetInstance().SetLevel(LogStream::LEVEL::INFO);
+  LogStream::GetInstance().SetLevel(moboware::common::NewLogStream::LEVEL::INFO);
   const std::string memoryName{"SharedMemoryTest"};
   if (argc == 2) {
     LogStream::GetInstance().SetLogFile("shared_memory_publisher.log");

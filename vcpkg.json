@@ -9,7 +9,8 @@
     "benchmark",
     "boost",
     "python3",
-    "pthreads"
+    "pthreads",
+    "atomic-queue"
   ],
   "overrides": [
     {

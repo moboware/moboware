@@ -4,7 +4,7 @@
 
 int main(int argc, char* argv[])
 {
-  LogStream::GetInstance().SetLevel(LogStream::LEVEL::DEBUG);
+  LogStream::GetInstance().SetLevel(moboware::common::NewLogStream::LEVEL::DEBUG);
 
   ::testing::InitGoogleMock(&argc, argv);
   ::testing::FLAGS_gtest_death_test_style = "fast";
