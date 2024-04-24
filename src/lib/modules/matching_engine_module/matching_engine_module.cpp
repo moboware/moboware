@@ -38,7 +38,7 @@ void MatchingEngineModule::OnWebSocketDataReceived(const boost::beast::flat_buff
   orderEventProcessor.Process(readBuffer);
 }
 
-void MatchingEngineModule::HandleOrderInsert(const OrderInsertData& orderInsert, const boost::asio::ip::tcp::endpoint& endpoint)
+void MatchingEngineModule::HandleOrderInsert(OrderInsertData&& orderInsert, const boost::asio::ip::tcp::endpoint& endpoint)
 {
   LOG_DEBUG("Handle order insert...");
   auto iter = m_MatchingEngines.find(orderInsert.GetInstrument());
@@ -46,7 +46,7 @@ void MatchingEngineModule::HandleOrderInsert(const OrderInsertData& orderInsert,
     LOG_ERROR("Unknown instrument " << orderInsert.GetInstrument());
     return;
   }
-  iter->second->OrderInsert(orderInsert, endpoint);
+  iter->second->OrderInsert(std::forward<OrderInsertData>(orderInsert), endpoint);
 }
 
 void MatchingEngineModule::HandleOrderAmend(const OrderAmendData& orderAmend, const boost::asio::ip::tcp::endpoint& endpoint)

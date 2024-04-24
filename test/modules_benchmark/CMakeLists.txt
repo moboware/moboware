@@ -1,6 +1,7 @@
 project(modules_benchmark)
 
 add_executable(${PROJECT_NAME}
+    main.cpp
     order_event_processor_benchmark.cpp
     matching_engine_benchmark.cpp
 )

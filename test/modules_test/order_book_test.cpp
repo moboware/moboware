@@ -36,11 +36,12 @@ public:
 TEST_F(OrderBookTest, InsertBidOrdersTest)
 {
   OrderBidBook_t orderBook;
-  OrderInsertData orderData;
+
   constexpr auto MAX_ORDER{10U};
   constexpr PriceType_t price{10U * std::mega::num};
 
   for (int i = {0U}; i < MAX_ORDER; i++) {
+    OrderInsertData orderData;
     orderData.SetAccount("mobo");
     orderData.SetIsBuySide(true);
     orderData.SetPrice(price);
@@ -52,7 +53,7 @@ TEST_F(OrderBookTest, InsertBidOrdersTest)
     strm << i;
     orderData.SetId(strm.str());
 
-    orderBook.Insert(orderData);
+    orderBook.Insert(std::move(orderData));
   }
 
   const auto levelOptional{orderBook.GetLevelAtPrice(price)};
@@ -64,11 +65,12 @@ TEST_F(OrderBookTest, InsertBidOrdersTest)
 TEST_F(OrderBookTest, InsertAskOrdersTest)
 {
   OrderAskBook_t orderBook;
-  OrderInsertData orderData;
+
   const auto MAX_ORDER{10U};
   constexpr PriceType_t price{10U * std::mega::num};
 
   for (int i = {0U}; i < MAX_ORDER; i++) {
+    OrderInsertData orderData;
     orderData.SetAccount("mobo");
     orderData.SetIsBuySide(false);
     orderData.SetPrice(price);
@@ -80,7 +82,7 @@ TEST_F(OrderBookTest, InsertAskOrdersTest)
     strm << i;
     orderData.SetId(strm.str());
 
-    orderBook.Insert(orderData);
+    orderBook.Insert(std::move(orderData));
   }
 
   const auto levelOptional{orderBook.GetLevelAtPrice(price)};
@@ -99,28 +101,28 @@ TEST_F(OrderBookTest, MatchOrdersFullTradeAskSideTest)
 
   // expect 2 order insert replies and 2 trades
   // create bid order
-  const OrderInsertData orderDataBid{"accountBid",
-                                     "ABCD",
-                                     price,
-                                     100,
-                                     "Limit",
-                                     true,
-                                     std::chrono::high_resolution_clock::now(),
-                                     std::chrono::milliseconds::duration::zero(),
-                                     "id=12938471298",
-                                     "clientId=2394857234"};
+  OrderInsertData orderDataBid{"accountBid",
+                               "ABCD",
+                               price,
+                               100,
+                               "Limit",
+                               true,
+                               std::chrono::high_resolution_clock::now(),
+                               std::chrono::milliseconds::duration::zero(),
+                               "id=12938471298",
+                               "clientId=2394857234"};
 
   // create ask order
-  const OrderInsertData orderDataAsk{"accountAsk",
-                                     "ABCD",
-                                     price,
-                                     10,
-                                     "Limit",
-                                     false,
-                                     std::chrono::high_resolution_clock::now(),
-                                     std::chrono::milliseconds::duration::zero(),
-                                     "id=129384712934528",
-                                     "clientId=23948572456434"};
+  OrderInsertData orderDataAsk{"accountAsk",
+                               "ABCD",
+                               price,
+                               10,
+                               "Limit",
+                               false,
+                               std::chrono::high_resolution_clock::now(),
+                               std::chrono::milliseconds::duration::zero(),
+                               "id=129384712934528",
+                               "clientId=23948572456434"};
 
   const OrderReply bidReply{orderDataBid.GetId(), orderDataBid.GetClientId()};
   EXPECT_CALL(matchingEngine, CreateAndSendMessage(bidReply, endpoint));
@@ -128,27 +130,27 @@ TEST_F(OrderBookTest, MatchOrdersFullTradeAskSideTest)
   const OrderReply askReply{orderDataAsk.GetId(), orderDataAsk.GetClientId()};
   EXPECT_CALL(matchingEngine, CreateAndSendMessage(askReply, endpoint));
   // trade expectations
-  const Trade tradeBid{orderDataBid.GetAccount(),
-                       orderDataBid.GetPrice(),
-                       orderDataAsk.GetVolume(),
-                       orderDataBid.GetId(),
-                       orderDataBid.GetClientId()};
+  Trade tradeBid{orderDataBid.GetAccount(),
+                 orderDataBid.GetPrice(),
+                 orderDataAsk.GetVolume(),
+                 orderDataBid.GetId(),
+                 orderDataBid.GetClientId()};
   EXPECT_CALL(matchingEngine, CreateAndSendMessage(tradeBid, endpoint));
 
-  const Trade tradeAsk{orderDataAsk.GetAccount(),
-                       orderDataAsk.GetPrice(),
-                       orderDataAsk.GetVolume(),
-                       orderDataAsk.GetId(),
-                       orderDataAsk.GetClientId()};
+  Trade tradeAsk{orderDataAsk.GetAccount(),
+                 orderDataAsk.GetPrice(),
+                 orderDataAsk.GetVolume(),
+                 orderDataAsk.GetId(),
+                 orderDataAsk.GetClientId()};
   EXPECT_CALL(matchingEngine, CreateAndSendMessage(tradeAsk, endpoint));
 
   // insert bid order
   ASSERT_TRUE(orderDataBid.Validate());
-  matchingEngine.OrderInsert(orderDataBid, endpoint);
+  matchingEngine.OrderInsert(std::move(orderDataBid), endpoint);
 
   // insert ask order
   ASSERT_TRUE(orderDataAsk.Validate());
-  matchingEngine.OrderInsert(orderDataAsk, endpoint);
+  matchingEngine.OrderInsert(std::move(orderDataAsk), endpoint);
 
   const auto &bidOrderBook{matchingEngine.GetBidOrderBook()};
   EXPECT_FALSE(bidOrderBook.GetOrderBookMap().empty());
@@ -165,27 +167,27 @@ TEST_F(OrderBookTest, MatchOrdersFullTradeBidSideTest)
   const boost::asio::ip::tcp::endpoint endpoint;
   constexpr PriceType_t price{10U * std::mega::num};
 
-  const OrderInsertData orderDataBid{"mobo",
-                                     "ABCD",
-                                     price,
-                                     10,
-                                     "Limit",
-                                     true,
-                                     std::chrono::high_resolution_clock::now(),
-                                     std::chrono::milliseconds::duration::zero(),
-                                     "id=12938471298",
-                                     "clientId=2394857234"};
+  OrderInsertData orderDataBid{"mobo",
+                               "ABCD",
+                               price,
+                               10,
+                               "Limit",
+                               true,
+                               std::chrono::high_resolution_clock::now(),
+                               std::chrono::milliseconds::duration::zero(),
+                               "id=12938471298",
+                               "clientId=2394857234"};
 
-  const OrderInsertData orderDataAsk{"mobo",
-                                     "ABCD",
-                                     price,
-                                     100,
-                                     "Limit",
-                                     false,
-                                     std::chrono::high_resolution_clock::now(),
-                                     std::chrono::milliseconds::duration::zero(),
-                                     "id=13894751567856",
-                                     "clientId=jko5ynkl345326751389475189"};
+  OrderInsertData orderDataAsk{"mobo",
+                               "ABCD",
+                               price,
+                               100,
+                               "Limit",
+                               false,
+                               std::chrono::high_resolution_clock::now(),
+                               std::chrono::milliseconds::duration::zero(),
+                               "id=13894751567856",
+                               "clientId=jko5ynkl345326751389475189"};
 
   // expect 2 order insert replies and 2 trades
   const OrderReply bidReply{orderDataBid.GetId(), orderDataBid.GetClientId()};
@@ -211,11 +213,11 @@ TEST_F(OrderBookTest, MatchOrdersFullTradeBidSideTest)
 
   // insert bid order
   ASSERT_TRUE(orderDataBid.Validate());
-  matchingEngine.OrderInsert(orderDataBid, endpoint);
+  matchingEngine.OrderInsert(std::move(orderDataBid), endpoint);
 
   // insert ask order
   ASSERT_TRUE(orderDataAsk.Validate());
-  matchingEngine.OrderInsert(orderDataAsk, endpoint);
+  matchingEngine.OrderInsert(std::move(orderDataAsk), endpoint);
 
   const auto &bidOrderBook{matchingEngine.GetBidOrderBook()};
   EXPECT_TRUE(bidOrderBook.GetOrderBookMap().empty());
@@ -233,27 +235,27 @@ TEST_F(OrderBookTest, MatchOrderFullTradeBidAndAskSideTest)
   const boost::asio::ip::tcp::endpoint endpoint;
   constexpr PriceType_t price{10U * std::mega::num};
 
-  const OrderInsertData orderDataBid{"mobo",
-                                     "ABCD",
-                                     price,
-                                     100,
-                                     "Limit",
-                                     true,
-                                     std::chrono::high_resolution_clock::now(),
-                                     std::chrono::milliseconds::duration::zero(),
-                                     "id=12938471298",
-                                     "clientId=2394857234"};
+  OrderInsertData orderDataBid{"mobo",
+                               "ABCD",
+                               price,
+                               100,
+                               "Limit",
+                               true,
+                               std::chrono::high_resolution_clock::now(),
+                               std::chrono::milliseconds::duration::zero(),
+                               "id=12938471298",
+                               "clientId=2394857234"};
 
-  const OrderInsertData orderDataAsk{"mobo",
-                                     "ABCD",
-                                     price,
-                                     100,
-                                     "Limit",
-                                     false,
-                                     std::chrono::high_resolution_clock::now(),
-                                     std::chrono::milliseconds::duration::zero(),
-                                     "id=13894751567856",
-                                     "clientId=jko5ynkl345326751389475189"};
+  OrderInsertData orderDataAsk{"mobo",
+                               "ABCD",
+                               price,
+                               100,
+                               "Limit",
+                               false,
+                               std::chrono::high_resolution_clock::now(),
+                               std::chrono::milliseconds::duration::zero(),
+                               "id=13894751567856",
+                               "clientId=jko5ynkl345326751389475189"};
 
   // expect 2 order insert replies and 2 trades
   const OrderReply bidReply{orderDataBid.GetId(), orderDataBid.GetClientId()};
@@ -279,11 +281,11 @@ TEST_F(OrderBookTest, MatchOrderFullTradeBidAndAskSideTest)
 
   // insert bid side
   ASSERT_TRUE(orderDataBid.Validate());
-  matchingEngine.OrderInsert(orderDataBid, endpoint);
+  matchingEngine.OrderInsert(std::move(orderDataBid), endpoint);
 
   // insert ask side
   ASSERT_TRUE(orderDataAsk.Validate());
-  matchingEngine.OrderInsert(orderDataAsk, endpoint);
+  matchingEngine.OrderInsert(std::move(orderDataAsk), endpoint);
 
   const auto &bidOrderBook{matchingEngine.GetBidOrderBook()};
   EXPECT_TRUE(bidOrderBook.GetOrderBookMap().empty());
@@ -301,27 +303,27 @@ TEST_F(OrderBookTest, MatchOrderFullTradeAskAndBidSideTest)
   const boost::asio::ip::tcp::endpoint endpoint;
   constexpr PriceType_t price{10U * std::mega::num};
 
-  const OrderInsertData orderDataBid{"mobo",
-                                     "ABCD",
-                                     price,
-                                     100,
-                                     "Limit",
-                                     true,
-                                     std::chrono::high_resolution_clock::now(),
-                                     std::chrono::milliseconds::duration::zero(),
-                                     "id=12938471298",
-                                     "clientId=2394857234"};
+  OrderInsertData orderDataBid{"mobo",
+                               "ABCD",
+                               price,
+                               100,
+                               "Limit",
+                               true,
+                               std::chrono::high_resolution_clock::now(),
+                               std::chrono::milliseconds::duration::zero(),
+                               "id=12938471298",
+                               "clientId=2394857234"};
 
-  const OrderInsertData orderDataAsk{"mobo",
-                                     "ABCD",
-                                     price,
-                                     100,
-                                     "Limit",
-                                     false,
-                                     std::chrono::high_resolution_clock::now(),
-                                     std::chrono::milliseconds::duration::zero(),
-                                     "id=13894751567856",
-                                     "clientId=jko5ynkl345326751389475189"};
+  OrderInsertData orderDataAsk{"mobo",
+                               "ABCD",
+                               price,
+                               100,
+                               "Limit",
+                               false,
+                               std::chrono::high_resolution_clock::now(),
+                               std::chrono::milliseconds::duration::zero(),
+                               "id=13894751567856",
+                               "clientId=jko5ynkl345326751389475189"};
 
   // expect 2 order insert replies and 2 trades
   const OrderReply bidReply{orderDataBid.GetId(), orderDataBid.GetClientId()};
@@ -347,11 +349,11 @@ TEST_F(OrderBookTest, MatchOrderFullTradeAskAndBidSideTest)
 
   // insert ask side first
   ASSERT_TRUE(orderDataAsk.Validate());
-  matchingEngine.OrderInsert(orderDataAsk, endpoint);
+  matchingEngine.OrderInsert(std::move(orderDataAsk), endpoint);
 
   // insert bid side secondly
   ASSERT_TRUE(orderDataBid.Validate());
-  matchingEngine.OrderInsert(orderDataBid, endpoint);
+  matchingEngine.OrderInsert(std::move(orderDataBid), endpoint);
 
   const auto &bidOrderBook{matchingEngine.GetBidOrderBook()};
   EXPECT_TRUE(bidOrderBook.GetOrderBookMap().empty());
@@ -385,52 +387,52 @@ TEST_F(OrderBookTest, MultiLevelMatchOrderBidAndAskSideTest)
   MatchingEngineMock matchingEngine(channelInterface);
 
   const boost::asio::ip::tcp::endpoint endpoint;
-  const OrderInsertData orderDataBid1{"mobo",
-                                      "ABCD",
-                                      {50U * std::mega::num},
-                                      100,
-                                      "Limit",
-                                      true,
-                                      std::chrono::high_resolution_clock::now(),
-                                      std::chrono::milliseconds::duration::zero(),
-                                      "id=BidOrder1",
-                                      "clientId=BidOrder1"};
+  OrderInsertData orderDataBid1{"mobo",
+                                "ABCD",
+                                {50U * std::mega::num},
+                                100,
+                                "Limit",
+                                true,
+                                std::chrono::high_resolution_clock::now(),
+                                std::chrono::milliseconds::duration::zero(),
+                                "id=BidOrder1",
+                                "clientId=BidOrder1"};
   ASSERT_TRUE(orderDataBid1.Validate());
 
-  const OrderInsertData orderDataBid2{"mobo",
-                                      "ABCD",
-                                      {52U * std::mega::num},
-                                      150,
-                                      "Limit",
-                                      true,
-                                      std::chrono::high_resolution_clock::now(),
-                                      std::chrono::milliseconds::duration::zero(),
-                                      "id=BidOrder2",
-                                      "clientId=BidOrder2"};
+  OrderInsertData orderDataBid2{"mobo",
+                                "ABCD",
+                                {52U * std::mega::num},
+                                150,
+                                "Limit",
+                                true,
+                                std::chrono::high_resolution_clock::now(),
+                                std::chrono::milliseconds::duration::zero(),
+                                "id=BidOrder2",
+                                "clientId=BidOrder2"};
   ASSERT_TRUE(orderDataBid2.Validate());
 
-  const OrderInsertData orderDataAsk1{"mobo",
-                                      "ABCD",
-                                      {51U * std::mega::num},
-                                      100,
-                                      "Limit",
-                                      false,
-                                      std::chrono::high_resolution_clock::now(),
-                                      std::chrono::milliseconds::duration::zero(),
-                                      "id=AskOrder1",
-                                      "clientId=AskOrder1"};
+  OrderInsertData orderDataAsk1{"mobo",
+                                "ABCD",
+                                {51U * std::mega::num},
+                                100,
+                                "Limit",
+                                false,
+                                std::chrono::high_resolution_clock::now(),
+                                std::chrono::milliseconds::duration::zero(),
+                                "id=AskOrder1",
+                                "clientId=AskOrder1"};
   ASSERT_TRUE(orderDataAsk1.Validate());
 
-  const OrderInsertData orderDataAsk2{"mobo",
-                                      "ABCD",
-                                      orderDataBid2.GetPrice(),
-                                      100,
-                                      "Limit",
-                                      false,
-                                      std::chrono::high_resolution_clock::now(),
-                                      std::chrono::milliseconds::duration::zero(),
-                                      "id=AskOrder2",
-                                      "clientId=AskOrder2"};
+  OrderInsertData orderDataAsk2{"mobo",
+                                "ABCD",
+                                orderDataBid2.GetPrice(),
+                                100,
+                                "Limit",
+                                false,
+                                std::chrono::high_resolution_clock::now(),
+                                std::chrono::milliseconds::duration::zero(),
+                                "id=AskOrder2",
+                                "clientId=AskOrder2"};
   ASSERT_TRUE(orderDataAsk2.Validate());
 
   //
@@ -446,9 +448,9 @@ TEST_F(OrderBookTest, MultiLevelMatchOrderBidAndAskSideTest)
   const OrderReply askReply2{orderDataAsk2.GetId(), orderDataAsk2.GetClientId()};
   EXPECT_CALL(matchingEngine, CreateAndSendMessage(askReply2, endpoint));
 
-  matchingEngine.OrderInsert(orderDataBid1, endpoint);
-  matchingEngine.OrderInsert(orderDataAsk1, endpoint);
-  matchingEngine.OrderInsert(orderDataAsk2, endpoint);
+  matchingEngine.OrderInsert(std::move(orderDataBid1), endpoint);
+  matchingEngine.OrderInsert(std::move(orderDataAsk1), endpoint);
+  matchingEngine.OrderInsert(std::move(orderDataAsk2), endpoint);
 
   // 2 trades on bid order2
   const Trade tradeBid2_1{orderDataBid2.GetAccount(),
@@ -480,7 +482,7 @@ TEST_F(OrderBookTest, MultiLevelMatchOrderBidAndAskSideTest)
   EXPECT_CALL(matchingEngine, CreateAndSendMessage(tradeAsk2, endpoint));
 
   // insert bid order 2 to fully match the ask order 1 and partially match ask order 2
-  matchingEngine.OrderInsert(orderDataBid2, endpoint);
+  matchingEngine.OrderInsert(std::move(orderDataBid2), endpoint);
   // check the state of the orderbook
   const auto &bidOrderBook{matchingEngine.GetBidOrderBook()};
   EXPECT_EQ(bidOrderBook.GetOrderBookMap().size(), 1);
@@ -497,52 +499,52 @@ TEST_F(OrderBookTest, MultiLevelCancelOrderBidAndAskSideTest)
   MatchingEngineMock matchingEngine(channelInterface);
 
   const boost::asio::ip::tcp::endpoint endpoint;
-  const OrderInsertData orderDataBid1{"mobo",
-                                      "ABCD",
-                                      {50U * std::mega::num},
-                                      100,
-                                      "Limit",
-                                      true,
-                                      std::chrono::high_resolution_clock::now(),
-                                      std::chrono::milliseconds::duration::zero(),
-                                      "id=BidOrder1",
-                                      "clientId=BidOrder1"};
+  OrderInsertData orderDataBid1{"mobo",
+                                "ABCD",
+                                {50U * std::mega::num},
+                                100,
+                                "Limit",
+                                true,
+                                std::chrono::high_resolution_clock::now(),
+                                std::chrono::milliseconds::duration::zero(),
+                                "id=BidOrder1",
+                                "clientId=BidOrder1"};
   ASSERT_TRUE(orderDataBid1.Validate());
 
-  const OrderInsertData orderDataBid2{"mobo",
-                                      "ABCD",
-                                      {52U * std::mega::num},
-                                      150,
-                                      "Limit",
-                                      true,
-                                      std::chrono::high_resolution_clock::now(),
-                                      std::chrono::milliseconds::duration::zero(),
-                                      "id=BidOrder2",
-                                      "clientId=BidOrder2"};
+  OrderInsertData orderDataBid2{"mobo",
+                                "ABCD",
+                                {52U * std::mega::num},
+                                150,
+                                "Limit",
+                                true,
+                                std::chrono::high_resolution_clock::now(),
+                                std::chrono::milliseconds::duration::zero(),
+                                "id=BidOrder2",
+                                "clientId=BidOrder2"};
   ASSERT_TRUE(orderDataBid2.Validate());
 
-  const OrderInsertData orderDataAsk1{"mobo",
-                                      "ABCD",
-                                      {51U * std::mega::num},
-                                      100,
-                                      "Limit",
-                                      false,
-                                      std::chrono::high_resolution_clock::now(),
-                                      std::chrono::milliseconds::duration::zero(),
-                                      "id=AskOrder1",
-                                      "clientId=AskOrder1"};
+  OrderInsertData orderDataAsk1{"mobo",
+                                "ABCD",
+                                {51U * std::mega::num},
+                                100,
+                                "Limit",
+                                false,
+                                std::chrono::high_resolution_clock::now(),
+                                std::chrono::milliseconds::duration::zero(),
+                                "id=AskOrder1",
+                                "clientId=AskOrder1"};
   ASSERT_TRUE(orderDataAsk1.Validate());
 
-  const OrderInsertData orderDataAsk2{"mobo",
-                                      "ABCD",
-                                      orderDataBid2.GetPrice(),
-                                      100,
-                                      "Limit",
-                                      false,
-                                      std::chrono::high_resolution_clock::now(),
-                                      std::chrono::milliseconds::duration::zero(),
-                                      "id=AskOrder2",
-                                      "clientId=AskOrder2"};
+  OrderInsertData orderDataAsk2{"mobo",
+                                "ABCD",
+                                orderDataBid2.GetPrice(),
+                                100,
+                                "Limit",
+                                false,
+                                std::chrono::high_resolution_clock::now(),
+                                std::chrono::milliseconds::duration::zero(),
+                                "id=AskOrder2",
+                                "clientId=AskOrder2"};
   ASSERT_TRUE(orderDataAsk2.Validate());
   //
   const OrderReply bidReply1{orderDataBid1.GetId(), orderDataBid1.GetClientId()};
@@ -554,9 +556,9 @@ TEST_F(OrderBookTest, MultiLevelCancelOrderBidAndAskSideTest)
   const OrderReply askReply2{orderDataAsk2.GetId(), orderDataAsk2.GetClientId()};
   EXPECT_CALL(matchingEngine, CreateAndSendMessage(askReply2, endpoint)).Times(2);
 
-  matchingEngine.OrderInsert(orderDataBid1, endpoint);
-  matchingEngine.OrderInsert(orderDataAsk1, endpoint);
-  matchingEngine.OrderInsert(orderDataAsk2, endpoint);
+  matchingEngine.OrderInsert(std::move(orderDataBid1), endpoint);
+  matchingEngine.OrderInsert(std::move(orderDataAsk1), endpoint);
+  matchingEngine.OrderInsert(std::move(orderDataAsk2), endpoint);
 
   const OrderCancelData cancelBidOrder1{orderDataBid1.GetInstrument(),
                                         orderDataBid1.GetPrice(),
@@ -586,38 +588,38 @@ TEST_F(OrderBookTest, AmendOrderVolumeTest)
   MatchingEngineMock matchingEngine(channelInterface);
 
   const boost::asio::ip::tcp::endpoint endpoint;
-  const OrderInsertData orderDataBid1{"mobo",
-                                      "ABCD",
-                                      {50U * std::mega::num},
-                                      100,
-                                      "Limit",
-                                      true,
-                                      std::chrono::high_resolution_clock::now(),
-                                      std::chrono::milliseconds::duration::zero(),
-                                      "id=BidOrder1",
-                                      "clientId=BidOrder1"};
+  OrderInsertData orderDataBid1{"mobo",
+                                "ABCD",
+                                {50U * std::mega::num},
+                                100,
+                                "Limit",
+                                true,
+                                std::chrono::high_resolution_clock::now(),
+                                std::chrono::milliseconds::duration::zero(),
+                                "id=BidOrder1",
+                                "clientId=BidOrder1"};
   ASSERT_TRUE(orderDataBid1.Validate());
 
-  const OrderInsertData orderDataAsk1{"mobo",
-                                      "ABCD",
-                                      {51U * std::mega::num},
-                                      100,
-                                      "Limit",
-                                      false,
-                                      std::chrono::high_resolution_clock::now(),
-                                      std::chrono::milliseconds::duration::zero(),
-                                      "id=AskOrder1",
-                                      "clientId=AskOrder1"};
+  OrderInsertData orderDataAsk1{"mobo",
+                                "ABCD",
+                                {51U * std::mega::num},
+                                100,
+                                "Limit",
+                                false,
+                                std::chrono::high_resolution_clock::now(),
+                                std::chrono::milliseconds::duration::zero(),
+                                "id=AskOrder1",
+                                "clientId=AskOrder1"};
   ASSERT_TRUE(orderDataAsk1.Validate());
 
   //
   const OrderReply bidReply1{orderDataBid1.GetId(), orderDataBid1.GetClientId()};
   EXPECT_CALL(matchingEngine, CreateAndSendMessage(bidReply1, endpoint)).Times(1);
-  matchingEngine.OrderInsert(orderDataBid1, endpoint);
+  matchingEngine.OrderInsert(std::move(orderDataBid1), endpoint);
 
   const OrderReply askReply1{orderDataAsk1.GetId(), orderDataAsk1.GetClientId()};
   EXPECT_CALL(matchingEngine, CreateAndSendMessage(askReply1, endpoint)).Times(1);
-  matchingEngine.OrderInsert(orderDataAsk1, endpoint);
+  matchingEngine.OrderInsert(std::move(orderDataAsk1), endpoint);
 
   // amend bid order volume
   const OrderAmendData amendBidOrder1{orderDataBid1.GetAccount(),
@@ -688,21 +690,21 @@ TEST_F(OrderBookTest, AmendAskOrderPriceVolumeTest)
 
   const boost::asio::ip::tcp::endpoint endpoint;
 
-  const OrderInsertData orderDataAsk1{"mobo",
-                                      "ABCD",
-                                      {51U * std::mega::num},
-                                      100,
-                                      "Limit",
-                                      false,
-                                      std::chrono::high_resolution_clock::now(),
-                                      std::chrono::milliseconds::duration::zero(),
-                                      "id=AskOrder1",
-                                      "clientId=AskOrder1"};
+  OrderInsertData orderDataAsk1{"mobo",
+                                "ABCD",
+                                {51U * std::mega::num},
+                                100,
+                                "Limit",
+                                false,
+                                std::chrono::high_resolution_clock::now(),
+                                std::chrono::milliseconds::duration::zero(),
+                                "id=AskOrder1",
+                                "clientId=AskOrder1"};
   ASSERT_TRUE(orderDataAsk1.Validate());
 
   const OrderReply askReply1{orderDataAsk1.GetId(), orderDataAsk1.GetClientId()};
   EXPECT_CALL(matchingEngine, CreateAndSendMessage(askReply1, endpoint)).Times(1);
-  matchingEngine.OrderInsert(orderDataAsk1, endpoint);
+  matchingEngine.OrderInsert(std::move(orderDataAsk1), endpoint);
 
   // amend ask order volume and price
   const auto newAskVolume1{orderDataAsk1.GetVolume() / 2};
@@ -735,21 +737,21 @@ TEST_F(OrderBookTest, AmendAskOrderPriceZeroVolumeTest)
 
   const boost::asio::ip::tcp::endpoint endpoint;
 
-  const OrderInsertData orderDataAsk1{"mobo",
-                                      "ABCD",
-                                      {51U * std::mega::num},
-                                      100,
-                                      "Limit",
-                                      false,
-                                      std::chrono::high_resolution_clock::now(),
-                                      std::chrono::milliseconds::duration::zero(),
-                                      "id=AskOrder1",
-                                      "clientId=AskOrder1"};
+  OrderInsertData orderDataAsk1{"mobo",
+                                "ABCD",
+                                {51U * std::mega::num},
+                                100,
+                                "Limit",
+                                false,
+                                std::chrono::high_resolution_clock::now(),
+                                std::chrono::milliseconds::duration::zero(),
+                                "id=AskOrder1",
+                                "clientId=AskOrder1"};
   ASSERT_TRUE(orderDataAsk1.Validate());
 
   const OrderReply askReply1{orderDataAsk1.GetId(), orderDataAsk1.GetClientId()};
   EXPECT_CALL(matchingEngine, CreateAndSendMessage(askReply1, endpoint)).Times(1);
-  matchingEngine.OrderInsert(orderDataAsk1, endpoint);
+  matchingEngine.OrderInsert(std::move(orderDataAsk1), endpoint);
 
   // amend ask order volume to zero and price
   const auto zeroVolume{0};
@@ -780,21 +782,21 @@ TEST_F(OrderBookTest, AmendBidOrderPriceVolumeTest)
   MatchingEngineMock matchingEngine(channelInterface);
 
   const boost::asio::ip::tcp::endpoint endpoint;
-  const OrderInsertData orderDataBid1{"mobo",
-                                      "ABCD",
-                                      {50U * std::mega::num},
-                                      100,
-                                      "Limit",
-                                      true,
-                                      std::chrono::high_resolution_clock::now(),
-                                      std::chrono::milliseconds::duration::zero(),
-                                      "id=BidOrder1",
-                                      "clientId=BidOrder1"};
+  OrderInsertData orderDataBid1{"mobo",
+                                "ABCD",
+                                {50U * std::mega::num},
+                                100,
+                                "Limit",
+                                true,
+                                std::chrono::high_resolution_clock::now(),
+                                std::chrono::milliseconds::duration::zero(),
+                                "id=BidOrder1",
+                                "clientId=BidOrder1"};
   ASSERT_TRUE(orderDataBid1.Validate());
   //
   const OrderReply bidReply1{orderDataBid1.GetId(), orderDataBid1.GetClientId()};
   EXPECT_CALL(matchingEngine, CreateAndSendMessage(bidReply1, endpoint)).Times(1);
-  matchingEngine.OrderInsert(orderDataBid1, endpoint);
+  matchingEngine.OrderInsert(std::move(orderDataBid1), endpoint);
 
   {   // amend bid order volume
     const auto newBidVolume1{orderDataBid1.GetVolume() + 100};
@@ -829,38 +831,38 @@ TEST_F(OrderBookTest, AmendAskOrderMatchBidPriceTest)
   MatchingEngineMock matchingEngine(channelInterface);
 
   const boost::asio::ip::tcp::endpoint endpoint;
-  const OrderInsertData orderDataBid1{"mobo",
-                                      "ABCD",
-                                      {50U * std::mega::num},
-                                      100,
-                                      "Limit",
-                                      true,
-                                      std::chrono::high_resolution_clock::now(),
-                                      std::chrono::milliseconds::duration::zero(),
-                                      "id=BidOrder1",
-                                      "clientId=BidOrder1"};
+  OrderInsertData orderDataBid1{"mobo",
+                                "ABCD",
+                                {50U * std::mega::num},
+                                100,
+                                "Limit",
+                                true,
+                                std::chrono::high_resolution_clock::now(),
+                                std::chrono::milliseconds::duration::zero(),
+                                "id=BidOrder1",
+                                "clientId=BidOrder1"};
   ASSERT_TRUE(orderDataBid1.Validate());
   //
   const OrderReply bidReply1{orderDataBid1.GetId(), orderDataBid1.GetClientId()};
   EXPECT_CALL(matchingEngine, CreateAndSendMessage(bidReply1, endpoint)).Times(1);
-  matchingEngine.OrderInsert(orderDataBid1, endpoint);
+  matchingEngine.OrderInsert(std::move(orderDataBid1), endpoint);
 
   // insert ask order
-  const OrderInsertData orderDataAsk1{"mobo",
-                                      "ABCD",
-                                      {51U * std::mega::num},
-                                      100,
-                                      "Limit",
-                                      false,
-                                      std::chrono::high_resolution_clock::now(),
-                                      std::chrono::milliseconds::duration::zero(),
-                                      "id=AskdOrder1",
-                                      "clientId=AskOrder1"};
+  OrderInsertData orderDataAsk1{"mobo",
+                                "ABCD",
+                                {51U * std::mega::num},
+                                100,
+                                "Limit",
+                                false,
+                                std::chrono::high_resolution_clock::now(),
+                                std::chrono::milliseconds::duration::zero(),
+                                "id=AskdOrder1",
+                                "clientId=AskOrder1"};
   ASSERT_TRUE(orderDataAsk1.Validate());
   //
   const OrderReply askReply1{orderDataAsk1.GetId(), orderDataAsk1.GetClientId()};
   EXPECT_CALL(matchingEngine, CreateAndSendMessage(askReply1, endpoint));
-  matchingEngine.OrderInsert(orderDataAsk1, endpoint);
+  matchingEngine.OrderInsert(std::move(orderDataAsk1), endpoint);
 
   // amend bid order to match the ask order
   const auto newAskVolume1{orderDataBid1.GetVolume()};
@@ -906,38 +908,38 @@ TEST_F(OrderBookTest, AmendBidOrderMatchAskPriceTest)
   MatchingEngineMock matchingEngine(channelInterface);
 
   const boost::asio::ip::tcp::endpoint endpoint;
-  const OrderInsertData orderDataBid1{"mobo",
-                                      "ABCD",
-                                      {50U * std::mega::num},
-                                      100,
-                                      "Limit",
-                                      true,
-                                      std::chrono::high_resolution_clock::now(),
-                                      std::chrono::milliseconds::duration::zero(),
-                                      "id=BidOrder1",
-                                      "clientId=BidOrder1"};
+  OrderInsertData orderDataBid1{"mobo",
+                                "ABCD",
+                                {50U * std::mega::num},
+                                100,
+                                "Limit",
+                                true,
+                                std::chrono::high_resolution_clock::now(),
+                                std::chrono::milliseconds::duration::zero(),
+                                "id=BidOrder1",
+                                "clientId=BidOrder1"};
   ASSERT_TRUE(orderDataBid1.Validate());
   //
   const OrderReply bidReply1{orderDataBid1.GetId(), orderDataBid1.GetClientId()};
   EXPECT_CALL(matchingEngine, CreateAndSendMessage(bidReply1, endpoint)).Times(1);
-  matchingEngine.OrderInsert(orderDataBid1, endpoint);
+  matchingEngine.OrderInsert(std::move(orderDataBid1), endpoint);
 
   // insert ask order
-  const OrderInsertData orderDataAsk1{"mobo",
-                                      "ABCD",
-                                      {51U * std::mega::num},
-                                      100,
-                                      "Limit",
-                                      false,
-                                      std::chrono::high_resolution_clock::now(),
-                                      std::chrono::milliseconds::duration::zero(),
-                                      "id=AskdOrder1",
-                                      "clientId=AskOrder1"};
+  OrderInsertData orderDataAsk1{"mobo",
+                                "ABCD",
+                                {51U * std::mega::num},
+                                100,
+                                "Limit",
+                                false,
+                                std::chrono::high_resolution_clock::now(),
+                                std::chrono::milliseconds::duration::zero(),
+                                "id=AskdOrder1",
+                                "clientId=AskOrder1"};
   ASSERT_TRUE(orderDataAsk1.Validate());
   //
   const OrderReply askReply1{orderDataAsk1.GetId(), orderDataAsk1.GetClientId()};
   EXPECT_CALL(matchingEngine, CreateAndSendMessage(askReply1, endpoint));
-  matchingEngine.OrderInsert(orderDataAsk1, endpoint);
+  matchingEngine.OrderInsert(std::move(orderDataAsk1), endpoint);
 
   // amend bid order to match the ask order
   const auto newBidVolume1{orderDataAsk1.GetVolume()};

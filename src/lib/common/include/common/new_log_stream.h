@@ -11,7 +11,8 @@ namespace moboware::common {
 
 class NewLogStream : public std::ostream {
 public:
-  using LogStreamLine_t = LogStreamBuf<24 * 1'024U>;
+  static constexpr auto LogLineLength{24 * 1'024U};
+  using LogStreamLine_t = LogStreamBuf<LogLineLength>;
 
   enum class LEVEL : std::int8_t {
     NONE = 0,
@@ -38,24 +39,6 @@ public:
                  const std::string &function,
                  const std::filesystem::path &fileName,
                  const size_t lineNumber);
-
-  template <typename... TLogArgs>
-  void LogLine(const NewLogStream::LEVEL level,
-               const std::filesystem::path &fileName,
-               const size_t lineNumber,
-               const TLogArgs... logArgs)
-  {
-    m_LogStreamLine.Reset();
-
-    auto &os{*this};
-    os << "[" << std::setfill('0') << std::dec                           //
-       << GetTimeString()                                                //
-       << "][" << NewLogStream::GetLevelString(level)                    //
-       << "][" << std::hex << std::this_thread::get_id()                 //
-       << "][" << fileName.filename() << "," << std::dec << lineNumber   //
-       << "]";
-    (os << ... << logArgs);
-  }
 
   void WriteToStream(std::ostream &outStream) const;
 

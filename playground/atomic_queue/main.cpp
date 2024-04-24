@@ -17,7 +17,7 @@
 
 using namespace moboware::common;
 
-#pragma pack(push)
+#pragma pack(push, 1)
 
 struct Header {
   std::uint64_t m_PayloadSize{};

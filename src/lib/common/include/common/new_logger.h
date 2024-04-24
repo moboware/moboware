@@ -14,11 +14,11 @@ namespace moboware::common {
  */
 class NewLogger : public moboware::common::Singleton<NewLogger> {
 public:
-  using LogStreamBuffer_t = moboware::common::NewLogStream;
+  using LogLine_t = moboware::common::NewLogStream;
 
   static const std::size_t length{512U};   // default length of the log message queue
   static constexpr bool usePushPopLock{true};
-  using LockLessRingBuffer_t = common::LockLessRingBuffer<LogStreamBuffer_t, length, usePushPopLock>;
+  using LockLessRingBuffer_t = common::LockLessRingBuffer<LogLine_t, length, usePushPopLock>;
 
   NewLogger();
   NewLogger(const NewLogger &) = delete;

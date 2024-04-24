@@ -3,20 +3,20 @@
 
 using namespace moboware::modules;
 
-template <typename TCompare> bool OrderBook<TCompare>::Insert(const OrderInsertData &orderInsert)
+template <typename TCompare> bool OrderBook<TCompare>::Insert(OrderInsertData &&orderInsert)
 {
   auto iter{m_OrderBookMap.find(orderInsert.GetPrice())};
   if (iter != std::end(m_OrderBookMap)) {
     /// already more orders on this price level, add this one to it.
     auto &orderPriceLevel{iter->second};
-    orderPriceLevel.Insert(orderInsert);
+    orderPriceLevel.Insert(std::forward<OrderInsertData>(orderInsert));
 
     LOG_DEBUG("Order added at price level:" << orderInsert.GetPriceAsDouble() << ", id:" << orderInsert.GetId());
 
     return true;
   } else {
     /// add new order to the price level
-    const auto pair{m_OrderBookMap.emplace(orderInsert.GetPrice(), orderInsert)};
+    const auto pair{m_OrderBookMap.emplace(orderInsert.GetPrice(), std::forward<OrderInsertData>(orderInsert))};
     if (pair.second) {
 
       LOG_DEBUG("Order added at price level:" << orderInsert.GetVolume() << "@" << orderInsert.GetPriceAsDouble()
@@ -58,16 +58,14 @@ template <typename TCompare> bool OrderBook<TCompare>::Amend(const OrderAmendDat
     }
   } else {
     //// The change is on a other price level. Means we need to move the order from the original price level and insert a new
-    /// order in the new price level with
-    /// a / original order id
-    /// move the order from one price level to the new price level
+    /// order in the new price level with an original order id move the order from one price level to the new price level
 
     const auto moveOrderFn{[&](OrderInsertData &&orderData) {
       // set new price and volume
       orderData.SetPrice(orderAmend.GetNewPrice());
       orderData.SetVolume(orderAmend.GetNewVolume());
 
-      const auto pair{m_OrderBookMap.emplace(orderAmend.GetNewPrice(), orderData)};
+      const auto pair{m_OrderBookMap.emplace(orderAmend.GetNewPrice(), std::forward<OrderInsertData>(orderData))};
       if (pair.second) {
         LOG_DEBUG("Order moved to new price level:" << orderData);
       }

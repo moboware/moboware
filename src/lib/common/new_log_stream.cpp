@@ -84,9 +84,5 @@ const std::string_view &NewLogStream::GetLevelString(const NewLogStream::LEVEL l
 
 void NewLogStream::WriteToStream(std::ostream &outStream) const
 {
-  outStream.write(GetLogStreamLine().GetBuffer(), GetLogStreamLine().Size());
-  // const char endOfLine{'\n'};
-  // outStream.write(&endOfLine, 1);
-
-  // m_LogStreamLine.Reset();
+  outStream.write(GetLogStreamLine().GetBuffer().m_LogBuffer.data(), GetLogStreamLine().GetBuffer().m_Size);
 }

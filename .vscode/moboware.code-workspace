@@ -6,18 +6,26 @@
   ],
   "settings": {
     "editor.fontSize": 15,
+    "cmake.outputLogEncoding": "UTF-8",
+    "cmake.parseBuildDiagnostics": true,
+    "cmake.options.statusBarVisibility": "visible",
     "cmake.sourceDirectory": "${workspaceFolder}/moboware",
     "cmake.buildArgs": [],
     "cmake.buildDirectory": "${workspaceFolder}/../build/moboware",
     "files.watcherInclude": [
       "/home/mobo/code/moboware/"
     ],
+    "cmake.enabledOutputParsers": [
+      "cmake",
+      "gcc"
+    ],
     "cmake.clearOutputBeforeBuild": true,
     "cmake.buildBeforeRun": true,
     "cmake.saveBeforeBuild": true,
     "cmake.configureSettings": {
       "CMAKE_TOOLCHAIN_FILE": "${workspaceFolder}/../vcpkg/scripts/buildsystems/vcpkg.cmake",
-      "VCPKG_TARGET_TRIPLET": "x64-linux-dynamic"
+      "VCPKG_TARGET_TRIPLET": "x64-linux-dynamic",
+      "PERFORMANCE_BUILD_FLAGS": "On"
     },
     "cmake.configureArgs": [
       //"-DCMAKE_TOOLCHAIN_FILE=${workspaceFolder}/vcpkg/scripts/buildsystems/vcpkg.cmake",
@@ -25,6 +33,9 @@
     ],
     "C_Cpp.clang_format_sortIncludes": true,
     "C_Cpp.clang_format_path": "/usr/bin/clang-format",
+    "C_Cpp.vcFormat.newLine.beforeOpenBrace.namespace": "sameLine",
+    "C_Cpp.vcFormat.newLine.beforeOpenBrace.lambda": "sameLine",
+    "C_Cpp.formatting": "clangFormat",
     "files.associations": {
       "*.ipp": "cpp",
       "cctype": "cpp",
@@ -115,16 +126,8 @@
       "*.inc": "cpp",
       "decimal": "cpp"
     },
-    "cmake.enabledOutputParsers": [
-      "cmake",
-      "gcc"
-    ],
-    "cmake.outputLogEncoding": "UTF-8",
-    "cmake.parseBuildDiagnostics": true,
-    "C_Cpp.vcFormat.newLine.beforeOpenBrace.namespace": "sameLine",
-    "C_Cpp.vcFormat.newLine.beforeOpenBrace.lambda": "sameLine",
-    "C_Cpp.formatting": "clangFormat",
     "files.trimTrailingWhitespace": true,
+    "workbench.settings.openDefaultKeybindings": true,
     "workbench.editor.limit.enabled": true,
     "editor.accessibilityPageSize": 15,
     "editor.tabSize": 2,
@@ -133,8 +136,6 @@
     "editor.lineHeight": 1.6,
     "cSpell.logLevel": "Warning",
     "cSpell.spellCheckOnlyWorkspaceFiles": true,
-    "workbench.settings.openDefaultKeybindings": true,
-    "cmake.options.statusBarVisibility": "visible",
     "cSpell.words": [
       "moboware"
     ]

@@ -44,28 +44,27 @@ BENCHMARK_F(MatchingEngineBenchmark, InsertOrder)(benchmark::State &state)
   for (const auto _ : state) {
 
     state.PauseTiming();
-    const OrderInsertData orderInsertData{
-        "mobo",
-        "ABCD",
-        {priceDistribution(gen) * std::mega::num},
-        1'000U,
-        "Limit",
-        true,
-        std::chrono::high_resolution_clock::now(),
-        std::chrono::milliseconds::duration::zero(),
-        std::to_string(std::chrono::high_resolution_clock::now().time_since_epoch().count()),
-        std::to_string(std::chrono::high_resolution_clock::now().time_since_epoch().count())};
+    OrderInsertData orderInsertData{"mobo",
+                                    "ABCD",
+                                    {priceDistribution(gen) * std::mega::num},
+                                    1'000U,
+                                    "Limit",
+                                    true,
+                                    std::chrono::system_clock::now(),
+                                    std::chrono::milliseconds::duration::zero(),
+                                    std::to_string(std::chrono::system_clock::now().time_since_epoch().count()),
+                                    std::to_string(std::chrono::system_clock::now().time_since_epoch().count())};
     if (not orderInsertData.Validate()) {
       state.SkipWithError("Order data validation failed");
       return;
     }
     state.ResumeTiming();
 
-    matchingEngine.OrderInsert(orderInsertData, endpoint);
+    matchingEngine.OrderInsert(std::move(orderInsertData), endpoint);
   }
 }
 
-BENCHMARK_REGISTER_F(MatchingEngineBenchmark, InsertOrder)->DenseThreadRange(1, 8, 1);
+BENCHMARK_REGISTER_F(MatchingEngineBenchmark, InsertOrder);   //->DenseThreadRange(1, 8, 1);
 
 BENCHMARK_F(MatchingEngineBenchmark, CancelOrder)(benchmark::State &state)
 {
@@ -77,23 +76,22 @@ BENCHMARK_F(MatchingEngineBenchmark, CancelOrder)(benchmark::State &state)
     std::mt19937 gen(rd());   // Standard mersenne_twister_engine seeded with rd()
     std::uniform_int_distribution<PriceType_t> priceDistribution(50, 100);   // price range from 50..100
 
-    const OrderInsertData orderInsertData{
-        "mobo",
-        "ABCD",
-        {priceDistribution(gen) * std::mega::num},
-        1'000U,
-        "Limit",
-        true,
-        std::chrono::high_resolution_clock::now(),
-        std::chrono::milliseconds::duration::zero(),
-        std::to_string(std::chrono::high_resolution_clock::now().time_since_epoch().count()),
-        std::to_string(std::chrono::high_resolution_clock::now().time_since_epoch().count())};
+    OrderInsertData orderInsertData{"mobo",
+                                    "ABCD",
+                                    {priceDistribution(gen) * std::mega::num},
+                                    1'000U,
+                                    "Limit",
+                                    true,
+                                    std::chrono::high_resolution_clock::now(),
+                                    std::chrono::milliseconds::duration::zero(),
+                                    std::to_string(std::chrono::high_resolution_clock::now().time_since_epoch().count()),
+                                    std::to_string(std::chrono::high_resolution_clock::now().time_since_epoch().count())};
     if (not orderInsertData.Validate()) {
       state.SkipWithError("Order data validation failed");
       return;
     }
 
-    matchingEngine.OrderInsert(orderInsertData, endpoint);
+    matchingEngine.OrderInsert(std::move(orderInsertData), endpoint);
 
     OrderCancelData orderCancel{orderInsertData.GetInstrument(),
                                 orderInsertData.GetPrice(),
@@ -108,4 +106,4 @@ BENCHMARK_F(MatchingEngineBenchmark, CancelOrder)(benchmark::State &state)
   }
 }
 
-BENCHMARK_REGISTER_F(MatchingEngineBenchmark, CancelOrder)->DenseThreadRange(1, 8, 1);
+BENCHMARK_REGISTER_F(MatchingEngineBenchmark, CancelOrder);   //->DenseThreadRange(1, 8, 1);
