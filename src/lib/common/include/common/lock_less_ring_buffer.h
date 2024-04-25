@@ -30,9 +30,9 @@ public:
   // multiple producer/consumer version
   bool Push(const std::function<bool(Buffer_t &slot, const QueueLengthType_t &headPosition)> &pushFn)
   {
-    if (Size() >= Capacity()) {
-      return false;   // The buffer is full!!!
-    }
+    // if (not Empty()) {
+    //   return false;   // The buffer is full!!!
+    // }
 
     const auto headPosition{m_Head.fetch_add(1, std::memory_order_seq_cst) % queueLength};
 
@@ -46,9 +46,9 @@ public:
 
   bool Pop(const std::function<void(const Buffer_t &)> &popFn) noexcept
   {
-    if (Empty()) {
-      return false;   // buffer is empty;
-    }
+    // if (Empty()) {
+    //   return false;   // buffer is empty;
+    // }
 
     const auto tailPosition{m_Tail.fetch_add(1, std::memory_order_seq_cst) % queueLength};
 
@@ -133,9 +133,10 @@ public:
 
   [[nodiscard]] bool Empty() const
   {
-    const auto headPosition{m_Head.load(std::memory_order_relaxed)};
-    const auto tailPosition{m_Tail.load(std::memory_order_relaxed)};
-    return (headPosition - tailPosition) == 0;
+    const auto headPosition{m_Head.load(std::memory_order_relaxed) % queueLength};
+    const auto tailPosition{m_Tail.load(std::memory_order_relaxed) % queueLength};
+    auto ret{headPosition > tailPosition};
+    return not ret;
   }
 
   void Signal(const bool tickleThread = true)

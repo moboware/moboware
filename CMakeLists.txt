@@ -38,6 +38,7 @@ set(CMAKE_CXX_FLAGS_RELEASE ${RELEASE_FLAGS}) # debug info in release mode
 find_package(OpenSSL REQUIRED)
 find_package(Threads)
 find_package(Boost REQUIRED COMPONENTS python3.10 )
+find_package(fmt REQUIRED)
 
 include_directories(${Boost_INCLUDE_DIRS})
 

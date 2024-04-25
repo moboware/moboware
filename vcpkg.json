@@ -10,7 +10,8 @@
     "boost",
     "python3",
     "pthreads",
-    "atomic-queue"
+    "atomic-queue",
+    "fmt"
   ],
   "overrides": [
     {
