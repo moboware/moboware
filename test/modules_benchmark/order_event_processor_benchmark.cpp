@@ -1,5 +1,5 @@
 #include "benchmark/benchmark.h"
-#include "common/log_stream.h"
+#include "common/logger.hpp"
 #include "modules/matching_engine_module/order_event_processor.h"
 
 using namespace moboware::modules;
@@ -30,7 +30,7 @@ public:
 
   void SetUp(const ::benchmark::State &state)
   {
-    LogStream::GetInstance().SetLevel(moboware::common::NewLogStream::LEVEL::ERROR);
+    Logger::GetInstance().SetLevel(Logger::LogLevel::Error);
   }
 
   void TearDown(const ::benchmark::State &state)

@@ -1,4 +1,4 @@
-#include "common/log_stream.h"
+#include "common/logger.hpp"
 #include "common/ring_buffer.hpp"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>

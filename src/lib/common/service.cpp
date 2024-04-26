@@ -1,13 +1,13 @@
 #include "common/service.h"
-#include "common/log_stream.h"
+#include "common/logger.hpp"
 #include <thread>
 
 using namespace moboware::common;
 
-constexpr auto numberOfServiceThreads{ 5U };
+constexpr auto numberOfServiceThreads{5U};
 
 Service::Service()
-  : m_IoService(numberOfServiceThreads)
+    : m_IoService(numberOfServiceThreads)
 {
 }
 

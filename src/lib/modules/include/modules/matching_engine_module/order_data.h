@@ -2,6 +2,7 @@
 #include <boost/json.hpp>
 #include <chrono>
 #include <ctime>
+#include <fmt/ostream.h>
 #include <ostream>
 #include <sstream>
 #include <string>
@@ -534,3 +535,18 @@ std::ostringstream &operator<<(std::ostringstream &os, const ErrorReply &errorRe
 std::ostringstream &operator<<(std::ostringstream &os, const Trade &orderReply);
 
 }   // namespace moboware::modules
+
+template <> struct fmt::formatter<moboware::modules::OrderInsertData> : fmt::ostream_formatter {
+};
+
+template <> struct fmt::formatter<moboware::modules::OrderAmendData> : fmt::ostream_formatter {
+};
+
+template <> struct fmt::formatter<moboware::modules::OrderCancelData> : fmt::ostream_formatter {
+};
+
+template <> struct fmt::formatter<moboware::modules::OrderReply> : fmt::ostream_formatter {
+};
+
+template <> struct fmt::formatter<moboware::modules::Trade> : fmt::ostream_formatter {
+};

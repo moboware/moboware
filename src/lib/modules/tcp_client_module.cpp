@@ -1,5 +1,5 @@
 #include "modules/tcp_client_module.h"
-#include "common/log_stream.h"
+#include "common/logger.hpp"
 
 using namespace moboware::modules;
 using namespace moboware::common;
@@ -15,7 +15,7 @@ TcpClientModule::TcpClientModule(const std::shared_ptr<common::Service>& service
 
 bool TcpClientModule::LoadConfig(const boost::json::value& moduleValue)
 {
-  LOG_DEBUG("Load module Config");
+  _log_debug(LOG_DETAILS,"Load module Config");
 
   m_Config.m_Address = moduleValue.at("Address").as_string().c_str();
   m_Config.m_Port = moduleValue.at("Port").as_int64();

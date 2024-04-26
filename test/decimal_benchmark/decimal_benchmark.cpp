@@ -1,5 +1,5 @@
 #include "benchmark/benchmark.h"
-#include "common/log_stream.h"
+#include "common/logger.hpp"
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <chrono>
 
@@ -11,8 +11,8 @@ int main(int argc, char **argv)
   std::filesystem::path logFilePath{"./decimal_benchmark.log"};
   std::filesystem::remove(logFilePath);
 
-  LogStream::GetInstance().SetLogFile(logFilePath);
-  LogStream::GetInstance().SetLevel(moboware::common::NewLogStream::LEVEL::DEBUG);
+  Logger::GetInstance().SetLogFile(logFilePath);
+  Logger::GetInstance().SetLevel(Logger::LogLevel::Debug);
 
   benchmark::Initialize(&argc, argv);
   benchmark::RunSpecifiedBenchmarks();

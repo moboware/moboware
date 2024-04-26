@@ -1,5 +1,5 @@
 #include "shared_memory/shared_memory.hpp"
-#include "common/log_stream.h"
+#include "common/logger.hpp"
 #include <boost/interprocess/mapped_region.hpp>
 
 using namespace boost;
@@ -30,7 +30,7 @@ SharedMemory::SharedMemory(const std::string &memoryName, const Type type, const
     header->m_ReadOffset = header->m_WriteOffset = 0;
   }
 
-  LOG_INFO("Created shared memory object:" << m_SharedMemory->get_name() << ", size:" << GetSize());
+  _log_info(LOG_DETAILS, "Created shared memory object:{} , size:{}", m_SharedMemory->get_name(), GetSize());
 }
 
 SharedMemory::~SharedMemory()

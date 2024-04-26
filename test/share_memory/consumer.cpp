@@ -1,5 +1,5 @@
 #include "shared_memory/consumer.hpp"
-#include "common/log_stream.h"
+#include "common/logger.hpp"
 #include <boost/interprocess/mapped_region.hpp>
 #include <chrono>
 
@@ -12,7 +12,7 @@ SharedMemoryConsumer::SharedMemoryConsumer(const std::string &memoryName)
 
 std::size_t SharedMemoryConsumer::Read(char *buffer, std::size_t bufferSize, const std::chrono::milliseconds &waitTime)
 {
-  LOG_INFO("Waiting...")
+  _log_info(LOG_DETAILS, "Waiting...");
 
   if (Wait(waitTime)) {
     interprocess::mapped_region region{*GetSharedMemoryObject(), interprocess::read_write};
@@ -23,10 +23,12 @@ std::size_t SharedMemoryConsumer::Read(char *buffer, std::size_t bufferSize, con
       const auto startTime{std::chrono::system_clock::now()};
       std::uint64_t counter{};
 
-      LOG_INFO("Region size:" << region.get_size()                                    //
-                              << ", Buffer size:" << header->m_MaxPayloadBufferSize   //
-                              << ", Read offset:" << header->m_ReadOffset             //
-                              << ", Write offset:" << header->m_WriteOffset);
+      _log_info(LOG_DETAILS,
+                "Region size:{}, Buffer size:{}, Read offset:{}, Write offset:{}",
+                region.get_size(),
+                header->m_MaxPayloadBufferSize,
+                header->m_ReadOffset,
+                header->m_WriteOffset);
 
       if (header->m_ReadOffset != header->m_WriteOffset) {   //  header msg is read prt
         std::string lastMsg;
@@ -35,7 +37,7 @@ std::size_t SharedMemoryConsumer::Read(char *buffer, std::size_t bufferSize, con
 
           if (msg and (msg->m_Size < header->m_MaxPayloadBufferSize)) {
             lastMsg = std::string((const char *)msg->m_MsgData, msg->m_Size);
-            // LOG_INFO("Msg size:" << msg->m_Size << ", msg:" << lastMsg );
+            // _log_info(LOG_DETAILS,"Msg size:" << msg->m_Size << ", msg:" << lastMsg );
             //  todo copy data from process memory to internal memory
             //  memcpy(buffer, );
 
@@ -52,7 +54,7 @@ std::size_t SharedMemoryConsumer::Read(char *buffer, std::size_t bufferSize, con
         const auto msgPerSec{
             (double(counter) / std::chrono::duration_cast<std::chrono::nanoseconds>(endTime - startTime).count()) *
             1'000'000'000};
-        LOG_INFO("Msg/sec " << std::fixed << msgPerSec << "," << lastMsg);
+        _log_info(LOG_DETAILS, "Msg/sec {}, {}", msgPerSec, lastMsg);
       }
     }
   }

@@ -1,5 +1,5 @@
 #include "modules/matching_engine_module/order_level.h"
-#include "common/log_stream.h"
+#include "common/logger.hpp"
 
 using namespace moboware::modules;
 
@@ -70,7 +70,7 @@ void OrderLevel::Insert(OrderInsertData &&orderData) noexcept
 
 bool OrderLevel::CancelOrder(const Id_t &orderId) noexcept
 {
-  LOG_DEBUG("Cancel order id " << orderId);
+  _log_debug(LOG_DETAILS, "Cancel order id {}", orderId);
   for (auto iter{m_TimeQueue.cbegin()}; iter != std::end(m_TimeQueue); ++iter) {
     const auto &orderData{*iter};
     if (orderData.GetId() == orderId) {

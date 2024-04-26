@@ -1,5 +1,5 @@
 #include "common/session.h"
-#include "common/log_stream.h"
+#include "common/logger.hpp"
 #include <boost/asio.hpp>
 
 using namespace boost;
@@ -7,10 +7,10 @@ using namespace boost::asio;
 using namespace boost::asio::ip;
 using namespace moboware::common;
 
-Session::Session(const std::shared_ptr<Service>& service)
-  : m_Socket(service->GetIoService())
+Session::Session(const std::shared_ptr<Service> &service)
+    : m_Socket(service->GetIoService())
 {
-  _readDataHandler = [this](const system::error_code& errorCode) {
+  _readDataHandler = [this](const system::error_code &errorCode) {
     if (ReadData(errorCode)) {
       AsyncReceive();
     }
@@ -22,14 +22,14 @@ Session::~Session()
   CloseSocket();
 }
 
-tcp::socket& Session::Socket()
+tcp::socket &Session::Socket()
 {
   return m_Socket;
 }
 
 void Session::Start()
 {
-  LOG_DEBUG("Start session");
+  _log_debug(LOG_DETAILS, "Start session");
 
   Session::AsyncReceive();
 
@@ -47,17 +47,17 @@ void Session::AsyncReceive()
   }
 }
 
-bool Session::ReadData(const system::error_code& errorCode)
+bool Session::ReadData(const system::error_code &errorCode)
 {
   if (errorCode.failed()) {
-    LOG_DEBUG("Read data failed " << errorCode);
+    _log_debug(LOG_DETAILS, "Read data failed {}", errorCode.to_string());
     return false;
   }
 
   system::error_code readError;
   const auto bytesAvailable = m_Socket.available(readError);
   if (readError.failed()) {
-    LOG_DEBUG("Read bytes available failed " << readError);
+    _log_debug(LOG_DETAILS, "Read bytes available failed {}", readError.to_string());
     return false;
   }
 
@@ -65,11 +65,14 @@ bool Session::ReadData(const system::error_code& errorCode)
     readError.clear();
     std::array<char, maxBufferSize> readBuffer;
 
-    // LOG_DEBUG(bytesAvailable << " bytes available...");
-    const auto bytesRead = asio::read(m_Socket, asio::buffer(readBuffer.data(), readBuffer.size()), asio::transfer_at_least(bytesAvailable), readError);
+    // _log_debug(LOG_DETAILS,bytesAvailable << " bytes available...");
+    const auto bytesRead = asio::read(m_Socket,
+                                      asio::buffer(readBuffer.data(), readBuffer.size()),
+                                      asio::transfer_at_least(bytesAvailable),
+                                      readError);
 
     if (readError.failed()) {
-      LOG_DEBUG("Read data bytes failed " << readError);
+      _log_debug(LOG_DETAILS, "Read data bytes failed {}", readError.to_string());
       return false;
     }
 
@@ -80,7 +83,7 @@ bool Session::ReadData(const system::error_code& errorCode)
   return true;
 }
 
-std::size_t Session::Send(const asio::const_buffer& sendBuffer)
+std::size_t Session::Send(const asio::const_buffer &sendBuffer)
 {
   std::vector<asio::const_buffer> sendBuffers;
   const std::uint16_t mesgLen = sendBuffer.size();
@@ -92,18 +95,19 @@ std::size_t Session::Send(const asio::const_buffer& sendBuffer)
   const auto bytesSend = asio::write(Session::Socket(), sendBuffers, errorCode);
 
   if (errorCode.failed()) {
-    if (errorCode == asio::error::connection_reset || errorCode == asio::error::connection_aborted || errorCode == asio::error::broken_pipe ||
-        errorCode == asio::error::network_reset || errorCode == asio::error::network_down) {
+    if (errorCode == asio::error::connection_reset || errorCode == asio::error::connection_aborted ||
+        errorCode == asio::error::broken_pipe || errorCode == asio::error::network_reset ||
+        errorCode == asio::error::network_down) {
       if (m_SessionDisconnectedCallback && shared_from_this()) {
         m_SessionDisconnectedCallback(shared_from_this(), GetRemoteEndpoint());
       }
       CloseSocket();
     } else {
-      LOG_DEBUG("send failed " << errorCode);
+      _log_debug(LOG_DETAILS, "send failed {}", errorCode.to_string());
     }
     return 0;
   }
-  // LOG_DEBUG("Socket write " << bytesSend << " bytes");
+  // _log_debug(LOG_DETAILS,"Socket write {} bytes" ,bytesSend );
   return bytesSend;
 }
 
@@ -114,17 +118,17 @@ void Session::CloseSocket()
   }
 }
 
-const Session::Endpoint& Session::GetRemoteEndpoint() const
+const Session::Endpoint &Session::GetRemoteEndpoint() const
 {
   return m_RemoteEndpoint;
 }
 
-void Session::SetSessionDisconnected(const std::function<void(const std::shared_ptr<Session>&, const Endpoint&)>& fn)
+void Session::SetSessionDisconnected(const std::function<void(const std::shared_ptr<Session> &, const Endpoint &)> &fn)
 {
   m_SessionDisconnectedCallback = fn;
 }
 
-void Session::SetSessionReceiveData(const ReceiveDataFunction& fn)
+void Session::SetSessionReceiveData(const ReceiveDataFunction &fn)
 {
   m_ReceiveDataCallbackFunction = fn;
 }

@@ -1,4 +1,4 @@
-#include "common/log_stream.h"
+#include "common/logger.hpp"
 #include "modules/matching_engine_module/order_event_processor.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>

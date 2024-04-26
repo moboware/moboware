@@ -1,4 +1,3 @@
-add_subdirectory(boost_lockfree_queue)
 add_subdirectory(lockfree_ringbuffer)
 add_subdirectory(meta_programming)
 add_subdirectory(new_logger)

@@ -1,4 +1,4 @@
-#include "common/log_stream.h"
+#include "common/logger.hpp"
 #include "shared_memory/consumer.hpp"
 #include "shared_memory/publisher.hpp"
 #include <chrono>
@@ -15,17 +15,17 @@ void SignalInt(int sig)
 int main(const int argc, const char **argv)
 {
   signal(SIGINT, SignalInt);
-  LogStream::GetInstance().SetLevel(moboware::common::NewLogStream::LEVEL::INFO);
+  Logger::GetInstance().SetLevel(Logger::LogLevel::Info);
   const std::string memoryName{"SharedMemoryTest"};
   if (argc == 2) {
-    LogStream::GetInstance().SetLogFile("shared_memory_publisher.log");
+    Logger::GetInstance().SetLogFile("shared_memory_publisher.log");
 
-    LOG_INFO("Shared memory publisher " << memoryName);
+    _log_info(LOG_DETAILS, "Shared memory publisher {}", memoryName);
 
     SharedMemoryPublisher smp(memoryName);
     std::uint64_t n{};
     while (!done) {
-      LOG_INFO("Start writing...");
+      _log_info(LOG_DETAILS, "Start writing...");
       for (std::uint64_t i = 0; i < 25'000; i++) {
         const auto msg{std::to_string(++n)};
         smp.Write({msg.data(), msg.size()});
@@ -33,13 +33,13 @@ int main(const int argc, const char **argv)
       // notify all consumers
       smp.Notify();
 
-      LOG_INFO("Ready..." << n);
+      _log_info(LOG_DETAILS, "Ready...{}", n);
       std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
   } else {
-    LogStream::GetInstance().SetLogFile("shared_memory_consumer.log");
+    Logger::GetInstance().SetLogFile("shared_memory_consumer.log");
 
-    LOG_INFO("Shared memory consumer " << memoryName);
+    _log_info(LOG_DETAILS, "Shared memory consumer {}", memoryName);
 
     SharedMemoryConsumer smc(memoryName);
 
@@ -50,6 +50,6 @@ int main(const int argc, const char **argv)
 
     } while (!done);
   }
-  LOG_INFO("Bye...");
+  _log_info(LOG_DETAILS, "Bye...");
   return 0;
 }

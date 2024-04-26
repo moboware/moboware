@@ -1,16 +1,16 @@
 #include "common/timer.h"
-#include "common/log_stream.h"
+#include "common/logger.hpp"
 #include <cstdlib>
 
 using namespace boost;
 using namespace boost::asio;
 using namespace moboware::common;
 
-Timer::Timer(const std::shared_ptr<Service>& service)
-  : m_Timer(service->GetIoService())
+Timer::Timer(const std::shared_ptr<Service> &service)
+    : m_Timer(service->GetIoService())
 {
   // Default timer handler lambda
-  m_TimerHandler = [this](const system::error_code& error) {
+  m_TimerHandler = [this](const system::error_code &error) {
     if (error != asio::error::operation_aborted && m_TimerFunction) {
       m_TimerFunction(*this);
     }
@@ -30,7 +30,7 @@ void Timer::Start(const std::chrono::microseconds timeout)
   m_Timer.async_wait(m_TimerHandler);
 }
 
-void Timer::Start(const TimerFunction& timerFunc, const std::chrono::microseconds timeout)
+void Timer::Start(const TimerFunction &timerFunc, const std::chrono::microseconds timeout)
 {
   m_TimerFunction = timerFunc;
 

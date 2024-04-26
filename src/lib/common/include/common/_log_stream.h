@@ -35,8 +35,7 @@ using LogStream = moboware::common::NewLogger;
 #endif
 
 #define LOG(level, log_line) LOG_STREAM(level, __FUNCTION__, __FILE__, __LINE__, log_line);
-#define LOG_DEBUG(log_line)                                                                                                 \
-  LOG_STREAM(moboware::common::NewLogStream::LEVEL::DEBUG, __FUNCTION__, __FILE__, __LINE__, log_line);
+#define LOG_DEBUG(log_line) LOG_STREAM(Logger::LogLevel::Debug, __FUNCTION__, __FILE__, __LINE__, log_line);
 
 #define LOG_INFO(log_line)                                                                                                  \
   LOG_STREAM(moboware::common::NewLogStream::LEVEL::INFO, __FUNCTION__, __FILE__, __LINE__, log_line);

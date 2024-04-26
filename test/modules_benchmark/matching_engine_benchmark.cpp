@@ -1,5 +1,5 @@
 #include "benchmark/benchmark.h"
-#include "common/log_stream.h"
+#include "common/logger.hpp"
 #include "modules/matching_engine_module/matching_engine.h"
 #include <random>
 
@@ -24,7 +24,7 @@ public:
 
   void SetUp(const ::benchmark::State &state)
   {
-    LogStream::GetInstance().SetLevel(moboware::common::NewLogStream::LEVEL::ERROR);
+    Logger::GetInstance().SetLevel(Logger::LogLevel::Error);
   }
 
   void TearDown(const ::benchmark::State &state)

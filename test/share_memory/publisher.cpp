@@ -1,6 +1,5 @@
 #include "shared_memory/publisher.hpp"
-#include "common/log_stream.h"
-//#include "common/ring_buffer.hpp"
+#include "common/logger.hpp"
 #include <boost/interprocess/mapped_region.hpp>
 
 using namespace boost;
@@ -25,16 +24,18 @@ void SharedMemoryPublisher::Write(const std::string_view &buffer)
 
   if (header) {
 
-    LOG_DEBUG("Region size:" << region.get_size()                                    //
-                             << ", Buffer size:" << header->m_MaxPayloadBufferSize   //
-                             << ", Read offset:" << header->m_ReadOffset             //
-                             << ", Write offset:" << header->m_WriteOffset);
+    _log_debug(LOG_DETAILS,
+               "Region size:{}, Buffer size:{}, Read offset:{}, Write offset:{}",
+               region.get_size(),
+               header->m_MaxPayloadBufferSize,
+               header->m_ReadOffset,
+               header->m_WriteOffset);
 
     // check if there is enough space for writing the msg, write prt + size < buffer size
     // otherwise reset the write prt the the start of the buffer ==> [0]
     if ((header->m_WriteOffset == header->m_ReadOffset) or   //
         (header->m_WriteOffset + sizeof(MemoryMsg) + buffer.size() > header->m_MaxPayloadBufferSize)) {
-      LOG_INFO("Resetting....");
+      _log_info(LOG_DETAILS, "Resetting....");
       // interprocess::scoped_lock memoryLock(m_MemoryMutex);
       header->m_WriteOffset = header->m_ReadOffset = 0;
     }
@@ -49,7 +50,7 @@ void SharedMemoryPublisher::Write(const std::string_view &buffer)
       // move the write prt to end of the msg, the next free memory part.
       header->m_WriteOffset += sizeof(MemoryMsg) + buffer.size();
 
-      LOG_DEBUG("Msg size:" << msg->m_Size << ", msg:" << buffer << ", WriteOffset:" << header->m_WriteOffset);
+      _log_debug(LOG_DETAILS, "Msg size:{}, msg:{}, WriteOffset:{}", msg->m_Size, buffer, header->m_WriteOffset);
     }
   }
 }

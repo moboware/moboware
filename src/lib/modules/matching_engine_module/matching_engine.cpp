@@ -1,5 +1,5 @@
 #include "modules/matching_engine_module/matching_engine.h"
-#include "common/log_stream.h"
+#include "common/logger.hpp"
 
 using namespace moboware::modules;
 
@@ -48,7 +48,7 @@ void MatchingEngine::OrderInsert(OrderInsertData &&orderInsert, const boost::asi
 {
   std::scoped_lock lock(m_Mutex);
 
-  LOG_INFO("OrderInsert:" << orderInsert);
+  _log_info(LOG_DETAILS, "OrderInsert:{}", orderInsert);
 
   const auto Insert{[&](OrderInsertData &&orderInsert) {
     return (orderInsert.GetIsBuySide() ? m_Bids.Insert(std::forward<OrderInsertData>(orderInsert))
@@ -59,7 +59,7 @@ void MatchingEngine::OrderInsert(OrderInsertData &&orderInsert, const boost::asi
     // send order insert reply
     const OrderReply orderInsertReply{orderInsert.GetId(), orderInsert.GetClientId()};
     CreateAndSendMessage(orderInsertReply, endpoint);
-    LOG_INFO("OrderReply:" << orderInsertReply);
+    _log_info(LOG_DETAILS, "OrderReply:{}", orderInsertReply);
 
     // check if this order has matches
     const auto CheckMatch{[&](const OrderDataBase &newOrder, const boost::asio::ip::tcp::endpoint &endpoint) {
@@ -81,13 +81,10 @@ void MatchingEngine::OrderAmend(const OrderAmendData &orderAmend, const boost::a
 {
   std::scoped_lock lock(m_Mutex);
 
-  LOG_INFO("OrderAmend:" << orderAmend);
+  _log_info(LOG_DETAILS, "OrderAmend: {}", orderAmend);
 
   const auto Amend{[&](const OrderAmendData &orderAmend) {
-    return (orderAmend.GetIsBuySide() ?   //
-                m_Bids.Amend(orderAmend)
-                                      :   //
-                m_Asks.Amend(orderAmend));
+    return (orderAmend.GetIsBuySide() ? m_Bids.Amend(orderAmend) : m_Asks.Amend(orderAmend));
   }};
 
   if (Amend(orderAmend)) {
@@ -115,7 +112,7 @@ void MatchingEngine::OrderCancel(const OrderCancelData &orderCancel, const boost
 {
   std::scoped_lock lock(m_Mutex);
 
-  LOG_INFO("OrderCancel:" << orderCancel);
+  _log_info(LOG_DETAILS, "OrderCancel:{}", orderCancel);
 
   const auto Cancel{[&](const OrderCancelData &orderCancel) {
     return orderCancel.GetIsBuySide() ? m_Bids.Cancel(orderCancel) : m_Asks.Cancel(orderCancel);
@@ -141,19 +138,19 @@ void MatchingEngine::ExecuteOrder(TOrderBook1 &oppositeSideOrderBook,
     auto &mySideOrderBookMap = mySideOrderBook.GetOrderBookMap();
     if (mySideOrderBookMap.empty()) {
       // should never happen if we just inserted an new order
-      LOG_DEBUG("Other sides order book is empty");
+      _log_debug(LOG_DETAILS, "Other sides order book is empty");
       return;
     }
 
     const auto &mySideBestOrderLevel = std::begin(mySideOrderBookMap)->second;
     if (mySideBestOrderLevel.IsEmpty()) {
-      LOG_DEBUG("Other side top level is empty");
+      _log_debug(LOG_DETAILS, "Other side top level is empty");
       return;
     }
 
     const auto mySideBestTopLevel = mySideBestOrderLevel.GetTopLevel();
     if (not mySideBestTopLevel) {
-      LOG_DEBUG("No best price on other side PriceLevel found");
+      _log_debug(LOG_DETAILS, "No best price on other side PriceLevel found");
       return;
     }
 
@@ -167,13 +164,13 @@ void MatchingEngine::ExecuteOrder(TOrderBook1 &oppositeSideOrderBook,
 
     const auto &oppositeBestOrderLevel = std::begin(oppositeSideOrderBookMap)->second;
     if (oppositeBestOrderLevel.IsEmpty()) {
-      LOG_DEBUG("Best top level is empty");
+      _log_debug(LOG_DETAILS, "Best top level is empty");
       return;
     }
 
     const auto oppositeBestTopLevel = oppositeBestOrderLevel.GetTopLevel();
     if (not oppositeBestTopLevel) {
-      LOG_DEBUG("No best price on PriceLevel found");
+      _log_debug(LOG_DETAILS, "No best price on PriceLevel found");
       return;
     }
 
@@ -187,11 +184,15 @@ void MatchingEngine::ExecuteOrder(TOrderBook1 &oppositeSideOrderBook,
       return;
     }
     // we have a match
-    LOG_DEBUG("Match " << myBestOrderData.GetVolume() << "@" << myBestOrderData.GetPrice() << ":"   //
-                       << oppositeBestOrderData.GetVolume() << "@" << oppositeBestOrderData.GetPrice());
+    _log_debug(LOG_DETAILS,
+               "Match {}@{}:{}@{}",
+               myBestOrderData.GetVolume(),
+               myBestOrderData.GetPrice(),
+               oppositeBestOrderData.GetVolume(),
+               oppositeBestOrderData.GetPrice());
     // trade execution callback function
     const auto sendTradeFn{[this, &endpoint](const Trade &trade) {
-      LOG_INFO("Trade:" << trade);
+      _log_info(LOG_DETAILS, "Trade:{}", trade);
       CreateAndSendMessage(trade, endpoint);
     }};
 
@@ -213,7 +214,7 @@ void MatchingEngine::GetOrderBook(const boost::asio::ip::tcp::endpoint &endpoint
 {
   const auto printOrderLevel{[](const OrderLevel &orderLevel) {
     const auto printOrderData{[](const OrderInsertData &orderData) {
-      // LOG_DEBUG("OrderInsertData:" << orderData);
+      // _log_debug(LOG_DETAILS,"OrderInsertData:" << orderData);
       return true;
     }};
 

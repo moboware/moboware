@@ -1,5 +1,5 @@
 #include "common/lock_less_ring_buffer.h"
-#include "common/log_stream.h"
+#include "common/logger.hpp"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 

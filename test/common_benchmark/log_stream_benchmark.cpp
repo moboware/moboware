@@ -1,5 +1,5 @@
 #include "benchmark/benchmark.h"
-#include "common/log_stream.h"
+#include "common/logger.hpp"
 
 static void BM_LogStream(benchmark::State &state)
 {
@@ -10,8 +10,8 @@ static void BM_LogStream(benchmark::State &state)
   for (auto _ : state) {
     const auto level{static_cast<LogStream::LEVEL>(state.range(0))};
     LOG(level,
-        "Level=" << LogStream::GetInstance().GetLevelString() << ", String benchmark " << intValue << "," << doubleValue
-                 << "," << stringValue);
+        "Level=" << Logger::GetInstance().GetLevelString() << ", String benchmark " << intValue << "," << doubleValue << ","
+                 << stringValue);
   }
 }
 

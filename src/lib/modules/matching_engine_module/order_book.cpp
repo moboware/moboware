@@ -1,5 +1,5 @@
 #include "modules/matching_engine_module/order_book.h"
-#include "common/log_stream.h"
+#include "common/logger.hpp"
 
 using namespace moboware::modules;
 
@@ -11,7 +11,7 @@ template <typename TCompare> bool OrderBook<TCompare>::Insert(OrderInsertData &&
     auto &orderPriceLevel{iter->second};
     orderPriceLevel.Insert(std::forward<OrderInsertData>(orderInsert));
 
-    LOG_DEBUG("Order added at price level:" << orderInsert.GetPriceAsDouble() << ", id:" << orderInsert.GetId());
+    _log_debug(LOG_DETAILS, "Order added at price level:{}, id:{}", orderInsert.GetPriceAsDouble(), orderInsert.GetId());
 
     return true;
   } else {
@@ -19,8 +19,11 @@ template <typename TCompare> bool OrderBook<TCompare>::Insert(OrderInsertData &&
     const auto pair{m_OrderBookMap.emplace(orderInsert.GetPrice(), std::forward<OrderInsertData>(orderInsert))};
     if (pair.second) {
 
-      LOG_DEBUG("Order added at price level:" << orderInsert.GetVolume() << "@" << orderInsert.GetPriceAsDouble()
-                                              << ", id:" << orderInsert.GetId());
+      _log_debug(LOG_DETAILS,
+                 "Order added at price level:{}@{}, id:{}",
+                 orderInsert.GetVolume(),
+                 orderInsert.GetPriceAsDouble(),
+                 orderInsert.GetId());
 
       return true;
     }
@@ -32,7 +35,7 @@ template <typename TCompare> bool OrderBook<TCompare>::Amend(const OrderAmendDat
 {
   auto iter{m_OrderBookMap.find(orderAmend.GetPrice())};
   if (iter == std::end(m_OrderBookMap)) {
-    LOG_ERROR("Price level not found at price " << orderAmend.GetPrice());
+    _log_error(LOG_DETAILS, "Price level not found at price {}", orderAmend.GetPrice());
     return false;
   }
 
@@ -41,8 +44,10 @@ template <typename TCompare> bool OrderBook<TCompare>::Amend(const OrderAmendDat
   if (orderAmend.GetNewVolume() == 0) {   // cancel order when  volume is zero
     if (orderPriceLevel.CancelOrder(orderAmend.GetId())) {
       // cancel the order when new volume is zero
-      LOG_DEBUG("Order amend volume is zero, order is cancelled at price level:" << orderAmend.GetPriceAsDouble()
-                                                                                 << ", id:" << orderAmend.GetId());
+      _log_debug(LOG_DETAILS,
+                 "Order amend volume is zero, order is cancelled at price level:{}, id:{}",
+                 orderAmend.GetPriceAsDouble(),
+                 orderAmend.GetId());
       if (orderPriceLevel.IsEmpty()) {
         RemoveLevelAtPrice(orderAmend.GetPrice());
       }
@@ -53,7 +58,7 @@ template <typename TCompare> bool OrderBook<TCompare>::Amend(const OrderAmendDat
     /// change the order volume of the order at price level
 
     if (orderPriceLevel.ChangeOrderVolume(orderAmend.GetId(), orderAmend.GetNewVolume())) {
-      LOG_DEBUG("Order volume changed to " << orderAmend.GetNewVolume());
+      _log_debug(LOG_DETAILS, "Order volume changed to {}", orderAmend.GetNewVolume());
       return true;
     }
   } else {
@@ -67,7 +72,7 @@ template <typename TCompare> bool OrderBook<TCompare>::Amend(const OrderAmendDat
 
       const auto pair{m_OrderBookMap.emplace(orderAmend.GetNewPrice(), std::forward<OrderInsertData>(orderData))};
       if (pair.second) {
-        LOG_DEBUG("Order moved to new price level:" << orderData);
+        _log_debug(LOG_DETAILS, "Order moved to new price level:{}", orderData);
       }
     }};
 
@@ -90,7 +95,10 @@ template <typename TCompare> bool OrderBook<TCompare>::Cancel(const OrderCancelD
     /// cancel the order at price level
     auto &orderPriceLevel{iter->second};
     if (orderPriceLevel.CancelOrder(orderCancel.GetId())) {
-      LOG_DEBUG("Order cancelled at price level:" << orderCancel.GetPriceAsDouble() << ", id:" << orderCancel.GetId());
+      _log_debug(LOG_DETAILS,
+                 "Order cancelled at price level:{}, id:{}",
+                 orderCancel.GetPriceAsDouble(),
+                 orderCancel.GetId());
 
       return true;
     }

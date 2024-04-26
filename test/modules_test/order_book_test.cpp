@@ -1,4 +1,4 @@
-#include "common/log_stream.h"
+#include "common/logger.hpp"
 #include "modules/matching_engine_module/matching_engine.h"
 #include "modules/matching_engine_module/order_book.h"
 #include <gmock/gmock.h>

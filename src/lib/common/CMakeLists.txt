@@ -8,8 +8,8 @@ add_library(${PROJECT_NAME}
     tcp_server.cpp
     tcp_client.cpp
     session.cpp
-    new_logger.cpp
-    new_log_stream.cpp
+    #new_logger.cpp
+    #new_log_stream.cpp
     )
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/)
@@ -17,4 +17,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/in
 add_library(moboware::common ALIAS ${PROJECT_NAME})
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
-                        Threads::Threads)
+                        Threads::Threads
+                        fmt::fmt
+                    )

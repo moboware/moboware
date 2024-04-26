@@ -1,10 +1,10 @@
-#include "common/log_stream.h"
+#include "common/logger.hpp"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
-  LogStream::GetInstance().SetLevel(moboware::common::NewLogStream::LEVEL::DEBUG);
+  Logger::GetInstance().SetLevel(Logger::LogLevel::Debug);
 
   ::testing::InitGoogleMock(&argc, argv);
   ::testing::FLAGS_gtest_death_test_style = "fast";

@@ -1,34 +1,36 @@
 #include "common/channel_base.h"
-#include "common/log_stream.h"
+#include "common/logger.hpp"
 #include <boost/json/src.hpp>
 
 using namespace moboware::common;
 
-ChannelBase::ChannelBase(const std::shared_ptr<Service>& service)
-  : m_Service(service)
+ChannelBase::ChannelBase(const std::shared_ptr<Service> &service)
+    : m_Service(service)
 {
 }
 
-void ChannelBase::Stop() {}
-
-const std::string MODULES_VALUE{ "Modules" };
-
-bool ChannelBase::LoadConfig(const boost::json::value& channelConfig)
+void ChannelBase::Stop()
 {
-  if (not channelConfig.as_object().contains(NAME_VALUE) || //
+}
+
+const std::string MODULES_VALUE{"Modules"};
+
+bool ChannelBase::LoadConfig(const boost::json::value &channelConfig)
+{
+  if (not channelConfig.as_object().contains(NAME_VALUE) ||   //
       not channelConfig.as_object().contains(MODULES_VALUE)) {
     return false;
   }
 
   m_ChannelName = channelConfig.at(NAME_VALUE).as_string().c_str();
   if (not LoadChannelConfig(channelConfig)) {
-    LOG_DEBUG("Failed to load channel config");
+    _log_debug(LOG_DETAILS, "Failed to load channel config");
     return false;
   }
 
   const auto modules = channelConfig.at(MODULES_VALUE);
   if (modules.is_array()) {
-    for (const auto& moduleValue : modules.as_array()) {
+    for (const auto &moduleValue : modules.as_array()) {
       if (not moduleValue.as_object().contains(NAME_VALUE)) {
         return false;
       }

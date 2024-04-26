@@ -1,4 +1,4 @@
-#include "common/log_stream.h"
+#include "common/logger.hpp"
 #include <array>
 #include <atomic_queue/atomic_queue.h>
 #include <chrono>
@@ -65,7 +65,7 @@ void ProducerThread(LockLessQueue &lockLessQueue)
     // fill the queue
     std::srand(std::time(nullptr));
     const auto maxElements{std::rand() % capacity};
-    LOG_INFO("Producing " << maxElements << " elements");
+    _log_info(LOG_DETAILS, "Producing {}  elements", maxElements);
     for (int i = 0; i < maxElements; i++) {
       {
         std::scoped_lock lock(_producerMutex);
@@ -88,7 +88,7 @@ void ProducerThread(LockLessQueue &lockLessQueue)
         // copy payload
         std::memcpy(&array.data()[sizeof(header)], str.c_str(), str.size());
 
-        LOG_INFO("Pushed #seq:" << header.m_SequenceNumber);
+        _log_info(LOG_DETAILS, "Pushed #seq: {}", header.m_SequenceNumber);
 
         lockLessQueue.push(array);
         Signal();
@@ -100,10 +100,10 @@ void ProducerThread(LockLessQueue &lockLessQueue)
 void ConsumerThread(LockLessQueue &lockLessQueue, const std::function<void(const ArrayBuffer_t &element)> &popFn)
 {
   while (true) {
-    LOG_INFO("Consumer waiting for data");
+    _log_info(LOG_DETAILS, "Consumer waiting for data");
 
     if (Wait()) {
-      LOG_INFO("Wakeup for data, queue size: " << lockLessQueue.was_size());
+      _log_info(LOG_DETAILS, "Wakeup for data, queue size:{}", lockLessQueue.was_size());
 
       while (not lockLessQueue.was_empty()) {   // read everything from the ring buffer
         const ArrayBuffer_t &&array{lockLessQueue.pop()};
@@ -115,10 +115,10 @@ void ConsumerThread(LockLessQueue &lockLessQueue, const std::function<void(const
 
 int main(int argc, char **argv)
 {
-  LogStream::GetInstance().SetLogFile("./atomic_queue.log");
+  Logger::GetInstance().SetLogFile("./atomic_queue.log");
   LockLessQueue lockLessQueue;
 
-  LOG_INFO("Lock less queue capacity: " << lockLessQueue.capacity());
+  _log_info(LOG_DETAILS, "Lock less queue capacity:{}", lockLessQueue.capacity());
 
   std::vector<std::jthread> producers;
   for (int i = 0; i < 4; i++) {
@@ -135,7 +135,7 @@ int main(int argc, char **argv)
       Header header;
       std::memcpy(&header, element.data(), sizeof(Header));
       if (header.m_PayloadSize == 0) {
-        LOG_ERROR("Payload size is zero");
+        _log_error(LOG_DETAILS, "Payload size is zero");
         return;
       }
       // read the payload
@@ -144,9 +144,9 @@ int main(int argc, char **argv)
       const auto delta{std::chrono::system_clock::now().time_since_epoch().count() - header.m_TimePoint};
 
       if (readSequenceNumber != header.m_SequenceNumber) {
-        LOG_FATAL("Invalid sequence:" << readSequenceNumber << ", != " << header.m_SequenceNumber);
+        _log_fatal(LOG_DETAILS, "Invalid sequence: {} , != {}", readSequenceNumber, header.m_SequenceNumber);
       } else {
-        LOG_INFO("Consumed: " << str << ", Seq#:" << header.m_SequenceNumber << ", delta:" << delta);
+        _log_info(LOG_DETAILS, "Consumed:{}, Seq#:{}, delta:{}", str, header.m_SequenceNumber, delta);
       }
       readSequenceNumber++;
     }};

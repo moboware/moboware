@@ -1,5 +1,5 @@
 #include "benchmark/benchmark.h"
-#include "common/log_stream.h"
+#include "common/logger.hpp"
 #include "common/unordered_fast_map.hpp"
 #include <map>
 #include <unordered_map>

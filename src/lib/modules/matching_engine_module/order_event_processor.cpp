@@ -1,5 +1,9 @@
 #include "modules/matching_engine_module/order_event_processor.h"
-#include "common/log_stream.h"
+#include "common/logger.hpp"
+#include "fmt/ostream.h"
+
+template <> struct fmt::formatter<boost::json::value> : fmt::ostream_formatter {
+};
 
 using namespace moboware::modules;
 using namespace boost;
@@ -18,16 +22,16 @@ void OrderEventProcessor::Process(const boost::beast::flat_buffer &readBuffer)
   if (0 == parser.write((const char *)readBuffer.data().data(),   //
                         readBuffer.data().size(),                 //
                         ec)) {
-    LOG_ERROR("Failed to parse message " << ec);
+    _log_error(LOG_DETAILS, "Failed to parse message {}", ec.to_string());
     return;
   }
 
   const json::value &rootDocument{parser.release()};
-  LOG_DEBUG("Root doc:" << rootDocument);
+  _log_debug(LOG_DETAILS, "Root doc:", rootDocument);
 
   const auto &action{rootDocument.at(Fields::Action)};
   const auto &data{rootDocument.at(Fields::Data)};
-  LOG_DEBUG(Fields::Action << ":" << action << ":" << data);
+  _log_debug(LOG_DETAILS, "{}:{}:{}", Fields::Action, action, data);
   if (action.as_string() == Fields::Insert) {
     HandleOrderInsert(data);
   } else if (action.as_string() == Fields::Cancel) {
@@ -46,8 +50,7 @@ void OrderEventProcessor::HandleOrderInsert(const boost::json::value &data)
   if (orderInsert.SetData(data)) {   // forward the converted order insert message
     m_OrderHandler.lock()->HandleOrderInsert(std::forward<OrderInsertData>(orderInsert), m_Endpoint);
   } else {
-    LOG_ERROR("Order data validation failed"
-              << " to do add order error reply");
+    _log_error(LOG_DETAILS, "Order data validation failed to do add order error reply");
   }
 }
 
@@ -58,8 +61,7 @@ void OrderEventProcessor::HandleOrderCancel(const boost::json::value &data)
   if (orderCancel.SetData(data)) {
     m_OrderHandler.lock()->HandleOrderCancel(orderCancel, m_Endpoint);
   } else {
-    LOG_ERROR("Order data validation failed"
-              << " to do add order error reply");
+    _log_error(LOG_DETAILS, "Order data validation failed to do add order error reply");
   }
 }
 
@@ -70,8 +72,7 @@ void OrderEventProcessor::HandleOrderAmend(const boost::json::value &data)
   if (orderAmend.SetData(data)) {   // forward the converted order amend message
     m_OrderHandler.lock()->HandleOrderAmend(orderAmend, m_Endpoint);
   } else {
-    LOG_ERROR("Order data validation failed"
-              << " to do add order error reply");
+    _log_error(LOG_DETAILS, "Order data validation failed to do add order error reply");
   }
 }
 

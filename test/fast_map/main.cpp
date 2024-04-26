@@ -1,4 +1,4 @@
-#include "common/log_stream.h"
+#include "common/logger.hpp"
 #include "common/unordered_fast_map.hpp"
 #include <iostream>
 
@@ -36,14 +36,20 @@ std::ostream &operator<<(std::ostream &os, const UnorderedFastMap_t &rhs)
   return os << "}";
 }
 
+template <> struct fmt::formatter<UnorderedFastMap_t> : fmt::ostream_formatter {
+};
+
+template <> struct fmt::formatter<TestStruct> : fmt::ostream_formatter {
+};
+
 int main(const int argc, const char **argv)
 {
-  LogStream::GetInstance().SetLevel(moboware::common::NewLogStream::LEVEL::INFO);
+  Logger::GetInstance().SetLevel(Logger::LogLevel::Info);
 
   UnorderedFastMap_t fastMap{};
   const auto i987{fastMap.find("987")};
   if (fastMap.end() != i987) {
-    LOG_INFO("found");
+    _log_info(LOG_DETAILS, "found");
   }
 
   for (int i = 0; i < 74; i++) {
@@ -54,26 +60,26 @@ int main(const int argc, const char **argv)
     }
   }
 
-  LOG_INFO("Fast map:" << fastMap);
+  _log_info(LOG_DETAILS, "Fast map:P{}", fastMap);
 
   const auto key{"9"};
   const auto findIter1{fastMap.find(key)};
   if (findIter1 != fastMap.end()) {
-    LOG_INFO("Found value:" << findIter1.second());
+    _log_info(LOG_DETAILS, "Found value:{}", findIter1.second());
   } else {
-    LOG_INFO("value " << key << " not found ");
+    _log_info(LOG_DETAILS, "key value {} not found", key);
   }
 
   const auto eraseIter1{fastMap.erase("5")};
   if (eraseIter1 != fastMap.end()) {
-    LOG_INFO("key " << eraseIter1.first() << " value:" << eraseIter1.second());
+    _log_info(LOG_DETAILS, "key {} value:{}", eraseIter1.first(), eraseIter1.second());
     const auto eraseIter2{fastMap.erase(eraseIter1)};
     if (eraseIter2 != fastMap.end()) {
-      LOG_INFO("key " << eraseIter2.first() << " value:" << eraseIter2.second());
+      _log_info(LOG_DETAILS, "key {}, value:{}", eraseIter2.first(), eraseIter2.second());
     }
   }
 
-  LOG_INFO("Bye... fast map:" << fastMap);
+  _log_info(LOG_DETAILS, "Bye... fast map:{}", fastMap);
   fastMap.clear();
   return 0;
 }
