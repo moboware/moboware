@@ -5,9 +5,7 @@ using namespace moboware::modules;
 
 OrderLevel::OrderLevel(OrderInsertData &&orderData)
 {
-  m_TimeQueue.resize(10'000u);
-
-  Insert(std::forward<OrderInsertData>(orderData));
+  const auto insertedOrder{Insert(std::forward<OrderInsertData>(orderData))};
 }
 
 auto OrderLevel::GetSize() const -> std::size_t
@@ -63,9 +61,11 @@ auto OrderLevel::GetLevels(const std::function<bool(const OrderInsertData &)> &o
   return true;
 }
 
-void OrderLevel::Insert(OrderInsertData &&orderData) noexcept
+const OrderInsertData *OrderLevel::Insert(OrderInsertData &&orderData) noexcept
 {
-  m_TimeQueue.push_back(orderData);
+  const auto iter{m_TimeQueue.insert(m_TimeQueue.end(), orderData)};
+
+  return (iter != m_TimeQueue.end()) ? &(*iter) : nullptr;
 }
 
 bool OrderLevel::CancelOrder(const Id_t &orderId) noexcept
@@ -143,4 +143,13 @@ auto OrderLevel::MoveOrder(const Id_t &orderId, const std::function<void(OrderIn
     return true;
   }
   return false;
+}
+
+const OrderInsertData *OrderLevel::GetLastOrder() noexcept
+{
+  if (not m_TimeQueue.empty()) {
+    return &m_TimeQueue.back();
+  }
+
+  return nullptr;
 }

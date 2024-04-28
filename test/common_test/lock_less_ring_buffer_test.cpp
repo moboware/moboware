@@ -33,14 +33,15 @@ TEST(LockLessRingBufferTest, constructTest)
         return true;
       }};
 
+  // push 1
   EXPECT_TRUE(rb.Push(pushFn));
   EXPECT_FALSE(rb.Empty());
   EXPECT_EQ(rb.Size(), 1);
-  //
+  // push 2
   EXPECT_TRUE(rb.Push(pushFn));
   EXPECT_FALSE(rb.Empty());
   EXPECT_EQ(rb.Size(), 2);
-  //
+  // push 3
   EXPECT_TRUE(rb.Push(pushFn));
   EXPECT_FALSE(rb.Empty());
   EXPECT_EQ(rb.Size(), 3);
@@ -52,4 +53,20 @@ TEST(LockLessRingBufferTest, constructTest)
   EXPECT_TRUE(rb.Pop(popFn));
   EXPECT_EQ(rb.Size(), 2);
   EXPECT_FALSE(rb.Empty());
+  // pop 2
+  EXPECT_TRUE(rb.Pop(popFn));
+  EXPECT_EQ(rb.Size(), 1);
+  EXPECT_FALSE(rb.Empty());
+  // pop 3
+  EXPECT_TRUE(rb.Pop(popFn));
+  EXPECT_EQ(rb.Size(), 0);
+  EXPECT_TRUE(rb.Empty());
+  // push 1
+  EXPECT_TRUE(rb.Push(pushFn));
+  EXPECT_FALSE(rb.Empty());
+  EXPECT_EQ(rb.Size(), 1);
+  // push 2
+  EXPECT_TRUE(rb.Push(pushFn));
+  EXPECT_FALSE(rb.Empty());
+  EXPECT_EQ(rb.Size(), 2);
 }

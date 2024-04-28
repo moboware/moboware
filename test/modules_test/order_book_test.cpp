@@ -137,11 +137,11 @@ TEST_F(OrderBookTest, MatchOrdersFullTradeAskSideTest)
                  orderDataBid.GetClientId()};
   EXPECT_CALL(matchingEngine, CreateAndSendMessage(tradeBid, endpoint));
 
-  Trade tradeAsk{orderDataAsk.GetAccount(),
-                 orderDataAsk.GetPrice(),
-                 orderDataAsk.GetVolume(),
-                 orderDataAsk.GetId(),
-                 orderDataAsk.GetClientId()};
+  const Trade tradeAsk{orderDataAsk.GetAccount(),
+                       orderDataAsk.GetPrice(),
+                       orderDataAsk.GetVolume(),
+                       orderDataAsk.GetId(),
+                       orderDataAsk.GetClientId()};
   EXPECT_CALL(matchingEngine, CreateAndSendMessage(tradeAsk, endpoint));
 
   // insert bid order

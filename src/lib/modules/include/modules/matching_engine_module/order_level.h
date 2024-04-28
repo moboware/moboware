@@ -18,10 +18,20 @@ public:
   OrderLevel &operator=(OrderLevel &&) = default;
   ~OrderLevel() = default;
 
-  void Insert(OrderInsertData &&orderData) noexcept;
+  /**
+   * @brief Insert an order at the end of the queue
+   * @param orderData
+   * @return std::optional<const OrderInsertData *>, the inserted order on success
+   */
+  [[nodiscard]] const OrderInsertData *Insert(OrderInsertData &&orderData) noexcept;
   [[nodiscard]] bool CancelOrder(const Id_t &orderId) noexcept;
   [[nodiscard]] bool ChangeOrderVolume(const Id_t &orderId, const VolumeType_t newVolume) noexcept;
 
+  /**
+   * @brief Get the Last Order object, returns the last order in the time queue when not emtpy
+   * @return const OrderInsertData*, pointer to the last order in the queue or a nullptr
+   */
+  [[nodiscard]] const OrderInsertData *GetLastOrder() noexcept;
   [[nodiscard]] auto GetSize() const -> std::size_t;
   [[nodiscard]] auto IsEmpty() const -> bool;
 

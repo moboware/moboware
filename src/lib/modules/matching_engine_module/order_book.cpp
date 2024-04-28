@@ -3,32 +3,40 @@
 
 using namespace moboware::modules;
 
-template <typename TCompare> bool OrderBook<TCompare>::Insert(OrderInsertData &&orderInsert)
+template <typename TCompare> const OrderInsertData *OrderBook<TCompare>::Insert(OrderInsertData &&orderInsert)
 {
   auto iter{m_OrderBookMap.find(orderInsert.GetPrice())};
   if (iter != std::end(m_OrderBookMap)) {
     /// already more orders on this price level, add this one to it.
     auto &orderPriceLevel{iter->second};
-    orderPriceLevel.Insert(std::forward<OrderInsertData>(orderInsert));
 
-    _log_debug(LOG_DETAILS, "Order added at price level:{}, id:{}", orderInsert.GetPriceAsDouble(), orderInsert.GetId());
+    const auto insertedOrder{orderPriceLevel.Insert(std::forward<OrderInsertData>(orderInsert))};
 
-    return true;
+    _log_debug(LOG_DETAILS,
+               "Order added at price level:{}, id:{}",
+               insertedOrder->GetPriceAsDouble(),
+               insertedOrder->GetId());
+
+    return insertedOrder;
   } else {
     /// add new order to the price level
     const auto pair{m_OrderBookMap.emplace(orderInsert.GetPrice(), std::forward<OrderInsertData>(orderInsert))};
     if (pair.second) {
+      auto &orderPriceLevel{pair.first->second};
 
-      _log_debug(LOG_DETAILS,
-                 "Order added at price level:{}@{}, id:{}",
-                 orderInsert.GetVolume(),
-                 orderInsert.GetPriceAsDouble(),
-                 orderInsert.GetId());
+      const auto insertedOrder{orderPriceLevel.GetLastOrder()};
+      if (insertedOrder) {
+        _log_debug(LOG_DETAILS,
+                   "Order added at price level:{}@{}, id:{}",
+                   insertedOrder->GetVolume(),
+                   insertedOrder->GetPriceAsDouble(),
+                   insertedOrder->GetId());
 
-      return true;
+        return insertedOrder;
+      }
     }
   }
-  return false;
+  return {};   // false
 }
 
 template <typename TCompare> bool OrderBook<TCompare>::Amend(const OrderAmendData &orderAmend)

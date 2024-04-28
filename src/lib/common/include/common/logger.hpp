@@ -65,6 +65,7 @@ struct LogLineDetails {
   const char *function{};
 };
 
+// returns a LogLineDetails struct, used to get the current log line details
 #define LOG_DETAILS                                                                                                         \
   {                                                                                                                         \
     __FILE__, __LINE__, __FUNCTION__                                                                                        \
@@ -104,7 +105,11 @@ public:
     m_LogConsumerThread = std::jthread(threadFunction);
   }
 
-  ~Logger() = default;
+  ~Logger()
+  {
+    m_LogConsumerThread.request_stop();
+  }
+
   Logger(const Logger &) = delete;
   Logger(Logger &&) = delete;
   Logger &operator=(const Logger &) = delete;

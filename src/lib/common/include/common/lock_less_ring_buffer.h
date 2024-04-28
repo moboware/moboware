@@ -19,7 +19,7 @@ public:
   using Buffer_t = TBufferType;
   static constexpr int CACHE_LINE_SIZE = 64;
 
-  LockLessRingBuffer() = default;
+  LockLessRingBuffer()= default;
   LockLessRingBuffer(const LockLessRingBuffer &) = delete;
   LockLessRingBuffer(LockLessRingBuffer &&) = delete;
   LockLessRingBuffer &operator=(const LockLessRingBuffer &) = delete;
@@ -30,9 +30,10 @@ public:
   // multiple producer/consumer version
   bool Push(const std::function<bool(Buffer_t &slot, const QueueLengthType_t &headPosition)> &pushFn)
   {
-    // if (not Empty()) {
-    //   return false;   // The buffer is full!!!
-    // }
+    if (not HasSpace()) {
+    //if (Size() == queueLength) {
+      return false;   // The buffer is full!!!
+    }
 
     const auto headPosition{m_Head.fetch_add(1, std::memory_order_seq_cst) % queueLength};
 
@@ -46,9 +47,9 @@ public:
 
   bool Pop(const std::function<void(const Buffer_t &)> &popFn) noexcept
   {
-    // if (Empty()) {
-    //   return false;   // buffer is empty;
-    // }
+    if (Empty()) {
+      return false;   // buffer is empty;
+    }
 
     const auto tailPosition{m_Tail.fetch_add(1, std::memory_order_seq_cst) % queueLength};
 
@@ -112,7 +113,7 @@ public:
   }
 #endif
 
-  [[nodiscard]] QueueLengthType_t Size() const noexcept
+  [[nodiscard]] inline QueueLengthType_t Size() const noexcept
   {
     const auto headPosition{m_Head.load(std::memory_order_relaxed)};
     const auto tailPosition{m_Tail.load(std::memory_order_relaxed)};
@@ -121,22 +122,23 @@ public:
     return headTailPosition;
   }
 
-  QueueLengthType_t Capacity() const noexcept
+  inline QueueLengthType_t Capacity() const noexcept
   {
     return queueLength;
   }
 
-  bool HasSpace() const noexcept
+  inline bool HasSpace() const noexcept
   {
     return Size() < Capacity();
   }
 
-  [[nodiscard]] bool Empty() const
+  [[nodiscard]] inline bool Empty() const
   {
-    const auto headPosition{m_Head.load(std::memory_order_relaxed) % queueLength};
-    const auto tailPosition{m_Tail.load(std::memory_order_relaxed) % queueLength};
-    auto ret{headPosition > tailPosition};
-    return not ret;
+    const auto headPosition{m_Head.load(std::memory_order_relaxed)};
+    const auto tailPosition{m_Tail.load(std::memory_order_relaxed)};
+
+    const bool isEmpty{(headPosition - tailPosition) == 0};
+    return isEmpty;
   }
 
   void Signal(const bool tickleThread = true)

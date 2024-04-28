@@ -50,14 +50,17 @@ void MatchingEngine::OrderInsert(OrderInsertData &&orderInsert, const boost::asi
 
   _log_info(LOG_DETAILS, "OrderInsert:{}", orderInsert);
 
-  const auto Insert{[&](OrderInsertData &&orderInsert) {
+  const auto InsertOrderFn{[&](OrderInsertData &&orderInsert) {
     return (orderInsert.GetIsBuySide() ? m_Bids.Insert(std::forward<OrderInsertData>(orderInsert))
                                        : m_Asks.Insert(std::forward<OrderInsertData>(orderInsert)));
   }};
 
-  if (Insert(std::forward<OrderInsertData>(orderInsert))) {
+  const auto insertedOrder{
+      InsertOrderFn(std::forward<OrderInsertData>(orderInsert))};   // order is moved and after this not valid anymore, you
+                                                                    // should use the returned inserted order pointer
+  if (insertedOrder) {
     // send order insert reply
-    const OrderReply orderInsertReply{orderInsert.GetId(), orderInsert.GetClientId()};
+    const OrderReply orderInsertReply{insertedOrder->GetId(), insertedOrder->GetClientId()};
     CreateAndSendMessage(orderInsertReply, endpoint);
     _log_info(LOG_DETAILS, "OrderReply:{}", orderInsertReply);
 
