@@ -3,17 +3,6 @@
 
 using namespace moboware::common;
 
-void vlog(const char *file, int line, fmt::string_view format, fmt::format_args args)
-{
-  fmt::print("{}: {}: ", file, line);
-  fmt::vprint(format, args);
-}
-
-template <typename... T> void log(const char *file, int line, fmt::format_string<T...> format, T &&...args)
-{
-  vlog(file, line, format, fmt::make_format_args(args...));
-}
-
 int main(int argc, char **argv)
 {
   Logger::GetInstance().SetLevel(Logger::LogLevel::Debug);
