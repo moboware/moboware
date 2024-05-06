@@ -276,7 +276,10 @@ inline auto fmt::formatter<Logger::LogLevel>::format(Logger::LogLevel l, fmt::fo
   case Logger::LogLevel::Warning:
     name = "WARN";
     break;
-  case Logger::LogLevel::None:
+    case Logger::LogLevel::Fatal:
+    name = "FATAL";
+    break;
+    case Logger::LogLevel::None:
     name = "NONE";
     break;
   }

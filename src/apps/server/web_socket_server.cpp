@@ -1,4 +1,3 @@
-
 #include "applications/application.h"
 
 #include "common/logger.hpp"

@@ -35,9 +35,22 @@ endif()
 set(CMAKE_CXX_FLAGS_RELEASE ${RELEASE_FLAGS}) # debug info in release mode
 
 # find pacakges
+# openssl package
 find_package(OpenSSL REQUIRED)
 find_package(Threads)
-find_package(Boost REQUIRED COMPONENTS python3.10 )
+# boost package
+set(Boost_USE_STATIC_LIBS On)
+find_package(
+  Boost
+  COMPONENTS thread
+             coroutine
+             context
+             date_time
+             filesystem
+             program_options
+             system
+  REQUIRED)
+#find_package(Boost REQUIRED COMPONENTS python3.10 )
 find_package(fmt REQUIRED)
 
 include_directories(${Boost_INCLUDE_DIRS})

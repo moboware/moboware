@@ -18,7 +18,7 @@ public:
 private:
 };
 
-class DataHandler {
+class DataHandler {   // callback class
 public:
   void OnRead(const std::string_view &data)
   {
@@ -28,6 +28,7 @@ public:
 
 int main(int, char **)
 {
+
   DataReader<DataHandler> dataReader;
   dataReader.ReadData();
   return 0;

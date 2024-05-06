@@ -1,35 +1,52 @@
 #include "common/service.h"
 #include "common/logger.hpp"
-#include <thread>
 
 using namespace moboware::common;
 
-constexpr auto numberOfServiceThreads{5U};
-
-Service::Service()
-    : m_IoService(numberOfServiceThreads)
+Service::Service(const std::uint8_t numberOfCpuThreads)
+    : m_IoService(numberOfCpuThreads)
+    , m_NumberOfServiceThreads(numberOfCpuThreads)
 {
 }
 
 int Service::Run()
 {
   // Run the I/O service on the requested number of threads
-  std::vector<std::thread> v;
-  v.reserve(numberOfServiceThreads - 1);
-  for (auto i = numberOfServiceThreads - 1; i > 0; --i) {
-    v.emplace_back([this] {
-      m_IoService.run();
+  for (int cpu = 1; cpu < m_NumberOfServiceThreads; cpu++) {
+    m_ServiceThreads.emplace_back([&, cpu](const std::stop_token & /*stoken*/) {
+      try {
+        // SetThreadAffinity(cpu);
+
+        m_IoService.run();
+      } catch (const std::exception &e) {
+        _log_error(LOG_DETAILS, "Fatal exception {}", e.what());
+        this->Stop();
+      } catch (...) {
+        _log_error(LOG_DETAILS, "Unhandled exception");
+        this->Stop();
+      }
     });
   }
+
   //
+  auto work{boost::asio::make_work_guard(m_IoService.get_executor())};
+
   m_IoService.run();
+
+  _log_info(LOG_DETAILS, "Stopped service, exiting");
 
   return EXIT_SUCCESS;
 }
 
 void Service::Stop()
 {
-  if (!m_IoService.stopped()) {
+  _log_info(LOG_DETAILS, "Stopping services...");
+
+  for (auto cpu = 1u; cpu < m_NumberOfServiceThreads; cpu++) {
+    m_IoService.stop();
+  }
+
+  if (not m_IoService.stopped()) {
     m_IoService.stop();
   }
 }
