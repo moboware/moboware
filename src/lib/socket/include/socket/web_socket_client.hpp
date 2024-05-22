@@ -16,16 +16,22 @@ public:
   WebSocketClient(WebSocketClient &&) = delete;
   WebSocketClient &operator=(const WebSocketClient &) = delete;
   WebSocketClient &operator=(WebSocketClient &&) = delete;
-  ~WebSocketClient() = default;
+  virtual ~WebSocketClient() = default;
+
+  inline void SetTarget(const std::string &target)
+  {
+    m_Target = target;
+  }
 
   [[nodiscard]] bool Start(const std::string &address, const std::uint16_t port) final;
   [[nodiscard]] auto SendWebSocketData(const boost::asio::const_buffer &sendBuffer) -> std::size_t;
 
 private:
-  void SendPingRequest() final;
+  bool SendPingRequest() final;
   using WebSocketClientServer_t = WebSocketClientServer<TSessionCallback>;
   using WebSocketSession_t = WebSocketSession<TSessionCallback>;
   std::shared_ptr<WebSocketSession_t> m_Session;
+  std::string m_Target{};
 };
 
 template <typename TSessionCallback>   //
@@ -41,16 +47,20 @@ auto WebSocketClient<TSessionCallback>::Start(const std::string &address, const 
   _log_trace(LOG_DETAILS, "Connecting web socket client, {}:{}", address, port);
 
   boost::asio::ip::tcp::socket webSocket(WebSocketClientServer_t::m_Strand.get_inner_executor());
-  m_Session = std::make_shared<WebSocketSession_t>(WebSocketClientServer_t::m_Service,
-                                                   WebSocketClientServer_t::m_SslContext,
-                                                   WebSocketClientServer_t::m_SessionCallback,
-                                                   std::move(webSocket),
-                                                   [](const boost::asio::ip::tcp::endpoint &){});
+  m_Session = std::make_shared<WebSocketSession_t>(
+      WebSocketClientServer_t::m_Service,
+      WebSocketClientServer_t::m_SslContext,
+      WebSocketClientServer_t::m_SessionCallback,
+      std::move(webSocket),
+      [&](const boost::asio::ip::tcp::endpoint &endpoint) {
+        //
+        WebSocketClientServer_t::m_SessionCallback.OnSessionClosed(endpoint);
+      },
+      m_Target);
 
-  if (m_Session->Connect(address, port)) {   // start ping timer
-
+  if (m_Session->Connect(address, port)) {
+    // start ping timer
     WebSocketClientServer_t::StartPingTimer(std::chrono::milliseconds(3000));
-
     return true;
   }
   return false;
@@ -63,9 +73,9 @@ auto WebSocketClient<TSessionCallback>::SendWebSocketData(const boost::asio::con
 }
 
 template <typename TSessionCallback>   //
-void WebSocketClient<TSessionCallback>::SendPingRequest()
+bool WebSocketClient<TSessionCallback>::SendPingRequest()
 {
-  m_Session->SendPingRequest();
+  return m_Session->SendPingRequest();
 }
 
 }   // namespace moboware::web_socket

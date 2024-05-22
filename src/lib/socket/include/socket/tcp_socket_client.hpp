@@ -17,7 +17,7 @@ public:
   TcpSocketClient(TcpSocketClient &&) = delete;
   TcpSocketClient &operator=(const TcpSocketClient &) = delete;
   TcpSocketClient &operator=(TcpSocketClient &&) = delete;
-  ~TcpSocketClient() = default;
+  virtual ~TcpSocketClient() = default;
 
   [[nodiscard]] bool Start(const std::string &address, const std::uint16_t port) final;
   [[nodiscard]] auto SendSocketData(const std::vector<boost::asio::const_buffer> &sendBuffer) -> std::size_t;

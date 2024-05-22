@@ -15,7 +15,7 @@ public:
   SslSocketClient(SslSocketClient &&) = delete;
   SslSocketClient &operator=(const SslSocketClient &) = delete;
   SslSocketClient &operator=(SslSocketClient &&) = delete;
-  ~SslSocketClient() = default;
+  virtual ~SslSocketClient() = default;
 
   [[nodiscard]] std::size_t SendSocketData(const std::vector<boost::asio::const_buffer> &sendBuffer);
   [[nodiscard]] bool Start(const std::string &address, const std::uint16_t port) override;
@@ -26,7 +26,13 @@ private:
 
   std::shared_ptr<SslSocketSession_t> m_Session;
 };
-
+/**
+ * @brief Construct a new Ssl Socket Client< T Session Callback>:: Ssl Socket Client object
+ *
+ * @tparam TSessionCallback
+ * @param service
+ * @param sessionCallback
+ */
 template <typename TSessionCallback>
 SslSocketClient<TSessionCallback>::SslSocketClient(const moboware::common::ServicePtr &service,
                                                    TSessionCallback &sessionCallback)
@@ -45,7 +51,9 @@ auto SslSocketClient<TSessionCallback>::Start(const std::string &address, const 
                                                    SslSocketClientServer_t::m_SslContext,
                                                    SslSocketClientServer_t::m_SessionCallback,
                                                    std::move(sslSocket),
-                                                   [](const boost::asio::ip::tcp::endpoint &) {
+                                                   [&](const boost::asio::ip::tcp::endpoint &endpoint) {
+                                                     // report closed session at the client
+                                                     SslSocketClientServer_t::m_SessionCallback.OnSessionClosed(endpoint);
                                                    });
 
   return m_Session->Connect(address, port);

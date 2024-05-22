@@ -58,12 +58,13 @@ private:
 };
 
 template <typename TSessionCallback>   //
-SslSocketSession<TSessionCallback>::SslSocketSession(const common::ServicePtr &service,
-                                                     boost::asio::ssl::context &ssl_ctx,
-                                                     TSessionCallback &callback,
-                                                     boost::asio::ip::tcp::socket &&socket,
-                                                     const SessionBase_t::SessionClosedCleanupHandlerFn &sessionClosedHandlerFn)
-    : moboware::socket::SocketSessionBase<TSessionCallback>(service, callback,sessionClosedHandlerFn)
+SslSocketSession<TSessionCallback>::SslSocketSession(
+    const common::ServicePtr &service,
+    boost::asio::ssl::context &ssl_ctx,
+    TSessionCallback &callback,
+    boost::asio::ip::tcp::socket &&socket,
+    const SessionBase_t::SessionClosedCleanupHandlerFn &sessionClosedHandlerFn)
+    : moboware::socket::SocketSessionBase<TSessionCallback>(service, callback, sessionClosedHandlerFn)
     , m_SslSocketStream(std::move(socket), ssl_ctx)
 {
 }
@@ -129,12 +130,12 @@ bool SslSocketSession<TSessionCallback>::Connect(const std::string &address, con
   boost::beast::get_lowest_layer(m_SslSocketStream).set_option(boost::asio::ip::tcp::no_delay(true));
   boost::beast::get_lowest_layer(m_SslSocketStream).set_option(boost::asio::socket_base::linger(true, 0));
 
-  //////////////////////////////////////////////////////////////////////////
   // Perform SSL handshake and verify the remote host's certificate.
-  //////////////////////////////////////////////////////////////////////////
   m_SslSocketStream.set_verify_mode(boost::asio::ssl::verify_peer);
   m_SslSocketStream.set_verify_callback(boost::asio::ssl::host_name_verification(address));
+
   m_SslSocketStream.handshake(boost::asio::ssl::stream_base::client, ec);
+
   if (ec.failed()) {
     _log_fatal(LOG_DETAILS, "Failed to handshake to ssl socket, {}:{} {}", address, port, ec.what());
     return false;
@@ -147,9 +148,8 @@ bool SslSocketSession<TSessionCallback>::Connect(const std::string &address, con
   SessionBase_t::SetTcpBufferSizes(boost::beast::get_lowest_layer(m_SslSocketStream));
 
   _log_info(LOG_DETAILS, "Ready for data reading/writing");
-  //////////////////////////////////////////////////////////////////////////
+
   // start reading data
-  //////////////////////////////////////////////////////////////////////////
   SessionBase_t::ReadData(boost::beast::get_lowest_layer(m_SslSocketStream));
 
   return true;

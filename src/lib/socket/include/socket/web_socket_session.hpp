@@ -30,7 +30,8 @@ public:
                             boost::asio::ssl::context &ssl_ctx,
                             TSessionCallback &sessionCallback,
                             boost::asio::ip::tcp::socket &&webSocket,
-                            const SessionBase_t::SessionClosedCleanupHandlerFn &);
+                            const SessionBase_t::SessionClosedCleanupHandlerFn &,
+                            const std::string &target = "/");
   /**
    * @brief Performs a server handshake and accept on an incoming client connection and start reading data
    */
@@ -54,9 +55,8 @@ public:
 
   [[nodiscard]] auto SendWebSocketData(const boost::asio::const_buffer &sendBuffer) -> bool;
 
-  boost::beast::tcp_stream::endpoint_type GetRemoteEndpoint() const;
-
-  void SendPingRequest();
+  [[nodiscard]] bool SendPongReply(const boost::asio::const_buffer &pongBuffer);
+  [[nodiscard]] bool SendPingRequest();
 
   std::size_t GetReceiveBufferSize() const;
   bool SetReceiveBufferSize(const std::size_t size);
@@ -65,9 +65,8 @@ public:
   bool SetSendBufferSize(const std::size_t size);
 
 private:
-  void SetRemoteEndpoint();
   void ReadData();
-  void HandleControllCallback(const boost::beast::websocket::frame_type kind, const boost::beast::string_view &payload);
+  void HandleControlCallback(const boost::beast::websocket::frame_type kind, const boost::beast::string_view &payload);
 
   std::size_t ReadBuffer(socket::RingBuffer_t::BufferType_t *dataBuffer, const std::size_t requestedBufferSize) final
   {
@@ -85,8 +84,8 @@ private:
   SslWebSocket_t m_WebSocketStream;
   boost::beast::flat_buffer m_ReadBuffer;
   //
-  boost::beast::tcp_stream::endpoint_type m_RemoteEndpoint;
-  std::atomic<bool> m_IsSending{};
+  // std::atomic<bool> m_IsSending{};
+  std::string m_Target;
 };
 
 template <typename TSessionCallback>   //
@@ -95,10 +94,12 @@ WebSocketSession<TSessionCallback>::WebSocketSession(
     boost::asio::ssl::context &ssl_ctx,
     TSessionCallback &callback,
     boost::asio::ip::tcp::socket &&webSocket,
-    const SessionBase_t::SessionClosedCleanupHandlerFn &sessionClosedHandlerFn)
+    const SessionBase_t::SessionClosedCleanupHandlerFn &sessionClosedHandlerFn,
+    const std::string &target)
     : SessionBase_t(service, callback, sessionClosedHandlerFn)
     , m_Service(service)
     , m_WebSocketStream(std::move(webSocket), ssl_ctx)
+    , m_Target(target)
 {
 }
 
@@ -107,7 +108,7 @@ bool WebSocketSession<TSessionCallback>::Accept()
 {
   // webserver accept
 
-  WebSocketSession_t::SetRemoteEndpoint();
+  SessionBase_t::SetRemoteEndpoint(boost::beast::get_lowest_layer(m_WebSocketStream).socket());
 
   // Set suggested timeout settings for the websocket
   boost::system::error_code ec;
@@ -132,11 +133,11 @@ bool WebSocketSession<TSessionCallback>::Accept()
   _log_info(LOG_DETAILS, "Start websocket ping timer....");
   m_WebSocketStream.control_callback(
       [&](const boost::beast::websocket::frame_type kind, const boost::beast::string_view &payload) {
-        HandleControllCallback(kind, payload);
+        HandleControlCallback(kind, payload);
       });
 
   // inform about new connection
-  SessionBase_t::m_DataHandlerCallback.OnSessionConnected(GetRemoteEndpoint());
+  SessionBase_t::m_DataHandlerCallback.OnSessionConnected(SessionBase_t::GetRemoteEndpoint());
 
   // get/set tcp send/receive buffer sizes
   _log_info(LOG_DETAILS, "Receive tcp buffer size:{}", GetReceiveBufferSize());
@@ -151,7 +152,7 @@ bool WebSocketSession<TSessionCallback>::Accept()
   return true;
 }
 
-template <typename TSessionCallback>   //
+template <typename TSessionCallback>   // web socket client connect
 bool WebSocketSession<TSessionCallback>::Connect(const std::string &address, const std::uint16_t port)
 {
   // websocket client connect
@@ -184,27 +185,31 @@ bool WebSocketSession<TSessionCallback>::Connect(const std::string &address, con
   // Make the connection on the IP address we get from a lookup
   //////////////////////////////////////////////////////////////////////////
   const boost::asio::ip::tcp::endpoint &endpoint{resolveResults.begin()->endpoint()};
-  m_WebSocketStream.next_layer().next_layer().connect(endpoint, ec);
+  boost::beast::get_lowest_layer(m_WebSocketStream).connect(endpoint, ec);
   if (ec.failed()) {
     _log_error(LOG_DETAILS, "Connect to Web socket failed, {}:{} {}", address, port, ec.what());
     return false;
   }
 
-  WebSocketSession_t::SetRemoteEndpoint();
+  SessionBase_t::SetRemoteEndpoint(boost::beast::get_lowest_layer(m_WebSocketStream).socket());
 
   //////////////////////////////////////////////////////////////////////////
   // set SNI hostname on tls extention
   //////////////////////////////////////////////////////////////////////////
   // todo check if the ssl socket implementation can be used here and not use native ssl calls!
-  if (not SSL_set_tlsext_host_name(m_WebSocketStream.next_layer().native_handle(), address.c_str())) {
-    _log_error(LOG_DETAILS, "Failed to set tls extention");
-    return false;
-  }
+  //  if (not SSL_set_tlsext_host_name(m_WebSocketStream.next_layer().native_handle(), address.c_str())) {
+  //    _log_error(LOG_DETAILS, "Failed to set tls extention");
+  //    return false;
+  //  }
 
   //////////////////////////////////////////////////////////////////////////
   // Perform the SSL handshake
   //////////////////////////////////////////////////////////////////////////
-  m_WebSocketStream.next_layer().handshake(boost::asio::ssl::stream_base::client);
+  m_WebSocketStream.next_layer().handshake(boost::asio::ssl::stream_base::client, ec);
+  if (ec.failed()) {
+    _log_error(LOG_DETAILS, "Handshake failed:{}:{} {}", address, port, ec.what());
+    return false;
+  }
 
   //////////////////////////////////////////////////////////////////////////
   // Set a decorator to change the User-Agent of the handshake
@@ -214,31 +219,40 @@ bool WebSocketSession<TSessionCallback>::Connect(const std::string &address, con
         req.set(boost::beast::http::field::user_agent, std::string(BOOST_BEAST_VERSION_STRING) + " websocket-client");
       }));
 
+  m_WebSocketStream.set_option(boost::beast::websocket::stream_base::timeout::suggested(boost::beast::role_type::client));
+
   //////////////////////////////////////////////////////////////////////////
-  // Perform the websocket handshake
+  // Perform the SSL and websocket handshake
   //////////////////////////////////////////////////////////////////////////
+  // perform ssl handshake first, after that the wss handshake
+  m_WebSocketStream.next_layer().handshake(boost::asio::ssl::stream_base::client, ec);
+  if (ec.failed()) {
+    _log_error(LOG_DETAILS, "SSL socket handshake failed, {}:{}, {}", address, port, ec.what());
+    return false;
+  }
 
   // Update the host_ string. This will provide the value of the
   // Host HTTP header during the WebSocket handshake.
   // See https://tools.ietf.org/html/rfc7230#section-5.4
   const auto host{address + ':' + std::to_string(port)};
 
-  m_WebSocketStream.handshake(host, "/", ec);
+  m_WebSocketStream.handshake(host, m_Target, ec);
   if (ec.failed()) {
     _log_error(LOG_DETAILS, "Web socket handshake failed, {}:{}, {}", address, port, ec.what());
     return false;
   }
+
   //////////////////////////////////////////////////////////////////////////
   // set control layer handling like, ping, pong and close
   //////////////////////////////////////////////////////////////////////////
   _log_info(LOG_DETAILS, "Start websocket ping timer....");
   m_WebSocketStream.control_callback(
       [&](const boost::beast::websocket::frame_type kind, const boost::beast::string_view &payload) {
-        HandleControllCallback(kind, payload);
+        HandleControlCallback(kind, payload);
       });
 
   // inform about connected client/server
-  SessionBase_t::m_DataHandlerCallback.OnSessionConnected(GetRemoteEndpoint());
+  SessionBase_t::m_DataHandlerCallback.OnSessionConnected(SessionBase_t::GetRemoteEndpoint());
 
   // get/set tcp send/receive buffer sizes
   _log_info(LOG_DETAILS, "Receive tcp buffer size:{}", GetReceiveBufferSize());
@@ -269,11 +283,18 @@ void WebSocketSession<TSessionCallback>::ReadData()
       // This indicates that the session was closed
       if (ec == boost::beast::websocket::error::closed) {
         _log_error(LOG_DETAILS, "Read error, closed Web socket, {}", ec.what());
-        SessionBase_t::m_DataHandlerCallback.OnSessionClosed(SessionBase_t::GetRemoteEndpoint());
+
+        SessionBase_t::m_SessionClosedCleanupHandler(SessionBase_t::GetRemoteEndpoint());
         return;
       } else if (ec.failed()) {
-        _log_error(LOG_DETAILS, "Read error: {}", ec.what());
-        SessionBase_t::m_DataHandlerCallback.OnSessionClosed(SessionBase_t::GetRemoteEndpoint());
+        _log_error(LOG_DETAILS,
+                   "Read error: {}, endpoint:{}@{}",
+                   ec.what(),
+                   SessionBase_t::GetRemoteEndpoint().port(),
+                   SessionBase_t::GetRemoteEndpoint().address().to_string());
+
+        SessionBase_t::m_SessionClosedCleanupHandler(SessionBase_t::GetRemoteEndpoint());
+
         return;
       } else {
         // forward read data to channel
@@ -291,45 +312,42 @@ void WebSocketSession<TSessionCallback>::ReadData()
 }
 
 template <typename TSessionCallback>   //
-void WebSocketSession<TSessionCallback>::SendPingRequest()
+bool WebSocketSession<TSessionCallback>::SendPongReply(const boost::asio::const_buffer &pongBuffer)
 {
+  const auto pongData = std::string((const char *)pongBuffer.data(), pongBuffer.size());
 
-#if 0
-  // post the ping handling so that it runs in a different context, if not done we do get unclear 'cipher' crashes on the ssl execution.
-  // looks like it is not possible to call ping together
+  boost::beast::error_code ec{};
+  m_WebSocketStream.pong(pongData.c_str(), ec);
+  // handle ping request with a pong reply
+  if (ec.failed()) {
+    _log_error(LOG_DETAILS, "Failed to send pong reply {}", ec.what());
 
-  boost::asio::dispatch(boost::asio::bind_executor(m_WebSocketStream.get_executor(), [&]() {   //
-    const auto pingMsg{"ping@" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count())};
-    _log_trace(LOG_DETAILS,"Send ping request {}", pingMsg);
+    SessionBase_t::m_SessionClosedCleanupHandler(SessionBase_t::GetRemoteEndpoint());
+    return false;
+  }
+  return true;
+}
 
-    // send web socket ping request
-    m_WebSocketStream.async_ping(pingMsg.c_str(), beast::bind_front_handler([&](const beast::error_code &ec) {
-                                   // handle on_ping
-                                   if (ec.failed()) {
-                                     _log_error(LOG_DETAILS,"Failed to send ping request {}", ec.what());
-
-                                     SessionBase_t::m_DataHandlerCallback.OnSessionClosed(GetRemoteEndpoint());
-                                   }
-                                 }));
-  }));
-#else
+template <typename TSessionCallback>   //
+bool WebSocketSession<TSessionCallback>::SendPingRequest()
+{
   const auto pingMsg{"ping@" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count())};
   _log_trace(LOG_DETAILS,
-             "Send ping request {} {}:{}",
+             "Send ping request {} {}@{}",
              pingMsg,
-             GetRemoteEndpoint().address().to_string(),
-             GetRemoteEndpoint().port());
+             SessionBase_t::GetRemoteEndpoint().port(),
+             SessionBase_t::GetRemoteEndpoint().address().to_string());
 
-  boost::beast::error_code ec;
+  boost::beast::error_code ec{};
   m_WebSocketStream.ping(pingMsg.c_str(), ec);
   // handle on_ping
   if (ec.failed()) {
     _log_error(LOG_DETAILS, "Failed to send ping request {}", ec.what());
 
-    SessionBase_t::m_DataHandlerCallback.OnSessionClosed(GetRemoteEndpoint());
+    SessionBase_t::m_SessionClosedCleanupHandler(SessionBase_t::GetRemoteEndpoint());
+    return false;
   }
-
-#endif
+  return true;
 }
 
 template <typename TSessionCallback>   //
@@ -349,32 +367,39 @@ bool WebSocketSession<TSessionCallback>::SendWebSocketData(const boost::asio::co
 }
 
 template <typename TSessionCallback>   //
-void WebSocketSession<TSessionCallback>::HandleControllCallback(const boost::beast::websocket::frame_type kind,
-                                                                const boost::beast::string_view &payload)
+void WebSocketSession<TSessionCallback>::HandleControlCallback(const boost::beast::websocket::frame_type kind,
+                                                               const boost::beast::string_view &payload)
 {
-
   switch (kind) {
   case boost::beast::websocket::frame_type::close: {
-    _log_info(LOG_DETAILS,
-              "Receive session close {} {}:{}",
-              std::string_view(payload.data(), payload.size()),
-              GetRemoteEndpoint().address().to_string(),
-              GetRemoteEndpoint().port());
-    SessionBase_t::m_DataHandlerCallback.OnSessionClosed(GetRemoteEndpoint());
+    _log_warning(LOG_DETAILS,
+                 "Receive session close {} {}:{}",
+                 std::string_view(payload.data(), payload.size()),
+                 SessionBase_t::GetRemoteEndpoint().address().to_string(),
+                 SessionBase_t::GetRemoteEndpoint().port());
+
+    SessionBase_t::m_SessionClosedCleanupHandler(SessionBase_t::GetRemoteEndpoint());
+
   } break;
   case boost::beast::websocket::frame_type::ping: {
-    _log_trace(LOG_DETAILS,
-               "Received ping {} {}:{}",
-               std::string_view(payload.data(), payload.size()),
-               GetRemoteEndpoint().address().to_string(),
-               GetRemoteEndpoint().port());
+    _log_info(LOG_DETAILS,
+              "Received ping {} {}:{}",
+              std::string_view(payload.data(), payload.size()),
+              SessionBase_t::GetRemoteEndpoint().address().to_string(),
+              SessionBase_t::GetRemoteEndpoint().port());
+    // send pong reply
+    const boost::asio::const_buffer pong_buffer{payload.data(), payload.size()};
+    if (not SendPongReply(pong_buffer)) {
+      _log_error(LOG_DETAILS, "Failed to send pong {}", std::string_view(payload.data(), payload.size()));
+    }
   } break;
   case boost::beast::websocket::frame_type::pong: {
-    _log_trace(LOG_DETAILS,
-               "Received pong {} {}:{}",
-               std::string_view(payload.data(), payload.size()),
-               GetRemoteEndpoint().address().to_string(),
-               GetRemoteEndpoint().port());
+    _log_info(LOG_DETAILS,
+              "Received pong {} {}:{}",
+              std::string_view(payload.data(), payload.size()),
+              SessionBase_t::GetRemoteEndpoint().address().to_string(),
+              SessionBase_t::GetRemoteEndpoint().port());
+
   } break;
   }
 }
@@ -385,24 +410,24 @@ bool WebSocketSession<TSessionCallback>::IsOpen() const
   return m_WebSocketStream.is_open();
 }
 
-template <typename TSessionCallback>   //
-boost::beast::tcp_stream::endpoint_type WebSocketSession<TSessionCallback>::GetRemoteEndpoint() const
-{
-  return m_RemoteEndpoint;
-}
+// template <typename TSessionCallback>   //
+// boost::beast::tcp_stream::endpoint_type WebSocketSession<TSessionCallback>::GetRemoteEndpoint() const
+//{
+//   return m_RemoteEndpoint;
+// }
 
-template <typename TSessionCallback>   //
-void WebSocketSession<TSessionCallback>::SetRemoteEndpoint()
-{
-  m_RemoteEndpoint = m_WebSocketStream.next_layer().next_layer().socket().remote_endpoint();
-}
+// template <typename TSessionCallback>   //
+// void WebSocketSession<TSessionCallback>::SetRemoteEndpoint()
+//{
+//   m_RemoteEndpoint = boost::beast::get_lowest_layer(m_WebSocketStream).socket().remote_endpoint();
+// }
 
 template <typename TSessionCallback>   //
 std::size_t WebSocketSession<TSessionCallback>::GetReceiveBufferSize() const
 {
   boost::system::error_code ec;
   boost::asio::socket_base::receive_buffer_size receiveBufferSizeOption{};
-  m_WebSocketStream.next_layer().next_layer().socket().get_option(receiveBufferSizeOption, ec);
+  boost::beast::get_lowest_layer(m_WebSocketStream).socket().get_option(receiveBufferSizeOption, ec);
   if (ec) {
     _log_error(LOG_DETAILS, "Get tcp receive size failed:{}", ec.what());
     return 0;
@@ -415,7 +440,7 @@ bool WebSocketSession<TSessionCallback>::SetReceiveBufferSize(const std::size_t 
 {
   boost::system::error_code ec;
   boost::asio::socket_base::receive_buffer_size receiveBufferSizeOption(size);
-  m_WebSocketStream.next_layer().next_layer().socket().set_option(receiveBufferSizeOption, ec);
+  boost::beast::get_lowest_layer(m_WebSocketStream).socket().set_option(receiveBufferSizeOption, ec);
   if (ec) {
     _log_error(LOG_DETAILS, "Set tcp receive size failed:{}", ec.what());
     return false;
@@ -431,7 +456,8 @@ std::size_t WebSocketSession<TSessionCallback>::GetSendBufferSize() const
 {
   boost::system::error_code ec{};
   boost::asio::socket_base::send_buffer_size sendBufferSizeOption{};
-  m_WebSocketStream.next_layer().next_layer().socket().get_option(sendBufferSizeOption, ec);
+  boost::beast::get_lowest_layer(m_WebSocketStream).socket().get_option(sendBufferSizeOption, ec);
+
   if (ec) {
     _log_error(LOG_DETAILS, "Get tcp send size failed:{}", ec.what());
     return 0;
@@ -444,7 +470,7 @@ bool WebSocketSession<TSessionCallback>::SetSendBufferSize(const std::size_t siz
 {
   boost::system::error_code ec{};
   boost::asio::socket_base::send_buffer_size sendBufferSizeOption(size);
-  m_WebSocketStream.next_layer().next_layer().socket().set_option(sendBufferSizeOption, ec);
+  boost::beast::get_lowest_layer(m_WebSocketStream).socket().set_option(sendBufferSizeOption, ec);
   if (ec) {
     _log_error(LOG_DETAILS, "Set tcp receive size failed:{}", ec.what());
     return false;

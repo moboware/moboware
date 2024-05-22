@@ -42,17 +42,18 @@ protected:
 
   [[nodiscard]] std::size_t SendData(boost::asio::ip::tcp::socket &socket,
                                      const std::vector<boost::asio::const_buffer> &sendBuffers);
-  void HandleClosedConnection(boost::asio::ip::tcp::socket &socket);
+  void HandleClosedSocket(boost::asio::ip::tcp::socket &socket);
   void ReadData(boost::asio::ip::tcp::socket &socket);
 
   socket::RingBuffer_t m_ReceiveBuffer;
 
   const std::shared_ptr<common::Service> m_Service{};
   TSessionCallback &m_DataHandlerCallback{};
+  // lambda function to be called when the session is closed, and must be handled in the higher layers
+  const SessionClosedCleanupHandlerFn m_SessionClosedCleanupHandler;
 
 private:
   boost::asio::ip::tcp::endpoint m_RemoteEndpoint{};
-  const SessionClosedCleanupHandlerFn m_SessionClosedCleanupHandler;
 
   [[nodiscard]] virtual std::size_t ReadBuffer(socket::RingBuffer_t::BufferType_t *dataBuffer,
                                                const std::size_t requestedBufferSize) = 0;
@@ -86,7 +87,7 @@ template <typename TSessionCallback>   //
 std::size_t SocketSessionBase<TSessionCallback>::GetReceiveBufferSize(const boost::asio::ip::tcp::socket &socket) const
 {
   boost::asio::socket_base::receive_buffer_size receiveBufferSizeOption{};
-  boost::system::error_code ec;
+  boost::system::error_code ec{};
 
   socket.get_option(receiveBufferSizeOption, ec);
   if (ec) {
@@ -163,7 +164,7 @@ std::size_t SocketSessionBase<TSessionCallback>::SendData(boost::asio::ip::tcp::
 
     if (ec.failed()) {
       _log_error(LOG_DETAILS, "Write failed: {}", ec.what());
-      HandleClosedConnection(socket);
+      HandleClosedSocket(socket);
       return 0;
     }
     return sendBytes;
@@ -172,17 +173,16 @@ std::size_t SocketSessionBase<TSessionCallback>::SendData(boost::asio::ip::tcp::
 }
 
 template <typename TSessionCallback>   //
-void SocketSessionBase<TSessionCallback>::HandleClosedConnection(boost::asio::ip::tcp::socket &socket)
+void SocketSessionBase<TSessionCallback>::HandleClosedSocket(boost::asio::ip::tcp::socket &socket)
 {
-  _log_info(LOG_DETAILS, "Handle session closed");
+  _log_trace(LOG_DETAILS, "Handle closed socket");
 
   if (m_SessionClosedCleanupHandler) {
+    // notify of a closed session
     m_SessionClosedCleanupHandler(GetRemoteEndpoint());
   }
-  // notify of a closed session
-  m_DataHandlerCallback.OnSessionClosed(GetRemoteEndpoint());
 
-  boost::system::error_code ec;
+  boost::system::error_code ec{};
   // cancel any pending async operation
 
   socket.cancel(ec);
@@ -227,7 +227,7 @@ void SocketSessionBase<TSessionCallback>::ReadData(boost::asio::ip::tcp::socket 
     //} else
     if (ec.failed()) {
       _log_error(LOG_DETAILS, "Read error: {}", ec.what());
-      HandleClosedConnection(socket);
+      HandleClosedSocket(socket);
       return;
     } else {
       // no errors, read data from socket

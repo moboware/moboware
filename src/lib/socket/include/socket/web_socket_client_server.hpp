@@ -24,14 +24,14 @@ protected:
   explicit WebSocketClientServer(const common::ServicePtr &service, TSessionCallback &sessionCallback)
       : m_Service{service}
       , m_Strand(boost::asio::make_strand(service->GetIoService()))
-      , m_SslContext{boost::asio::ssl::context::tlsv13}
+      , m_SslContext{boost::asio::ssl::context::tlsv12}
       , m_PingTimer{service}
       , m_SessionCallback(sessionCallback)
   {
   }
 
-  virtual bool Start(const std::string &address, const std::uint16_t port) = 0;
-  virtual void SendPingRequest() = 0;
+  [[nodiscard]] virtual bool Start(const std::string &address, const std::uint16_t port) = 0;
+  [[nodiscard]] virtual bool SendPingRequest() = 0;
 
   void StartPingTimer(const std::chrono::milliseconds &pingTime)
   {

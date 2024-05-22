@@ -24,14 +24,14 @@ public:
   WebSocketServer(WebSocketServer &&) = delete;
   WebSocketServer &operator=(const WebSocketServer &) = delete;
   WebSocketServer &operator=(WebSocketServer &&) = delete;
-  ~WebSocketServer() = default;
+  virtual ~WebSocketServer() = default;
 
   [[nodiscard]] bool Start(const std::string &address, const std::uint16_t port) final;
   [[nodiscard]] bool SendWebSocketData(const boost::asio::const_buffer &sendBuffer,
                                        const boost::asio::ip::tcp::endpoint &remoteEndPoint);
   void SendToAllClients(const boost::asio::const_buffer &sendBuffer);
 
-  bool HasConnectedClients() const
+  [[nodiscard]] inline bool HasConnectedClients() const noexcept
   {
     return not m_Sessions.empty();
   }
@@ -40,9 +40,10 @@ private:
   using WebSocketClientServer_t = WebSocketClientServer<TSessionCallback>;
   using WebSocketSession_t = WebSocketSession<TSessionCallback>;
 
-  void Accept();
-  std::size_t CheckClosedSessions(const boost::asio::ip::tcp::endpoint &remoteEndpoint);
-  void SendPingRequest() final;
+  void Accept() noexcept;
+  std::size_t CheckClosedSessions(const boost::asio::ip::tcp::endpoint &remoteEndpoint) noexcept;
+
+  bool SendPingRequest() final;
 
   boost::asio::ip::tcp::acceptor m_Acceptor;
 
@@ -74,7 +75,7 @@ bool WebSocketServer<TSessionCallback>::Start(const std::string &address, const 
   }
 
   // create end point
-  const boost::asio::ip::tcp::endpoint &endpoint{resolveResults.begin()->endpoint()};
+  const auto &endpoint{resolveResults.begin()->endpoint()};
 
   // Open the acceptor
   m_Acceptor.open(endpoint.protocol(), ec);
@@ -116,9 +117,61 @@ bool WebSocketServer<TSessionCallback>::Start(const std::string &address, const 
 }
 
 template <typename TSessionCallback>   //
-std::size_t WebSocketServer<TSessionCallback>::CheckClosedSessions(const boost::asio::ip::tcp::endpoint &remoteEndpoint)
+void WebSocketServer<TSessionCallback>::Accept() noexcept
 {
+  const auto acceptorFunc{[&](boost::system::error_code ec, boost::asio::ip::tcp::socket webSocket) {
+    if (ec.failed()) {
+      _log_error(LOG_DETAILS, "Failed to accept connection:{}", ec.what());
+    } else {
+      // create session and store in our session list
+      const auto endPointKey = std::make_pair(webSocket.remote_endpoint().address(), webSocket.remote_endpoint().port());
+
+      const auto sessionClosedHandlerFn{[&](const boost::asio::ip::tcp::endpoint &endpoint) {
+        // cleanup session details, should be posted because the session must be alive for ping etc
+        const auto removeSessionFn{[this, endpoint]() {
+          CheckClosedSessions(endpoint);
+          // notify of closed connection
+          WebSocketClientServer_t::m_SessionCallback.OnSessionClosed(endpoint);
+        }};
+
+        WebSocketClientServer_t::m_Service->GetIoService().post(removeSessionFn);
+      }};
+
+      const auto session = std::make_shared<WebSocketSession_t>(WebSocketClientServer_t::m_Service,
+                                                                WebSocketClientServer_t::m_SslContext,
+                                                                WebSocketClientServer_t::m_SessionCallback,
+                                                                std::move(webSocket),
+                                                                sessionClosedHandlerFn);
+      {
+        const auto pair{m_Sessions.emplace(endPointKey, session)};
+
+        if (pair.second and session->Accept()) {
+          _log_info(LOG_DETAILS,
+                    "Connection accepted from {}:{}",
+                    session->GetRemoteEndpoint().address().to_string(),
+                    session->GetRemoteEndpoint().port());
+          // store this new session in the sessions list
+        } else {
+          m_Sessions.erase(pair.first);
+        }
+      }
+    }
+
+    // wait for the next connection
+    WebSocketServer<TSessionCallback>::Accept();
+  }};
+
+  m_Acceptor.async_accept(WebSocketClientServer_t::m_Strand, boost::beast::bind_front_handler(acceptorFunc));
+}
+
+template <typename TSessionCallback>   //
+std::size_t
+WebSocketServer<TSessionCallback>::CheckClosedSessions(const boost::asio::ip::tcp::endpoint &remoteEndpoint) noexcept
+{
+  _log_trace(LOG_DETAILS, "{}@{}", remoteEndpoint.port(), remoteEndpoint.address().to_string());
+
   const auto endpointPair{std::make_pair(remoteEndpoint.address(), remoteEndpoint.port())};
+
   const auto iter{m_Sessions.find(endpointPair)};
   if (iter != m_Sessions.end()) {
 
@@ -132,50 +185,13 @@ std::size_t WebSocketServer<TSessionCallback>::CheckClosedSessions(const boost::
 }
 
 template <typename TSessionCallback>   //
-void WebSocketServer<TSessionCallback>::Accept()
-{
-  const auto acceptorFunc = [&](boost::system::error_code ec, boost::asio::ip::tcp::socket webSocket) {
-    if (ec.failed()) {
-      _log_error(LOG_DETAILS, "Failed to accept connection:{}", ec.what());
-    } else {
-      // create session and store in our session list
-      const auto endPointKey = std::make_pair(webSocket.remote_endpoint().address(), webSocket.remote_endpoint().port());
-
-      const auto session = std::make_shared<WebSocketSession_t>(WebSocketClientServer_t ::m_Service,
-                                                                WebSocketClientServer_t ::m_SslContext,
-                                                                WebSocketClientServer_t::m_SessionCallback,
-                                                                std::move(webSocket),
-                                                                [&](const boost::asio::ip::tcp::endpoint &endpoint) {
-                                                                  CheckClosedSessions(endpoint);
-                                                                });
-
-      const auto pair{m_Sessions.emplace(endPointKey, session)};
-
-      if (pair.second and session->Accept()) {
-        _log_info(LOG_DETAILS,
-                  "Connection accepted from {}:{}",
-                  session->GetRemoteEndpoint().address().to_string(),
-                  session->GetRemoteEndpoint().port());
-        // store this new session in the sessions list
-      } else {
-        m_Sessions.erase(pair.first);
-      }
-    }
-    // wait for the next connection
-    WebSocketServer<TSessionCallback>::Accept();
-  };
-
-  m_Acceptor.async_accept(WebSocketClientServer_t::m_Strand, boost::beast::bind_front_handler(acceptorFunc));
-}
-
-template <typename TSessionCallback>   //
 bool WebSocketServer<TSessionCallback>::SendWebSocketData(const boost::asio::const_buffer &sendBuffer,
                                                           const boost::asio::ip::tcp::endpoint &remoteEndPoint)
 {
   const auto endPointKey = std::make_pair(remoteEndPoint.address(), remoteEndPoint.port());
+
   const auto iter = m_Sessions.find(endPointKey);
   if (iter != std::end(m_Sessions)) {
-
     const auto &session = iter->second;
     return session->SendWebSocketData(sendBuffer);
   }
@@ -198,29 +214,16 @@ void WebSocketServer<TSessionCallback>::SendToAllClients(const boost::asio::cons
   }
 }
 
-// template <typename TSessionCallback>   //
-// void WebSocketServer<TSessionCallback>::OnSessionClosed(const boost::asio::ip::tcp::endpoint &endpoint)
-//{
-//   CheckClosedSessions(endpoint);
-//
-//   // const auto removeSessionFn{[this, endpoint]() {
-//   //   CheckClosedSessions(endpoint);
-//   // }};
-//   //
-//   // m_Service->GetIoService().post(removeSessionFn);
-//
-//   if (m_WebSocketClosedFn) {
-//     m_WebSocketClosedFn(endpoint);
-//   }
-// }
-
 template <typename TSessionCallback>   //
-void WebSocketServer<TSessionCallback>::SendPingRequest()
+bool WebSocketServer<TSessionCallback>::SendPingRequest()
 {
-  for (const auto &[k, v] : m_Sessions) {
+  for (const auto &[_, v] : m_Sessions) {
     const auto &session = v;
-    session->SendPingRequest();
+    if (not session->SendPingRequest()) {
+      _log_warning(LOG_DETAILS, "Failed to send ping request");
+    }
   }
+  return true;
 }
 
 }   // namespace moboware::web_socket

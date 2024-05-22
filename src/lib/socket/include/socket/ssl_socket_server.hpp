@@ -32,11 +32,11 @@ public:
   }
 
 private:
-  void Accept();
+  void Accept() noexcept;
   /**
    * Cleanup closed sessions and returns the current number of sessions open
    */
-  std::size_t CheckClosedSessions(const boost::asio::ip::tcp::endpoint &remoteEndpoint);
+  std::size_t CheckClosedSessions(const boost::asio::ip::tcp::endpoint &remoteEndpoint) noexcept;
 
   boost::asio::ip::tcp::acceptor m_Acceptor;
 
@@ -48,6 +48,13 @@ private:
   Sessions_t m_Sessions;
 };
 
+/**
+ * @brief Construct a new Ssl Socket Server< T Session Callback>:: Ssl Socket Server object
+ *
+ * @tparam TSessionCallback
+ * @param service
+ * @param sessionCallback
+ */
 template <typename TSessionCallback>   //
 SslSocketServer<TSessionCallback>::SslSocketServer(const std::shared_ptr<moboware::common::Service> &service,
                                                    TSessionCallback &sessionCallback)
@@ -62,7 +69,8 @@ bool SslSocketServer<TSessionCallback>::Start(const std::string &address, const 
 {
   _log_info(LOG_DETAILS, "Start server on {}:{}", address, port);
   boost::asio::ip::tcp::resolver resolver(SslSocketClientServer_t::m_Strand.get_inner_executor());
-  boost::system::error_code ec;
+  boost::system::error_code ec{};
+
   const auto resolveResults{resolver.resolve(address, std::to_string(port), ec)};
   if (ec.failed()) {
     _log_error(LOG_DETAILS, "Resolving address failed:{}:{} {}", address, port, ec.what());
@@ -109,7 +117,53 @@ bool SslSocketServer<TSessionCallback>::Start(const std::string &address, const 
 }
 
 template <typename TSessionCallback>   //
-std::size_t SslSocketServer<TSessionCallback>::CheckClosedSessions(const boost::asio::ip::tcp::endpoint &remoteEndpoint)
+void SslSocketServer<TSessionCallback>::Accept() noexcept
+{
+  const auto acceptorFunc{[&](const boost::system::error_code &ec, boost::asio::ip::tcp::socket webSocket) {
+    if (ec.failed()) {
+      _log_error(LOG_DETAILS, "Failed to accept connection:{}", ec.what());
+    } else {
+      // create session and store in our session list
+      const auto sessionClosedHandlerFn{[&](const boost::asio::ip::tcp::endpoint &endpoint) {
+        // cleanup session details, should be posted because the session must be alive for ping etc
+        const auto removeSessionFn{[this, endpoint]() {
+          CheckClosedSessions(endpoint);
+          // notify of closed connection
+          SslSocketClientServer_t::m_SessionCallback.OnSessionClosed(endpoint);
+        }};
+
+        SslSocketClientServer_t::m_Service->GetIoService().post(removeSessionFn);
+      }};
+
+      const auto endPointKey = std::make_pair(webSocket.remote_endpoint().address(), webSocket.remote_endpoint().port());
+      const auto session = std::make_shared<SslSocketSession_t>(SslSocketClientServer_t::m_Service,
+                                                                SslSocketClientServer_t::m_SslContext,
+                                                                SslSocketClientServer_t::m_SessionCallback,
+                                                                std::move(webSocket),
+                                                                sessionClosedHandlerFn);
+      const auto pair{m_Sessions.emplace(endPointKey, session)};
+
+      if (pair.second and session->Accept()) {
+        _log_info(LOG_DETAILS,
+                  "Connection accepted from {}:{}",
+                  session->GetRemoteEndpoint().address().to_string(),
+                  session->GetRemoteEndpoint().port());
+        // store this new session in the sessions list
+      } else {
+        m_Sessions.erase(pair.first);
+      }
+    }
+
+    // wait for the next connection
+    SslSocketServer::Accept();
+  }};
+
+  m_Acceptor.async_accept(SslSocketClientServer_t::m_Strand, acceptorFunc);
+}
+
+template <typename TSessionCallback>   //
+std::size_t
+SslSocketServer<TSessionCallback>::CheckClosedSessions(const boost::asio::ip::tcp::endpoint &remoteEndpoint) noexcept
 {
   const auto endpointPair{std::make_pair(remoteEndpoint.address(), remoteEndpoint.port())};
   const auto iter{m_Sessions.find(endpointPair)};
@@ -126,49 +180,13 @@ std::size_t SslSocketServer<TSessionCallback>::CheckClosedSessions(const boost::
 }
 
 template <typename TSessionCallback>   //
-void SslSocketServer<TSessionCallback>::Accept()
-{
-  const auto acceptorFunc = [&](const boost::system::error_code &ec, boost::asio::ip::tcp::socket webSocket) {
-    if (ec.failed()) {
-      _log_error(LOG_DETAILS, "Failed to accept connection:{}", ec.what());
-    } else {
-      // create session and store in our session list
-      const auto endPointKey = std::make_pair(webSocket.remote_endpoint().address(), webSocket.remote_endpoint().port());
-      const auto session = std::make_shared<SslSocketSession_t>(SslSocketClientServer_t::m_Service,
-                                                                SslSocketClientServer_t::m_SslContext,
-                                                                SslSocketClientServer_t::m_SessionCallback,
-                                                                std::move(webSocket),
-                                                                [&](const boost::asio::ip::tcp::endpoint &endpoint) {
-                                                                  CheckClosedSessions(endpoint);
-                                                                });
-      const auto pair{m_Sessions.emplace(endPointKey, session)};
-
-      if (pair.second and session->Accept()) {
-        _log_info(LOG_DETAILS,
-                  "Connection accepted from {}:{}",
-                  session->GetRemoteEndpoint().address().to_string(),
-                  session->GetRemoteEndpoint().port());
-        // store this new session in the sessions list
-      } else {
-        m_Sessions.erase(pair.first);
-      }
-    }
-
-    // wait for the next connection
-    SslSocketServer::Accept();
-  };
-
-  m_Acceptor.async_accept(SslSocketClientServer_t::m_Strand, acceptorFunc);
-}
-
-template <typename TSessionCallback>   //
 std::size_t SslSocketServer<TSessionCallback>::SendSocketData(const std::vector<boost::asio::const_buffer> &sendBuffer,
                                                               const boost::asio::ip::tcp::endpoint &remoteEndPoint)
 {
   const auto endPointKey = std::make_pair(remoteEndPoint.address(), remoteEndPoint.port());
   const auto iter = m_Sessions.find(endPointKey);
-  if (iter != std::end(m_Sessions)) {
 
+  if (iter != std::end(m_Sessions)) {
     const auto &session = iter->second;
     return session->SendData(sendBuffer);
   }

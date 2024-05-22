@@ -1,5 +1,6 @@
 #include "common/logger.hpp"
 #include "socket/web_socket_server.hpp"
+#include <string>
 
 using namespace moboware;
 
@@ -12,7 +13,11 @@ public:
                   const boost::asio::ip::tcp::endpoint &remoteEndPoint,
                   const common::SystemTimePoint_t &sessionTimePoint)
   {
-    _log_info(LOG_DETAILS, "Received data");
+    const auto buffer{readBuffer.cdata()};
+
+    const std::string_view s{(const char *)buffer.data(), buffer.size()};
+    //
+    _log_info(LOG_DETAILS, "Received data {} {}", s, std::chrono::steady_clock::now().time_since_epoch().count());
   }
 
   void OnSessionConnected(const boost::asio::ip::tcp::endpoint &endpoint)
@@ -29,6 +34,8 @@ public:
 
 int main(int, char **)
 {
+  ::Logger::GetInstance().SetLevel(Logger::LogLevel::Trace);
+
   auto service{std::make_shared<common::Service>()};
   boost::asio::signal_set signals(service->GetIoService(), SIGTERM, SIGINT);
   signals.async_wait([&](boost::system::error_code const &, int) {

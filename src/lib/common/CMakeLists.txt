@@ -1,4 +1,4 @@
-project(${PROJECT_NAME})
+project(common)
 
 add_library(${PROJECT_NAME}
     service.cpp

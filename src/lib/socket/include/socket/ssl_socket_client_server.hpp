@@ -34,7 +34,7 @@ protected:
   const common::ServicePtr m_Service;
   boost::asio::strand<boost::asio::io_context::executor_type> m_Strand;
   TSessionCallback &m_SessionCallback{};
-  boost::asio::ssl::context m_SslContext{boost::asio::ssl::context::tlsv13};
+  boost::asio::ssl::context m_SslContext;
 };
 
 template <typename TSessionCallback>   //
@@ -43,6 +43,7 @@ SslSocketClientServer<TSessionCallback>::SslSocketClientServer(const common::Ser
     : m_Service{service}
     , m_Strand(boost::asio::make_strand(service->GetIoService()))
     , m_SessionCallback(sessionCallback)
+    , m_SslContext(boost::asio::ssl::context::sslv23)
 {
 }
 
@@ -51,7 +52,9 @@ bool SslSocketClientServer<TSessionCallback>::LoadCertificateAndKeyFile(const st
                                                                         const std::string &keyFile)
 {
   boost::system::error_code ec;
+
   m_SslContext.use_certificate_file(certificateFile, boost::asio::ssl::context::file_format::pem, ec);
+
   if (ec.failed()) {
     _log_error(LOG_DETAILS, "Unable to load cert file:{}, {}", certificateFile, ec.what());
     return false;
