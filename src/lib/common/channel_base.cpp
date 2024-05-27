@@ -5,7 +5,7 @@
 using namespace moboware::common;
 
 ChannelBase::ChannelBase(const std::shared_ptr<Service> &service)
-    : m_Service(service)
+  : m_Service(service)
 {
 }
 
@@ -24,7 +24,7 @@ bool ChannelBase::LoadConfig(const boost::json::value &channelConfig)
 
   m_ChannelName = channelConfig.at(NAME_VALUE).as_string().c_str();
   if (not LoadChannelConfig(channelConfig)) {
-    _log_debug(LOG_DETAILS, "Failed to load channel config");
+    LOG_DEBUG("Failed to load channel config");
     return false;
   }
 

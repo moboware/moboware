@@ -10,8 +10,8 @@ const std::string CHANNELS_VALUE{"Channels"};
 
 Application::Application(const std::shared_ptr<common::Service> &service,   //
                          const std::vector<std::shared_ptr<common::ChannelBase>> &channels)
-    : common::ApplicationBase(service)
-    , m_Channels(channels)
+  : common::ApplicationBase(service)
+  , m_Channels(channels)
 {
 }
 
@@ -19,7 +19,7 @@ bool Application::LoadConfig(const std::string &configFile, const std::filesyste
 {
   std::ifstream configStream(configFile.c_str());
   if (not configStream.is_open()) {
-    _log_debug(LOG_DETAILS, "Failed to open file:{}", configFile);
+    LOG_DEBUG("Failed to open file:{}", configFile);
     return false;
   }
 
@@ -31,13 +31,13 @@ bool Application::LoadConfig(const std::string &configFile, const std::filesyste
     std::getline(configStream, c);
 
     if (0 == parser.write_some(c, ec)) {
-      _log_debug(LOG_DETAILS, "Failed to parse config file");
+      LOG_DEBUG("Failed to parse config file");
       return false;
     }
   }
 
   if (not parser.done()) {
-    _log_error(LOG_DETAILS, "Parser is not done yet!");
+    LOG_ERROR("Parser is not done yet!");
     return false;
   }
 
@@ -60,22 +60,19 @@ bool Application::LoadConfig(const std::string &configFile, const std::filesyste
 
   // read channel settings
   if (not rootDocument.as_object().contains(CHANNELS_VALUE)) {
-    _log_debug(LOG_DETAILS, "Channel item not found");
+    LOG_DEBUG("Channel item not found");
     return false;
   }
 
   const auto &channelsValues = rootDocument.at(CHANNELS_VALUE);
   if (not channelsValues.is_array()) {
-    _log_debug(LOG_DETAILS, "Channels value is not an array");
+    LOG_DEBUG("Channels value is not an array");
     return false;
   }
 
   const auto &channelsValuesArray{channelsValues.as_array()};
   if (channelsValuesArray.size() != m_Channels.size()) {
-    _log_debug(LOG_DETAILS,
-               "Channel config and channels not same size {}!={}",
-               channelsValuesArray.size(),
-               m_Channels.size());
+    LOG_DEBUG("Channel config and channels not same size {}!={}", channelsValuesArray.size(), m_Channels.size());
     return false;
   }
 
@@ -102,13 +99,13 @@ int Application::Run(const int argc, const char *argv[])
   const std::filesystem::path applicationPath = argv[0];
 
   if (not LoadConfig(configFile, applicationPath.stem())) {
-    _log_debug(LOG_DETAILS, "Failed to load config");
+    LOG_DEBUG("Failed to load config");
     return EXIT_FAILURE;
   }
 
   for (const auto channel : m_Channels) {
     if (!channel->Start()) {
-      _log_debug(LOG_DETAILS, "Failed to start channel");
+      LOG_DEBUG("Failed to start channel");
 
       return EXIT_FAILURE;
     }

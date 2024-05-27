@@ -59,20 +59,12 @@ private:
   std::size_t _index{};
 };
 
-struct LogLineDetails {
-  const std::filesystem::path file{};
-  std::size_t line{};
-  const char *function{};
-};
-
-// returns a LogLineDetails struct, used to get the current log line details
-#define LOG_DETAILS                                                                                                         \
-  {                                                                                                                         \
-    __FILE__, __LINE__, __FUNCTION__                                                                                        \
-  }
-
 /**
- * @brief
+ * @brief Logger implementation that uses the fmt library formatting rules
+ * The logger has several levels to log messages on, but the formatted data is send to a consumer thread that will write it to the console or log
+ * file. The formatted data is send to the consumer thread via a lock-less queue and has a initial queue length limitation of 10K messages of a
+ * max length of 5K length
+ * see fmt lib: https://fmt.dev/latest/api.html
  */
 class Logger : public moboware::common::Singleton<Logger> {
 public:
@@ -115,44 +107,14 @@ public:
   Logger &operator=(const Logger &) = delete;
   Logger &operator=(Logger &&) = delete;
 
-  void _log(const LogLevel level,                //
-            const std::filesystem::path &file,   //
-            const std::uint32_t lineNumber,      //
-            fmt::string_view format,             //
-            fmt::format_args args)               //
+  template <typename... Args>
+  void _log2(const LogLevel level,                //
+             const std::filesystem::path &file,   //
+             const std::uint32_t lineNumber,      //
+             fmt::format_string<Args...> format,
+             Args &&...args)
   {
-    // format the pre log line
-    const auto time{GetNowString()};
-    const auto id{pthread_self()};
-
-    LogBuffer_t buffer;
-    vformat_to(std::back_insert_iterator(buffer),
-               "[{}][{}][{:#x}][{}:{}]",
-               fmt::make_format_args(          //
-                   time,                       //
-                   level,                      //
-                   id,                         //
-                   file.filename().native(),   //
-                   lineNumber));
-    // format the log line
-    vformat_to(std::back_insert_iterator(buffer), format, args);
-    vformat_to(std::back_insert_iterator(buffer), "{}", fmt::make_format_args("\n"));
-
-    if (not m_LogQueue.bounded_push(buffer)) {   // failed to push due to queue full, wait and retry
-      bool done{false};
-      while (not done) {
-        std::cout << "Log Queue full!!!" << std::endl;
-        Signal(true);
-
-        std::this_thread::sleep_for(std::chrono::microseconds(50));
-
-        if (m_LogQueue.push(buffer)) {
-          done = true;
-        }
-      }
-    }
-
-    Signal(false);
+    this->_log(level, file, lineNumber, format, fmt::make_format_args(args...));
   }
 
   inline void SetLevel(const Logger::LogLevel level)
@@ -163,13 +125,13 @@ public:
   inline Logger::LogLevel GetLevel(const std::string &levelStr)
   {
     static std::map<std::string, Logger::LogLevel> levels{
-        {"",      LogLevel::None   }, //
-        {"TRACE", LogLevel::Trace  }, //
-        {"DEBUG", LogLevel::Debug  }, //
-        {"INFO",  LogLevel::Info   }, //
-        {"WARN",  LogLevel::Warning}, //
-        {"ERROR", LogLevel::Error  }, //
-        {"FATAL", LogLevel::Fatal  }  //
+      {"",      LogLevel::None   }, //
+      {"TRACE", LogLevel::Trace  }, //
+      {"DEBUG", LogLevel::Debug  }, //
+      {"INFO",  LogLevel::Info   }, //
+      {"WARN",  LogLevel::Warning}, //
+      {"ERROR", LogLevel::Error  }, //
+      {"FATAL", LogLevel::Fatal  }  //
     };
     const auto iter{levels.find(levelStr)};
 
@@ -179,13 +141,20 @@ public:
     return Logger::LogLevel::Info;
   }
 
-  bool SetLogFile(const std::filesystem::path &logFileName)
+  bool SetLogFile(const std::filesystem::path &logFilePath)
   {
     if (m_LogFileStream.is_open()) {
       m_LogFileStream.close();
     }
 
-    m_LogFileStream.open(logFileName.c_str(), std::ios_base::out | std::ios_base::app);
+    const auto now{std::chrono::system_clock::now()};
+    m_LogFileStreamPath = logFilePath;
+    const auto fileName{fmt::format("{:%Y%m%d}_{}",   //
+                                    now,
+                                    logFilePath.filename().c_str())};
+    m_LogFileStreamPath.replace_filename(fileName);
+
+    m_LogFileStream.open(m_LogFileStreamPath.c_str(), std::ios_base::out | std::ios_base::app);
 
     if (m_LogFileStream.is_open()) {
       return true;
@@ -220,6 +189,46 @@ public:
   }
 
 private:
+  inline void _log(const LogLevel level,                //
+                   const std::filesystem::path &file,   //
+                   const std::uint32_t lineNumber,      //
+                   fmt::string_view format,             //
+                   fmt::format_args args)               //
+  {
+    // format the pre log line
+    const auto time{GetNowString()};
+    const auto id{pthread_self()};
+
+    LogBuffer_t buffer;
+    vformat_to(std::back_insert_iterator(buffer),
+               "[{}][{}][{:#x}][{}:{}]",
+               fmt::make_format_args(        //
+                 time,                       //
+                 level,                      //
+                 id,                         //
+                 file.filename().native(),   //
+                 lineNumber));
+    // format the log line
+    vformat_to(std::back_insert_iterator(buffer), format, args);
+    vformat_to(std::back_insert_iterator(buffer), "{}", fmt::make_format_args("\n"));
+
+    if (not m_LogQueue.bounded_push(buffer)) {   // failed to push due to queue full, wait and retry
+      bool done{false};
+      while (not done) {
+        std::cout << "Log Queue full!!!" << std::endl;
+        Signal(true);
+
+        std::this_thread::sleep_for(std::chrono::microseconds(50));
+
+        if (m_LogQueue.push(buffer)) {
+          done = true;
+        }
+      }
+    }
+
+    Signal(false);
+  }
+
   void Signal(const bool tickleThread = true)
   {
     m_ConditionVariable.notify_one();
@@ -243,6 +252,7 @@ private:
 
   LogQueue_t m_LogQueue;
   std::ofstream m_LogFileStream{};
+  std::filesystem::path m_LogFileStreamPath;
 
   std::jthread m_LogConsumerThread;
   std::condition_variable m_ConditionVariable;
@@ -276,90 +286,55 @@ inline auto fmt::formatter<Logger::LogLevel>::format(Logger::LogLevel l, fmt::fo
   case Logger::LogLevel::Warning:
     name = "WARN";
     break;
-    case Logger::LogLevel::Fatal:
+  case Logger::LogLevel::Fatal:
     name = "FATAL";
     break;
-    case Logger::LogLevel::None:
+  case Logger::LogLevel::None:
     name = "NONE";
     break;
   }
   return formatter<string_view>::format(name, ctx);
 }
 
-// Logger _Logger;
-
-template <typename... T>
-void _log(const Logger::LogLevel level, const LogLineDetails &logDetails, fmt::format_string<T...> format, T &&...args)
-{
-  if (Logger::GetInstance().TestLevel(level)) {
-    Logger::GetInstance()._log(level, logDetails.file, logDetails.line, format, fmt::make_format_args(args...));
+#define LOG_TRACE(format, ...)                                                                                                                  \
+  {                                                                                                                                             \
+    if (Logger::GetInstance().TestLevel(Logger::LogLevel::Trace)) {                                                                             \
+      Logger::GetInstance()._log2(Logger::LogLevel::Trace, __FILE__, __LINE__, format, ##__VA_ARGS__);                                          \
+    }                                                                                                                                           \
   }
-}
 
-template <typename... T> void _log_trace(const LogLineDetails &logDetails, fmt::format_string<T...> format, T &&...args)
-{
-  if (Logger::GetInstance().TestLevel(Logger::LogLevel::Trace)) {
-    Logger::GetInstance()._log(Logger::LogLevel::Trace,
-                               logDetails.file,
-                               logDetails.line,
-                               format,
-                               fmt::make_format_args(args...));
+#define LOG_DEBUG(format, ...)                                                                                                                  \
+  {                                                                                                                                             \
+    if (Logger::GetInstance().TestLevel(Logger::LogLevel::Debug)) {                                                                             \
+      Logger::GetInstance()._log2(Logger::LogLevel::Debug, __FILE__, __LINE__, format, ##__VA_ARGS__);                                          \
+    }                                                                                                                                           \
   }
-}
 
-template <typename... T> void _log_debug(const LogLineDetails &logDetails, fmt::format_string<T...> format, T &&...args)
-{
-  if (Logger::GetInstance().TestLevel(Logger::LogLevel::Debug)) {
-    Logger::GetInstance()._log(Logger::LogLevel::Debug,
-                               logDetails.file,
-                               logDetails.line,
-                               format,
-                               fmt::make_format_args(args...));
+#define LOG_INFO(format, ...)                                                                                                                   \
+  {                                                                                                                                             \
+    if (Logger::GetInstance().TestLevel(Logger::LogLevel::Info)) {                                                                              \
+      Logger::GetInstance()._log2(Logger::LogLevel::Info, __FILE__, __LINE__, format, ##__VA_ARGS__);                                           \
+    }                                                                                                                                           \
   }
-}
 
-template <typename... T> void _log_info(const LogLineDetails &logDetails, fmt::format_string<T...> format, T &&...args)
-{
-  if (Logger::GetInstance().TestLevel(Logger::LogLevel::Info)) {
-    Logger::GetInstance()._log(Logger::LogLevel::Info,
-                               logDetails.file,
-                               logDetails.line,
-                               format,
-                               fmt::make_format_args(args...));
+#define LOG_ERROR(format, ...)                                                                                                                  \
+  {                                                                                                                                             \
+    if (Logger::GetInstance().TestLevel(Logger::LogLevel::Error)) {                                                                             \
+      Logger::GetInstance()._log2(Logger::LogLevel::Error, __FILE__, __LINE__, format, ##__VA_ARGS__);                                          \
+    }                                                                                                                                           \
   }
-}
 
-template <typename... T> void _log_warning(const LogLineDetails &logDetails, fmt::format_string<T...> format, T &&...args)
-{
-  if (Logger::GetInstance().TestLevel(Logger::LogLevel::Warning)) {
-    Logger::GetInstance()._log(Logger::LogLevel::Warning,
-                               logDetails.file,
-                               logDetails.line,
-                               format,
-                               fmt::make_format_args(args...));
+#define LOG_WARN(format, ...)                                                                                                                   \
+  {                                                                                                                                             \
+    if (Logger::GetInstance().TestLevel(Logger::LogLevel::Warning)) {                                                                           \
+      Logger::GetInstance()._log2(Logger::LogLevel::Warning, __FILE__, __LINE__, format, ##__VA_ARGS__);                                        \
+    }                                                                                                                                           \
   }
-}
 
-template <typename... T> void _log_error(const LogLineDetails &logDetails, fmt::format_string<T...> format, T &&...args)
-{
-  if (Logger::GetInstance().TestLevel(Logger::LogLevel::Error)) {
-    Logger::GetInstance()._log(Logger::LogLevel::Error,
-                               logDetails.file,
-                               logDetails.line,
-                               format,
-                               fmt::make_format_args(args...));
+#define LOG_FATAL(format, ...)                                                                                                                  \
+  {                                                                                                                                             \
+    if (Logger::GetInstance().TestLevel(Logger::LogLevel::Fatal)) {                                                                             \
+      Logger::GetInstance()._log2(Logger::LogLevel::Fatal, __FILE__, __LINE__, format, ##__VA_ARGS__);                                          \
+    }                                                                                                                                           \
   }
-}
-
-template <typename... T> void _log_fatal(const LogLineDetails &logDetails, fmt::format_string<T...> format, T &&...args)
-{
-  if (Logger::GetInstance().TestLevel(Logger::LogLevel::Fatal)) {
-    Logger::GetInstance()._log(Logger::LogLevel::Fatal,
-                               logDetails.file,
-                               logDetails.line,
-                               format,
-                               fmt::make_format_args(args...));
-  }
-}
-
 //}   // namespace moboware::common::logger

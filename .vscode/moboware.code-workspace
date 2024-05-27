@@ -22,10 +22,11 @@
     "cmake.clearOutputBeforeBuild": true,
     "cmake.buildBeforeRun": true,
     "cmake.saveBeforeBuild": true,
+    "cmake.parallelJobs": 0,
     "cmake.configureSettings": {
       "CMAKE_TOOLCHAIN_FILE": "${workspaceFolder}/../vcpkg/scripts/buildsystems/vcpkg.cmake",
       "VCPKG_TARGET_TRIPLET": "x64-linux-dynamic",
-      "PERFORMANCE_BUILD_FLAGS": "On"
+      "PERFORMANCE_BUILD_FLAGS": "Off"
     },
     "cmake.configureArgs": [
       //"-DCMAKE_TOOLCHAIN_FILE=${workspaceFolder}/vcpkg/scripts/buildsystems/vcpkg.cmake",
@@ -138,6 +139,9 @@
     "cSpell.spellCheckOnlyWorkspaceFiles": true,
     "cSpell.words": [
       "moboware"
+    ],
+    "cSpell.ignoreWords": [
+      "rapidjson"
     ]
   }
 }

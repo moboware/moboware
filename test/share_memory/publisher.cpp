@@ -7,7 +7,7 @@ using namespace boost;
 // using namespace moboware;
 
 SharedMemoryPublisher::SharedMemoryPublisher(const std::string &memoryName)
-    : SharedMemory(memoryName, SharedMemory::Type::Publisher)
+  : SharedMemory(memoryName, SharedMemory::Type::Publisher)
 {
   // common::RingBuffer<unsigned char> rb(1024);
 }
@@ -24,18 +24,17 @@ void SharedMemoryPublisher::Write(const std::string_view &buffer)
 
   if (header) {
 
-    _log_debug(LOG_DETAILS,
-               "Region size:{}, Buffer size:{}, Read offset:{}, Write offset:{}",
-               region.get_size(),
-               header->m_MaxPayloadBufferSize,
-               header->m_ReadOffset,
-               header->m_WriteOffset);
+    LOG_DEBUG("Region size:{}, Buffer size:{}, Read offset:{}, Write offset:{}",
+              region.get_size(),
+              header->m_MaxPayloadBufferSize,
+              header->m_ReadOffset,
+              header->m_WriteOffset);
 
     // check if there is enough space for writing the msg, write prt + size < buffer size
     // otherwise reset the write prt the the start of the buffer ==> [0]
     if ((header->m_WriteOffset == header->m_ReadOffset) or   //
         (header->m_WriteOffset + sizeof(MemoryMsg) + buffer.size() > header->m_MaxPayloadBufferSize)) {
-      _log_info(LOG_DETAILS, "Resetting....");
+      LOG_INFO("Resetting....");
       // interprocess::scoped_lock memoryLock(m_MemoryMutex);
       header->m_WriteOffset = header->m_ReadOffset = 0;
     }
@@ -50,7 +49,7 @@ void SharedMemoryPublisher::Write(const std::string_view &buffer)
       // move the write prt to end of the msg, the next free memory part.
       header->m_WriteOffset += sizeof(MemoryMsg) + buffer.size();
 
-      _log_debug(LOG_DETAILS, "Msg size:{}, msg:{}, WriteOffset:{}", msg->m_Size, buffer, header->m_WriteOffset);
+      LOG_DEBUG("Msg size:{}, msg:{}, WriteOffset:{}", msg->m_Size, buffer, header->m_WriteOffset);
     }
   }
 }

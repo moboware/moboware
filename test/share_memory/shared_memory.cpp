@@ -5,18 +5,16 @@
 using namespace boost;
 
 SharedMemory::SharedMemory(const std::string &memoryName, const Type type, const boost::interprocess::offset_t size)
-    : m_SharedMemoryName(memoryName)
-    , m_SemaphoreName(memoryName + std::string("_Semaphore"))
-    //, m_MemoryMutex(interprocess::open_or_create, std::string(memoryName + std::string("_Mutex")).c_str())
-    , m_InterprocessNamedSemaphore(interprocess::open_or_create, m_SemaphoreName.c_str(), 1)
+  : m_SharedMemoryName(memoryName)
+  , m_SemaphoreName(memoryName + std::string("_Semaphore"))
+  //, m_MemoryMutex(interprocess::open_or_create, std::string(memoryName + std::string("_Mutex")).c_str())
+  , m_InterprocessNamedSemaphore(interprocess::open_or_create, m_SemaphoreName.c_str(), 1)
 {
   if (type == Type::Publisher) {
     interprocess::shared_memory_object::remove(m_SharedMemoryName.c_str());
   }
 
-  m_SharedMemory = std::make_unique<SharedMemoryObject_t>(interprocess::open_or_create,
-                                                          m_SharedMemoryName.c_str(),
-                                                          interprocess::read_write);
+  m_SharedMemory = std::make_unique<SharedMemoryObject_t>(interprocess::open_or_create, m_SharedMemoryName.c_str(), interprocess::read_write);
 
   // create new mem buffer
   m_SharedMemory->truncate(size);
@@ -30,7 +28,7 @@ SharedMemory::SharedMemory(const std::string &memoryName, const Type type, const
     header->m_ReadOffset = header->m_WriteOffset = 0;
   }
 
-  _log_info(LOG_DETAILS, "Created shared memory object:{} , size:{}", m_SharedMemory->get_name(), GetSize());
+  LOG_INFO("Created shared memory object:{} , size:{}", m_SharedMemory->get_name(), GetSize());
 }
 
 SharedMemory::~SharedMemory()

@@ -10,9 +10,9 @@ using namespace boost::asio::ip;
 using namespace moboware::common;
 
 TcpServer::TcpServer(const std::shared_ptr<Service> &service)
-    : m_Service(service)
-    , m_Acceptor(service->GetIoService())
-    , m_PingTimer(service)
+  : m_Service(service)
+  , m_Acceptor(service->GetIoService())
+  , m_PingTimer(service)
 {
 
   m_RemoveSession = [this](const Session::Endpoint &endPoint) {
@@ -35,7 +35,7 @@ bool TcpServer::StartListening(const std::uint16_t port)
 
     m_Acceptor.open(asio::ip::tcp::v4(), errorCode);
     if (errorCode.failed()) {
-      _log_debug(LOG_DETAILS, "Open acceptor failed");
+      LOG_DEBUG("Open acceptor failed");
       return false;
     }
   }
@@ -48,7 +48,7 @@ bool TcpServer::StartListening(const std::uint16_t port)
     system::error_code errorCode;
     m_Acceptor.bind(endPoint, errorCode);
     if (errorCode.failed()) {
-      _log_debug(LOG_DETAILS, "Bind failed");
+      LOG_DEBUG("Bind failed");
       return false;
     }
   }
@@ -58,20 +58,20 @@ bool TcpServer::StartListening(const std::uint16_t port)
     system::error_code errorCode;
     m_Acceptor.listen(socket_base::max_listen_connections, errorCode);
     if (errorCode.failed()) {
-      _log_debug(LOG_DETAILS, "Setup listener failed");
+      LOG_DEBUG("Setup listener failed");
       return false;
     }
   }
 
   AcceptConnection();
 
-  _log_debug(LOG_DETAILS, "Starting listener on port:{}", port);
+  LOG_DEBUG("Starting listener on port:{}", port);
 
   const auto pingSessionsFunc = [this](Timer &timer) {
     for (const auto &[k, session] : m_Sessions) {
       const std::string payloadBuffer{"ping"};
       session->Send(asio::const_buffer(payloadBuffer.c_str(), payloadBuffer.size()));
-      _log_debug(LOG_DETAILS, "Send ping to {}:{}", session->GetRemoteEndpoint().first, session->GetRemoteEndpoint().second);
+      LOG_DEBUG("Send ping to {}:{}", session->GetRemoteEndpoint().first, session->GetRemoteEndpoint().second);
     }
 
     timer.Restart();
@@ -84,14 +84,14 @@ bool TcpServer::StartListening(const std::uint16_t port)
 void TcpServer::AcceptSession(const std::shared_ptr<ServerSession> &session, const system::error_code &errorCode)
 {
   if (errorCode.failed()) {
-    _log_error(LOG_DETAILS, "Accept Error:{}", errorCode.to_string());
+    LOG_ERROR("Accept Error:{}", errorCode.to_string());
     return;
   }
 
   session->Start();
 
   m_Sessions[session->GetRemoteEndpoint()] = session;
-  _log_debug(LOG_DETAILS, "Accepted new session, #sessions:{}", m_Sessions.size());
+  LOG_DEBUG("Accepted new session, #sessions:{}", m_Sessions.size());
 }
 
 void TcpServer::SetSessionHandlers(const std::shared_ptr<ServerSession> &session)
@@ -105,7 +105,7 @@ void TcpServer::SetSessionHandlers(const std::shared_ptr<ServerSession> &session
 
 void TcpServer::AcceptConnection()
 {
-  _log_debug(LOG_DETAILS, "Accept connection");
+  LOG_DEBUG("Accept connection");
 
   const auto session = std::make_shared<ServerSession>(m_Service, m_RemoveSession);
 
@@ -123,7 +123,7 @@ void TcpServer::AcceptConnection()
 void TcpServer::HandleAccept(const std::shared_ptr<Session> &session, const system::error_code &error)
 {
   if (!error) {
-    _log_debug(LOG_DETAILS, "Accept session");
+    LOG_DEBUG("Accept session");
 
     session->Start();
 
@@ -131,8 +131,7 @@ void TcpServer::HandleAccept(const std::shared_ptr<Session> &session, const syst
       const auto newSession = std::make_shared<ServerSession>(m_Service, m_RemoveSession);
       SetSessionHandlers(newSession);
 
-      m_Acceptor.async_accept(newSession->Socket(),
-                              boost::bind(&TcpServer::HandleAccept, this, newSession, asio::placeholders::error));
+      m_Acceptor.async_accept(newSession->Socket(), boost::bind(&TcpServer::HandleAccept, this, newSession, asio::placeholders::error));
     }
   }
 }
@@ -145,7 +144,7 @@ void TcpServer::SetSessionReceiveData(const Session::ReceiveDataFunction &fn)
 void TcpServer::SessionDisconnected(const std::shared_ptr<Session> & /*session*/, const Session::Endpoint &endPoint)
 {
   if (m_RemoveSession) {
-    _log_debug(LOG_DETAILS, "Session is disconnecting end point:{}:{}", endPoint.first, endPoint.second);
+    LOG_DEBUG("Session is disconnecting end point:{}:{}", endPoint.first, endPoint.second);
     m_RemoveSession(endPoint);
   }
 }

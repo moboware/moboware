@@ -61,13 +61,12 @@ private:
 };
 
 template <typename TSessionCallback>   //
-TcpSocketSession<TSessionCallback>::TcpSocketSession(
-    const common::ServicePtr &service,
-    TSessionCallback &callback,
-    boost::asio::ip::tcp::socket &&socket,
-    const SessionBase_t::SessionClosedCleanupHandlerFn &sessionClosedHandlerFn)
-    : moboware::socket::SocketSessionBase<TSessionCallback>(service, callback, sessionClosedHandlerFn)
-    , m_TcpSocketStream(std::move(socket))
+TcpSocketSession<TSessionCallback>::TcpSocketSession(const common::ServicePtr &service,
+                                                     TSessionCallback &callback,
+                                                     boost::asio::ip::tcp::socket &&socket,
+                                                     const SessionBase_t::SessionClosedCleanupHandlerFn &sessionClosedHandlerFn)
+  : moboware::socket::SocketSessionBase<TSessionCallback>(service, callback, sessionClosedHandlerFn)
+  , m_TcpSocketStream(std::move(socket))
 {
 }
 
@@ -95,7 +94,7 @@ bool TcpSocketSession<TSessionCallback>::Connect(const std::string &address, con
   boost::system::error_code ec;
   const auto resolveResults{resolver.resolve(address, std::to_string(port), ec)};
   if (ec.failed()) {
-    _log_error(LOG_DETAILS, "Resolving address failed:{}:{} {}", address, port, ec.what());
+    LOG_ERROR("Resolving address failed:{}:{} {}", address, port, ec.what());
     return false;
   }
 
@@ -103,7 +102,7 @@ bool TcpSocketSession<TSessionCallback>::Connect(const std::string &address, con
   const boost::asio::ip::tcp::endpoint &endpoint{resolveResults.begin()->endpoint()};
   m_TcpSocketStream.connect(endpoint, ec);
   if (ec.failed()) {
-    _log_error(LOG_DETAILS, "Connect to Web socket failed, {}:{} {}", address, port, ec.what());
+    LOG_ERROR("Connect to Web socket failed, {}:{} {}", address, port, ec.what());
     return false;
   }
 
@@ -118,7 +117,7 @@ bool TcpSocketSession<TSessionCallback>::Connect(const std::string &address, con
   // get/set tcp send/receive buffer sizes
   SessionBase_t::SetTcpBufferSizes(m_TcpSocketStream);
 
-  _log_info(LOG_DETAILS, "Ready for data reading/writing");
+  LOG_INFO("Ready for data reading/writing");
 
   // start reading data
   SessionBase_t::ReadData(m_TcpSocketStream);
@@ -127,13 +126,12 @@ bool TcpSocketSession<TSessionCallback>::Connect(const std::string &address, con
 }
 
 template <typename TSessionCallback>   //
-std::size_t TcpSocketSession<TSessionCallback>::ReadBuffer(socket::RingBuffer_t::BufferType_t *dataBuffer,
-                                                           const std::size_t requestedBufferSize)
+std::size_t TcpSocketSession<TSessionCallback>::ReadBuffer(socket::RingBuffer_t::BufferType_t *dataBuffer, const std::size_t requestedBufferSize)
 {
   boost::system::error_code readError;
   const auto bytesRead{m_TcpSocketStream.read_some(boost::asio::buffer(dataBuffer, requestedBufferSize), readError)};
   if (not readError.failed()) {
-    _log_debug(LOG_DETAILS, "Read {} data:{}", bytesRead, std::string(dataBuffer, bytesRead));
+    LOG_DEBUG("Read {} data:{}", bytesRead, std::string(dataBuffer, bytesRead));
     return bytesRead;
   }
   return 0ul;

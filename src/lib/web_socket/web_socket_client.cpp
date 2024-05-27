@@ -15,13 +15,13 @@ using namespace moboware::web_socket;
 ////////////////////////////////////////////////
 
 WebSocketClient::WebSocketClient(const std::shared_ptr<moboware::common::Service> &service)
-    : m_Service(service)
+  : m_Service(service)
 {
 }
 
 auto WebSocketClient::Start(const std::string &address, const short port) -> bool
 {
-  _log_debug(LOG_DETAILS, "Connecting web socket client:{}:{}", address, port);
+  LOG_DEBUG("Connecting web socket client:{}:{}", address, port);
 
   boost::asio::ip::tcp::socket webSocket(m_Service->GetIoService());
   m_Session = std::make_shared<WebSocketSession>(m_Service, shared_from_this(), std::move(webSocket));
@@ -34,8 +34,7 @@ auto WebSocketClient::SendWebSocketData(const const_buffer &sendBuffer) -> std::
   return m_Session->SendWebSocketData(sendBuffer);
 }
 
-void WebSocketClient::OnDataRead(const boost::beast::flat_buffer &readBuffer,
-                                 const boost::asio::ip::tcp::endpoint &remoteEndPoint)
+void WebSocketClient::OnDataRead(const boost::beast::flat_buffer &readBuffer, const boost::asio::ip::tcp::endpoint &remoteEndPoint)
 {
   if (m_WebSocketDataReceivedFn) {
     m_WebSocketDataReceivedFn(readBuffer, remoteEndPoint);

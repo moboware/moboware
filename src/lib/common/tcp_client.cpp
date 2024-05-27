@@ -11,9 +11,9 @@ using namespace boost::asio::ip;
 using namespace moboware::common;
 
 TcpClient::TcpClient(const std::shared_ptr<Service> &io_service)
-    : Session(io_service)
-    , _service(io_service)
-    , _pingTimer(io_service)
+  : Session(io_service)
+  , _service(io_service)
+  , _pingTimer(io_service)
 {
   SetSessionReceiveData([this](const std::shared_ptr<Session> &session,
                                const std::array<char, maxBufferSize> &readBuffer,
@@ -24,7 +24,7 @@ TcpClient::TcpClient(const std::shared_ptr<Service> &io_service)
 
 bool TcpClient::Connect(const std::string &address, const std::uint16_t port)
 {
-  _log_debug(LOG_DETAILS, "Connecting to: {}:{}", address, port);
+  LOG_DEBUG("Connecting to: {}:{}", address, port);
 
   // ip::tcp::resolver tcpResolver(_service->GetIoService());
 
@@ -34,16 +34,16 @@ bool TcpClient::Connect(const std::string &address, const std::uint16_t port)
     system::error_code errorCode;
     Session::Socket().connect(endpoint, errorCode);
     if (errorCode.failed()) {
-      _log_debug(LOG_DETAILS, "Connect failed {}", errorCode.to_string());
+      LOG_DEBUG("Connect failed {}", errorCode.to_string());
       return false;
     }
   } catch (const std::exception &e) {
-    _log_debug(LOG_DETAILS, "Failed to resolve address:{}, Error:", address, e.what());
+    LOG_DEBUG("Failed to resolve address:{}, Error:", address, e.what());
     return false;
   }
   Session::Start();
 
-  _log_debug(LOG_DETAILS, "Client is connected");
+  LOG_DEBUG("Client is connected");
 
   // move to protocol layer
   const auto pingFunction = [this](Timer &timer) {
@@ -51,7 +51,7 @@ bool TcpClient::Connect(const std::string &address, const std::uint16_t port)
     if (Session::Send(asio::const_buffer(payloadBuffer.c_str(), payloadBuffer.size())) > 0) {
       timer.Restart();
     } else {
-      _log_debug(LOG_DETAILS, "Send ping failed");
+      LOG_DEBUG("Send ping failed");
     }
   };
 
@@ -64,10 +64,6 @@ void TcpClient::HandleReceivedData(const std::shared_ptr<Session> &session,
                                    const std::array<char, maxBufferSize> &readBuffer,
                                    const std::size_t bytesRead)
 {   // move to  protocol handler !!!!!!!!!!!!!!!!!!
-  _log_debug(LOG_DETAILS,
-             "Handle received data, size:{}, {}:{}",
-             bytesRead,
-             session->GetRemoteEndpoint().first,
-             session->GetRemoteEndpoint().second);
+  LOG_DEBUG("Handle received data, size:{}, {}:{}", bytesRead, session->GetRemoteEndpoint().first, session->GetRemoteEndpoint().second);
   const std::string payload(&readBuffer.data()[sizeof(std::uint16_t)], bytesRead - sizeof(std::uint16_t));
 }

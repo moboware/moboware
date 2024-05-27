@@ -12,25 +12,23 @@ int main(const int, const char *[])
   const auto service{std::make_shared<moboware::common::Service>()};
   const auto websocketClient{std::make_shared<moboware::web_socket::WebSocketClient>(service)};
 
-  const auto OnWebSocketDataReceived{
-      [](const boost::beast::flat_buffer &readBuffer,            //
-         const boost::asio::ip::tcp::endpoint &remoteEndPoint)   //
-      {
-        _log_debug(LOG_DETAILS,
-                   "Read data from {}:{}, {}",
-                   remoteEndPoint.address().to_string(),
-                   remoteEndPoint.port(),
-                   std::string((const char *)readBuffer.data().data(), readBuffer.data().size()));
-      }};
+  const auto OnWebSocketDataReceived{[](const boost::beast::flat_buffer &readBuffer,            //
+                                        const boost::asio::ip::tcp::endpoint &remoteEndPoint)   //
+                                     {
+                                       LOG_DEBUG("Read data from {}:{}, {}",
+                                                 remoteEndPoint.address().to_string(),
+                                                 remoteEndPoint.port(),
+                                                 std::string((const char *)readBuffer.data().data(), readBuffer.data().size()));
+                                     }};
 
   websocketClient->SetWebSocketDataReceived(OnWebSocketDataReceived);
 
   if (not websocketClient->Start("localhost", 8080)) {
-    _log_fatal(LOG_DETAILS, "Failed to connect client to server");
+    LOG_FATAL("Failed to connect client to server");
     return EXIT_FAILURE;
   }
 
-  _log_debug(LOG_DETAILS, "Running...");
+  LOG_DEBUG("Running...");
   common::Timer timer(service);
 
   common::Timer::TimerFunction tmf{[&websocketClient, service](common::Timer &timer) {
@@ -38,7 +36,7 @@ int main(const int, const char *[])
     const boost::asio::const_buffer sendBuffer(sendString.c_str(), sendString.size());
     const std::size_t size = websocketClient->SendWebSocketData(sendBuffer);
     if (size > 0) {
-      _log_debug(LOG_DETAILS, "Wrote {} bytes", size);
+      LOG_DEBUG("Wrote {} bytes", size);
       timer.Restart();
     } else {
       service->Stop();

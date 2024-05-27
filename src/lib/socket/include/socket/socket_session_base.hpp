@@ -40,8 +40,7 @@ protected:
   [[nodiscard]] std::size_t GetSendBufferSize(const boost::asio::ip::tcp::socket &socket) const;
   [[nodiscard]] bool SetSendBufferSize(boost::asio::ip::tcp::socket &socket, const std::size_t size);
 
-  [[nodiscard]] std::size_t SendData(boost::asio::ip::tcp::socket &socket,
-                                     const std::vector<boost::asio::const_buffer> &sendBuffers);
+  [[nodiscard]] std::size_t SendData(boost::asio::ip::tcp::socket &socket, const std::vector<boost::asio::const_buffer> &sendBuffers);
   void HandleClosedSocket(boost::asio::ip::tcp::socket &socket);
   void ReadData(boost::asio::ip::tcp::socket &socket);
 
@@ -55,19 +54,17 @@ protected:
 private:
   boost::asio::ip::tcp::endpoint m_RemoteEndpoint{};
 
-  [[nodiscard]] virtual std::size_t ReadBuffer(socket::RingBuffer_t::BufferType_t *dataBuffer,
-                                               const std::size_t requestedBufferSize) = 0;
-  [[nodiscard]] virtual std::size_t WriteSocket(const std::vector<boost::asio::const_buffer> &sendBuffers,
-                                                boost::system::error_code &ec) = 0;
+  [[nodiscard]] virtual std::size_t ReadBuffer(socket::RingBuffer_t::BufferType_t *dataBuffer, const std::size_t requestedBufferSize) = 0;
+  [[nodiscard]] virtual std::size_t WriteSocket(const std::vector<boost::asio::const_buffer> &sendBuffers, boost::system::error_code &ec) = 0;
 };
 
 template <typename TSessionCallback>   //
 SocketSessionBase<TSessionCallback>::SocketSessionBase(const std::shared_ptr<moboware::common::Service> &service,
                                                        TSessionCallback &callback,
                                                        const SessionClosedCleanupHandlerFn &sessionClosedCleanupHandler)
-    : m_Service(service)
-    , m_DataHandlerCallback(callback)
-    , m_SessionClosedCleanupHandler(sessionClosedCleanupHandler)
+  : m_Service(service)
+  , m_DataHandlerCallback(callback)
+  , m_SessionClosedCleanupHandler(sessionClosedCleanupHandler)
 {
 }
 
@@ -91,7 +88,7 @@ std::size_t SocketSessionBase<TSessionCallback>::GetReceiveBufferSize(const boos
 
   socket.get_option(receiveBufferSizeOption, ec);
   if (ec) {
-    _log_error(LOG_DETAILS, "Get tcp receive buffer size failed:{}", ec.what());
+    LOG_ERROR("Get tcp receive buffer size failed:{}", ec.what());
     return 0;
   }
   return receiveBufferSizeOption.value();
@@ -105,11 +102,11 @@ bool SocketSessionBase<TSessionCallback>::SetReceiveBufferSize(boost::asio::ip::
 
   socket.set_option(receiveBufferSizeOption, ec);
   if (ec) {
-    _log_error(LOG_DETAILS, "Set tcp receive buffer size failed:{}", ec.what());
+    LOG_ERROR("Set tcp receive buffer size failed:{}", ec.what());
     return false;
   }
 
-  _log_info(LOG_DETAILS, "Tcp receive buffer set to:{}", size);
+  LOG_INFO("Tcp receive buffer set to:{}", size);
 
   return true;
 }
@@ -121,7 +118,7 @@ std::size_t SocketSessionBase<TSessionCallback>::GetSendBufferSize(const boost::
   boost::asio::socket_base::send_buffer_size sendBufferSizeOption{};
   socket.get_option(sendBufferSizeOption, ec);
   if (ec) {
-    _log_error(LOG_DETAILS, "Get tcp send buffer size failed:{}", ec.what());
+    LOG_ERROR("Get tcp send buffer size failed:{}", ec.what());
     return 0;
   }
   return sendBufferSizeOption.value();
@@ -134,10 +131,10 @@ bool SocketSessionBase<TSessionCallback>::SetSendBufferSize(boost::asio::ip::tcp
   boost::asio::socket_base::send_buffer_size sendBufferSizeOption(size);
   socket.set_option(sendBufferSizeOption, ec);
   if (ec) {
-    _log_error(LOG_DETAILS, "Set tcp send buffer size failed:{}", ec.what());
+    LOG_ERROR("Set tcp send buffer size failed:{}", ec.what());
     return false;
   }
-  _log_info(LOG_DETAILS, "Tcp send buffer set to:{}", size);
+  LOG_INFO("Tcp send buffer set to:{}", size);
   return true;
 }
 
@@ -145,11 +142,11 @@ template <typename TSessionCallback>   //
 void SocketSessionBase<TSessionCallback>::SetTcpBufferSizes(boost::asio::ip::tcp::socket &socket)
 {
   if (not SetReceiveBufferSize(socket, socket::RingBufferSize)) {
-    _log_info(LOG_DETAILS, "Receive tcp buffer size:{}", GetReceiveBufferSize(socket));
+    LOG_INFO("Receive tcp buffer size:{}", GetReceiveBufferSize(socket));
   }
 
   if (not SetSendBufferSize(socket, socket::RingBufferSize)) {
-    _log_info(LOG_DETAILS, "Send tcp buffer size:{}", GetSendBufferSize(socket));
+    LOG_INFO("Send tcp buffer size:{}", GetSendBufferSize(socket));
   }
 }
 
@@ -163,7 +160,7 @@ std::size_t SocketSessionBase<TSessionCallback>::SendData(boost::asio::ip::tcp::
     const auto sendBytes{WriteSocket(sendBuffers, ec)};
 
     if (ec.failed()) {
-      _log_error(LOG_DETAILS, "Write failed: {}", ec.what());
+      LOG_ERROR("Write failed: {}", ec.what());
       HandleClosedSocket(socket);
       return 0;
     }
@@ -175,7 +172,7 @@ std::size_t SocketSessionBase<TSessionCallback>::SendData(boost::asio::ip::tcp::
 template <typename TSessionCallback>   //
 void SocketSessionBase<TSessionCallback>::HandleClosedSocket(boost::asio::ip::tcp::socket &socket)
 {
-  _log_trace(LOG_DETAILS, "Handle closed socket");
+  LOG_TRACE("Handle closed socket");
 
   if (m_SessionClosedCleanupHandler) {
     // notify of a closed session
@@ -187,23 +184,23 @@ void SocketSessionBase<TSessionCallback>::HandleClosedSocket(boost::asio::ip::tc
 
   socket.cancel(ec);
   if (ec.failed()) {
-    _log_error(LOG_DETAILS, "Cancel operation on socket failed:{}", ec.what());
+    LOG_ERROR("Cancel operation on socket failed:{}", ec.what());
   }
 
   if (socket.is_open()) {
-    _log_info(LOG_DETAILS, "Shutting down and closing socket");
+    LOG_INFO("Shutting down and closing socket");
 
     ec.clear();
     socket.shutdown(boost::asio::socket_base::shutdown_both, ec);
     if (ec.failed()) {
-      _log_error(LOG_DETAILS, "Socket shutdown failed:{}", ec.what());
+      LOG_ERROR("Socket shutdown failed:{}", ec.what());
       ec.clear();
     }
 
     ec.clear();
     socket.close(ec);
     if (ec.failed()) {
-      _log_error(LOG_DETAILS, "Socket close failed:{}", ec.what());
+      LOG_ERROR("Socket close failed:{}", ec.what());
     }
   }
 }
@@ -211,7 +208,7 @@ void SocketSessionBase<TSessionCallback>::HandleClosedSocket(boost::asio::ip::tc
 template <typename TSessionCallback>   //
 void SocketSessionBase<TSessionCallback>::ReadData(boost::asio::ip::tcp::socket &socket)
 {
-  _log_debug(LOG_DETAILS, "Waiting to read data");
+  LOG_DEBUG("Waiting to read data");
   //
   const auto readDataFunc{[&](const boost::system::error_code &ec) {
     // This indicates that the session was closed
@@ -221,24 +218,24 @@ void SocketSessionBase<TSessionCallback>::ReadData(boost::asio::ip::tcp::socket 
     //    ec == asio::error::network_reset ||        //
     //    ec == asio::error::network_down) {
     //
-    //  _log_error(LOG_DETAILS,"Read error, closed Web socket, {}", ec.what());
+    //  LOG_ERROR("Read error, closed Web socket, {}", ec.what());
     //  m_DataHandlerCallback->OnSessionClosed(GetRemoteEndpoint());
     //  return;
     //} else
     if (ec.failed()) {
-      _log_error(LOG_DETAILS, "Read error: {}", ec.what());
+      LOG_ERROR("Read error: {}", ec.what());
       HandleClosedSocket(socket);
       return;
     } else {
       // no errors, read data from socket
       const auto bytesAvailable{socket.available()};
-      _log_debug(LOG_DETAILS, "Bytes available:{}", bytesAvailable);
+      LOG_DEBUG("Bytes available:{}", bytesAvailable);
       if (bytesAvailable > 0 and m_ReceiveBuffer.WriteBuffer(
-                                     [&](socket::RingBuffer_t::BufferType_t *dataBuffer,
-                                         const std::size_t requestedBufferSize) {   //
-                                       return ReadBuffer(dataBuffer, requestedBufferSize);
-                                     },
-                                     bytesAvailable)) {
+                                   [&](socket::RingBuffer_t::BufferType_t *dataBuffer,
+                                       const std::size_t requestedBufferSize) {   //
+                                     return ReadBuffer(dataBuffer, requestedBufferSize);
+                                   },
+                                   bytesAvailable)) {
         // forward data when successful committed the data into the read buffer
         m_DataHandlerCallback.OnDataRead(m_ReceiveBuffer, this->GetRemoteEndpoint(), std::chrono::steady_clock::now());
       }

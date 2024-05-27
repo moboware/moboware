@@ -13,9 +13,9 @@ using namespace moboware::web_socket;
 WebSocketSession::WebSocketSession(const std::shared_ptr<moboware::common::Service> &service,
                                    const std::shared_ptr<WebSocketSessionCallback> &callback,
                                    tcp::socket &&webSocket)
-    : m_Service(service)
-    , m_DataHandlerCallback(callback)
-    , m_WebSocket(std::move(webSocket))
+  : m_Service(service)
+  , m_DataHandlerCallback(callback)
+  , m_WebSocket(std::move(webSocket))
 {
 }
 
@@ -40,7 +40,7 @@ void WebSocketSession::Accept()
       // Accept the websocket handshake
       const auto acceptHandshakeFn{[this](const beast::error_code &ec) {
         if (ec) {
-          _log_debug(LOG_DETAILS, "Failed to accept web socket handshake ", ec.to_string());
+          LOG_DEBUG("Failed to accept web socket handshake ", ec.to_string());
           return;
         }
 
@@ -64,13 +64,13 @@ void WebSocketSession::ReadData()
 
     // This indicates that the session was closed
     if (ec == websocket::error::closed) {
-      _log_info(LOG_DETAILS, "Web socket closed");
+      LOG_INFO("Web socket closed");
       m_DataHandlerCallback->OnSessionClosed();
       return;
     }
 
     if (ec) {
-      _log_error(LOG_DETAILS, "Read error: {}, open:{}", ec.to_string(), m_WebSocket.is_open());
+      LOG_ERROR("Read error: {}, open:{}", ec.to_string(), m_WebSocket.is_open());
       return;
     }
 
@@ -102,7 +102,7 @@ auto WebSocketSession::Connect(const std::string &address, const short port) -> 
   system::error_code ec;
   const auto results{resolver.resolve(address, std::to_string(port), ec)};
   if (ec.failed()) {
-    _log_error(LOG_DETAILS, "Resolving address failed:{}:{}, {}", address, port, ec.to_string());
+    LOG_ERROR("Resolving address failed:{}:{}, {}", address, port, ec.to_string());
     return false;
   }
 
@@ -112,7 +112,7 @@ auto WebSocketSession::Connect(const std::string &address, const short port) -> 
   m_WebSocket.next_layer().connect(endpoint, ec);
 
   if (ec.failed()) {
-    _log_error(LOG_DETAILS, "Connect to Web socket failed: {}:{}, {}", address, port, ec.to_string());
+    LOG_ERROR("Connect to Web socket failed: {}:{}, {}", address, port, ec.to_string());
     return false;
   }
   // Update the host_ string. This will provide the value of the
@@ -129,7 +129,7 @@ auto WebSocketSession::Connect(const std::string &address, const short port) -> 
   m_WebSocket.handshake(host, "/", ec);
 
   if (ec.failed()) {
-    _log_error(LOG_DETAILS, "Web socket handshake failed: {}:{}, {}", address, port, ec.to_string());
+    LOG_ERROR("Web socket handshake failed: {}:{}, {}", address, port, ec.to_string());
     return false;
   }
 

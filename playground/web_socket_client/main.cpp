@@ -11,7 +11,7 @@ using namespace moboware;
 class SessionHandler {
 public:
   SessionHandler(const common::ServicePtr &service)
-      : m_Service(service)
+    : m_Service(service)
   {
   }
 
@@ -19,20 +19,20 @@ public:
 
   void OnDataRead(const boost::beast::flat_buffer &readBuffer,
                   const boost::asio::ip::tcp::endpoint &remoteEndPoint,
-                  const common::SystemTimePoint_t &sessionTimePoint)
+                  const common::SessionTimePoint_t &sessionTimePoint)
   {
-    _log_info(LOG_DETAILS, "Received data");
+    LOG_INFO("Received data");
   }
 
   void OnSessionConnected(const boost::asio::ip::tcp::endpoint &endpoint)
   {
-    _log_info(LOG_DETAILS, "Session connected");
+    LOG_INFO("Session connected");
   }
 
   // called when the session is closed and the session can be cleaned up.
   void OnSessionClosed(const boost::asio::ip::tcp::endpoint &endpoint)
   {
-    _log_info(LOG_DETAILS, "Session closed");
+    LOG_INFO("Session closed");
     m_Service->Stop();
   }
 
@@ -48,7 +48,7 @@ int main(int, char **)
 
   boost::asio::signal_set signals(service->GetIoService(), SIGTERM, SIGINT);
   signals.async_wait([&](boost::system::error_code const &, int) {
-    _log_info(LOG_DETAILS, "Control-C received, stopping application");
+    LOG_INFO("Control-C received, stopping application");
 
     service->Stop();
   });
@@ -62,7 +62,7 @@ int main(int, char **)
   const auto port{6543u};
   if (webClient.Start(address, port)) {
 
-    _log_info(LOG_DETAILS, "Client connected to {}:{}", address, port);
+    LOG_INFO("Client connected to {}:{}", address, port);
 
     common::Timer timer(service);
     const auto timerFn{[&](common::Timer &timer)   //

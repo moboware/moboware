@@ -1,15 +1,14 @@
-project(binance)
+project(exchange)
 
 add_library(${PROJECT_NAME}
     # files
-    binance_stream_parser.cpp
+    exchange.cpp
     )
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/)
 
-add_library(moboware::exchange::binance ALIAS ${PROJECT_NAME})
+add_library(moboware::exchange ALIAS ${PROJECT_NAME})
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
-                         moboware::exchange
-                         moboware::socket
+                         moboware::common
                     )

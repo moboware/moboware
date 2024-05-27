@@ -5,10 +5,10 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "binance_price_feed",
+      "name": "lohmann_sax_parsing",
       "type": "cppdbg",
       "request": "launch",
-      "program": "/home/mobo/code/build/moboware/debug/binance_price_feed",
+      "program": "/home/mobo/code/build/moboware/debug/lohmann_sax_parsing",
       "args": [
         // "publish"
       ],

@@ -26,6 +26,7 @@ private:
 
   std::shared_ptr<SslSocketSession_t> m_Session;
 };
+
 /**
  * @brief Construct a new Ssl Socket Client< T Session Callback>:: Ssl Socket Client object
  *
@@ -34,17 +35,15 @@ private:
  * @param sessionCallback
  */
 template <typename TSessionCallback>
-SslSocketClient<TSessionCallback>::SslSocketClient(const moboware::common::ServicePtr &service,
-                                                   TSessionCallback &sessionCallback)
-    : SslSocketClientServer_t(service, sessionCallback)
+SslSocketClient<TSessionCallback>::SslSocketClient(const moboware::common::ServicePtr &service, TSessionCallback &sessionCallback)
+  : SslSocketClientServer_t(service, sessionCallback)
 {
   SslSocketClientServer_t::m_SslContext.set_default_verify_paths();
 }
 
-template <typename TSessionCallback>
-auto SslSocketClient<TSessionCallback>::Start(const std::string &address, const std::uint16_t port) -> bool
+template <typename TSessionCallback> auto SslSocketClient<TSessionCallback>::Start(const std::string &address, const std::uint16_t port) -> bool
 {
-  _log_trace(LOG_DETAILS, "Connecting ssl socket client, {}:{}", address, port);
+  LOG_TRACE("Connecting ssl socket client, {}:{}", address, port);
 
   boost::asio::ip::tcp::socket sslSocket(SslSocketClientServer_t::m_Strand.get_inner_executor());
   m_Session = std::make_shared<SslSocketSession_t>(SslSocketClientServer_t::m_Service,
@@ -60,8 +59,7 @@ auto SslSocketClient<TSessionCallback>::Start(const std::string &address, const 
 }
 
 template <typename TSessionCallback>
-auto SslSocketClient<TSessionCallback>::SendSocketData(const std::vector<boost::asio::const_buffer> &sendBuffer)
-    -> std::size_t
+auto SslSocketClient<TSessionCallback>::SendSocketData(const std::vector<boost::asio::const_buffer> &sendBuffer) -> std::size_t
 {
   return m_Session->SendData(sendBuffer);
 }

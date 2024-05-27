@@ -20,12 +20,12 @@ int main(const int argc, const char **argv)
   if (argc == 2) {
     Logger::GetInstance().SetLogFile("shared_memory_publisher.log");
 
-    _log_info(LOG_DETAILS, "Shared memory publisher {}", memoryName);
+    LOG_INFO("Shared memory publisher {}", memoryName);
 
     SharedMemoryPublisher smp(memoryName);
     std::uint64_t n{};
     while (!done) {
-      _log_info(LOG_DETAILS, "Start writing...");
+      LOG_INFO("Start writing...");
       for (std::uint64_t i = 0; i < 25'000; i++) {
         const auto msg{std::to_string(++n)};
         smp.Write({msg.data(), msg.size()});
@@ -33,13 +33,13 @@ int main(const int argc, const char **argv)
       // notify all consumers
       smp.Notify();
 
-      _log_info(LOG_DETAILS, "Ready...{}", n);
+      LOG_INFO("Ready...{}", n);
       std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
   } else {
     Logger::GetInstance().SetLogFile("shared_memory_consumer.log");
 
-    _log_info(LOG_DETAILS, "Shared memory consumer {}", memoryName);
+    LOG_INFO("Shared memory consumer {}", memoryName);
 
     SharedMemoryConsumer smc(memoryName);
 
@@ -50,6 +50,6 @@ int main(const int argc, const char **argv)
 
     } while (!done);
   }
-  _log_info(LOG_DETAILS, "Bye...");
+  LOG_INFO("Bye...");
   return 0;
 }

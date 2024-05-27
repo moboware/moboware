@@ -27,8 +27,7 @@ public:
   virtual ~WebSocketServer() = default;
 
   [[nodiscard]] bool Start(const std::string &address, const std::uint16_t port) final;
-  [[nodiscard]] bool SendWebSocketData(const boost::asio::const_buffer &sendBuffer,
-                                       const boost::asio::ip::tcp::endpoint &remoteEndPoint);
+  [[nodiscard]] bool SendWebSocketData(const boost::asio::const_buffer &sendBuffer, const boost::asio::ip::tcp::endpoint &remoteEndPoint);
   void SendToAllClients(const boost::asio::const_buffer &sendBuffer);
 
   [[nodiscard]] inline bool HasConnectedClients() const noexcept
@@ -55,10 +54,9 @@ private:
 };
 
 template <typename TSessionCallback>
-WebSocketServer<TSessionCallback>::WebSocketServer(const std::shared_ptr<moboware::common::Service> &service,
-                                                   TSessionCallback &sessionCallback)
-    : WebSocketClientServer_t(service, sessionCallback)
-    , m_Acceptor(WebSocketClientServer_t::m_Strand)
+WebSocketServer<TSessionCallback>::WebSocketServer(const std::shared_ptr<moboware::common::Service> &service, TSessionCallback &sessionCallback)
+  : WebSocketClientServer_t(service, sessionCallback)
+  , m_Acceptor(WebSocketClientServer_t::m_Strand)
 {
   LoadServerCertificate(WebSocketClientServer_t::m_SslContext);
 }
@@ -70,7 +68,7 @@ bool WebSocketServer<TSessionCallback>::Start(const std::string &address, const 
   boost::system::error_code ec{};
   const auto resolveResults{resolver.resolve(address, std::to_string(port), ec)};
   if (ec.failed()) {
-    _log_error(LOG_DETAILS, "Resolving address failed:{}:{} {}", address, port, ec.what());
+    LOG_ERROR("Resolving address failed:{}:{} {}", address, port, ec.what());
     return false;
   }
 
@@ -80,35 +78,35 @@ bool WebSocketServer<TSessionCallback>::Start(const std::string &address, const 
   // Open the acceptor
   m_Acceptor.open(endpoint.protocol(), ec);
   if (ec) {
-    _log_error(LOG_DETAILS, "Open acceptor failed:{}", ec.what());
+    LOG_ERROR("Open acceptor failed:{}", ec.what());
     return false;
   }
 
   // Allow address reuse
   m_Acceptor.set_option(boost::asio::socket_base::reuse_address(true), ec);
   if (ec) {
-    _log_error(LOG_DETAILS, "set_option failed:{}", ec.what());
+    LOG_ERROR("set_option failed:{}", ec.what());
     return false;
   }
 
   // Bind to the server address
   m_Acceptor.bind(endpoint, ec);
   if (ec) {
-    _log_error(LOG_DETAILS, "bind failed:{}", ec.what());
+    LOG_ERROR("bind failed:{}", ec.what());
     return false;
   }
 
   // Start listening for connections
   m_Acceptor.listen(boost::asio::socket_base::max_listen_connections, ec);
   if (ec) {
-    _log_error(LOG_DETAILS, "start listen failed:{}", ec.what());
+    LOG_ERROR("start listen failed:{}", ec.what());
     return false;
   }
 
   // start accepting connections
   Accept();
 
-  _log_info(LOG_DETAILS, "WebSocket server started");
+  LOG_INFO("WebSocket server started");
 
   // start ping timer
   WebSocketClientServer_t::StartPingTimer(std::chrono::milliseconds(3000));
@@ -121,7 +119,7 @@ void WebSocketServer<TSessionCallback>::Accept() noexcept
 {
   const auto acceptorFunc{[&](boost::system::error_code ec, boost::asio::ip::tcp::socket webSocket) {
     if (ec.failed()) {
-      _log_error(LOG_DETAILS, "Failed to accept connection:{}", ec.what());
+      LOG_ERROR("Failed to accept connection:{}", ec.what());
     } else {
       // create session and store in our session list
       const auto endPointKey = std::make_pair(webSocket.remote_endpoint().address(), webSocket.remote_endpoint().port());
@@ -146,10 +144,7 @@ void WebSocketServer<TSessionCallback>::Accept() noexcept
         const auto pair{m_Sessions.emplace(endPointKey, session)};
 
         if (pair.second and session->Accept()) {
-          _log_info(LOG_DETAILS,
-                    "Connection accepted from {}:{}",
-                    session->GetRemoteEndpoint().address().to_string(),
-                    session->GetRemoteEndpoint().port());
+          LOG_INFO("Connection accepted from {}:{}", session->GetRemoteEndpoint().address().to_string(), session->GetRemoteEndpoint().port());
           // store this new session in the sessions list
         } else {
           m_Sessions.erase(pair.first);
@@ -165,10 +160,9 @@ void WebSocketServer<TSessionCallback>::Accept() noexcept
 }
 
 template <typename TSessionCallback>   //
-std::size_t
-WebSocketServer<TSessionCallback>::CheckClosedSessions(const boost::asio::ip::tcp::endpoint &remoteEndpoint) noexcept
+std::size_t WebSocketServer<TSessionCallback>::CheckClosedSessions(const boost::asio::ip::tcp::endpoint &remoteEndpoint) noexcept
 {
-  _log_trace(LOG_DETAILS, "{}@{}", remoteEndpoint.port(), remoteEndpoint.address().to_string());
+  LOG_TRACE("{}@{}", remoteEndpoint.port(), remoteEndpoint.address().to_string());
 
   const auto endpointPair{std::make_pair(remoteEndpoint.address(), remoteEndpoint.port())};
 
@@ -178,7 +172,7 @@ WebSocketServer<TSessionCallback>::CheckClosedSessions(const boost::asio::ip::tc
     const auto session = iter->second;
     if (not session->IsOpen()) {
       m_Sessions.erase(iter);
-      _log_trace(LOG_DETAILS, "Removed 'closed' session {}:{}", remoteEndpoint.address().to_string(), remoteEndpoint.port());
+      LOG_TRACE("Removed 'closed' session {}:{}", remoteEndpoint.address().to_string(), remoteEndpoint.port());
     }
   }
   return m_Sessions.size();
@@ -196,10 +190,7 @@ bool WebSocketServer<TSessionCallback>::SendWebSocketData(const boost::asio::con
     return session->SendWebSocketData(sendBuffer);
   }
 
-  _log_error(LOG_DETAILS,
-             "No endpoint not found to send data to {}:{}",
-             remoteEndPoint.address().to_string(),
-             remoteEndPoint.port());
+  LOG_ERROR("No endpoint not found to send data to {}:{}", remoteEndPoint.address().to_string(), remoteEndPoint.port());
   return false;
 }
 
@@ -209,7 +200,7 @@ void WebSocketServer<TSessionCallback>::SendToAllClients(const boost::asio::cons
   for (const auto &[k, v] : m_Sessions) {
     const auto &session = v;
     if (not session->SendWebSocketData(sendBuffer)) {
-      _log_error(LOG_DETAILS, "Failed to send data to client: {}:{}", k.first.to_string(), k.second);
+      LOG_ERROR("Failed to send data to client: {}:{}", k.first.to_string(), k.second);
     }
   }
 }
@@ -220,7 +211,7 @@ bool WebSocketServer<TSessionCallback>::SendPingRequest()
   for (const auto &[_, v] : m_Sessions) {
     const auto &session = v;
     if (not session->SendPingRequest()) {
-      _log_warning(LOG_DETAILS, "Failed to send ping request");
+      LOG_WARN("Failed to send ping request");
     }
   }
   return true;

@@ -29,16 +29,15 @@ private:
 };
 
 template <typename TSessionCallback>   //
-TcpSocketClient<TSessionCallback>::TcpSocketClient(const moboware::common::ServicePtr &service,
-                                                   TSessionCallback &sessionCallback)
-    : TcpSocketClientServer<TSessionCallback>(service, sessionCallback)
+TcpSocketClient<TSessionCallback>::TcpSocketClient(const moboware::common::ServicePtr &service, TSessionCallback &sessionCallback)
+  : TcpSocketClientServer<TSessionCallback>(service, sessionCallback)
 {
 }
 
 template <typename TSessionCallback>   //
 auto TcpSocketClient<TSessionCallback>::Start(const std::string &address, const std::uint16_t port) -> bool
 {
-  _log_trace(LOG_DETAILS, "Connecting tcp socket client, {}:{}", address, port);
+  LOG_TRACE("Connecting tcp socket client, {}:{}", address, port);
 
   boost::asio::ip::tcp::socket tcpSocket(TcpSocketClientServer_t::m_Strand.get_inner_executor());
 
@@ -52,8 +51,7 @@ auto TcpSocketClient<TSessionCallback>::Start(const std::string &address, const 
 }
 
 template <typename TSessionCallback>   //
-auto TcpSocketClient<TSessionCallback>::SendSocketData(const std::vector<boost::asio::const_buffer> &sendBuffer)
-    -> std::size_t
+auto TcpSocketClient<TSessionCallback>::SendSocketData(const std::vector<boost::asio::const_buffer> &sendBuffer) -> std::size_t
 {
   if (m_Session) {
     return m_Session->SendData(sendBuffer);

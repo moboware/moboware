@@ -49,7 +49,7 @@ int main(const int argc, const char **argv)
   UnorderedFastMap_t fastMap{};
   const auto i987{fastMap.find("987")};
   if (fastMap.end() != i987) {
-    _log_info(LOG_DETAILS, "found");
+    LOG_INFO("found");
   }
 
   for (int i = 0; i < 74; i++) {
@@ -60,26 +60,26 @@ int main(const int argc, const char **argv)
     }
   }
 
-  _log_info(LOG_DETAILS, "Fast map:P{}", fastMap);
+  LOG_INFO("Fast map:P{}", fastMap);
 
   const auto key{"9"};
   const auto findIter1{fastMap.find(key)};
   if (findIter1 != fastMap.end()) {
-    _log_info(LOG_DETAILS, "Found value:{}", findIter1.second());
+    LOG_INFO("Found value:{}", findIter1.second());
   } else {
-    _log_info(LOG_DETAILS, "key value {} not found", key);
+    LOG_INFO("key value {} not found", key);
   }
 
   const auto eraseIter1{fastMap.erase("5")};
   if (eraseIter1 != fastMap.end()) {
-    _log_info(LOG_DETAILS, "key {} value:{}", eraseIter1.first(), eraseIter1.second());
+    LOG_INFO("key {} value:{}", eraseIter1.first(), eraseIter1.second());
     const auto eraseIter2{fastMap.erase(eraseIter1)};
     if (eraseIter2 != fastMap.end()) {
-      _log_info(LOG_DETAILS, "key {}, value:{}", eraseIter2.first(), eraseIter2.second());
+      LOG_INFO("key {}, value:{}", eraseIter2.first(), eraseIter2.second());
     }
   }
 
-  _log_info(LOG_DETAILS, "Bye... fast map:{}", fastMap);
+  LOG_INFO("Bye... fast map:{}", fastMap);
   fastMap.clear();
   return 0;
 }

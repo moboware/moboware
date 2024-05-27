@@ -38,31 +38,29 @@ protected:
 };
 
 template <typename TSessionCallback>   //
-SslSocketClientServer<TSessionCallback>::SslSocketClientServer(const common::ServicePtr &service,
-                                                               TSessionCallback &sessionCallback)
-    : m_Service{service}
-    , m_Strand(boost::asio::make_strand(service->GetIoService()))
-    , m_SessionCallback(sessionCallback)
-    , m_SslContext(boost::asio::ssl::context::sslv23)
+SslSocketClientServer<TSessionCallback>::SslSocketClientServer(const common::ServicePtr &service, TSessionCallback &sessionCallback)
+  : m_Service{service}
+  , m_Strand(boost::asio::make_strand(service->GetIoService()))
+  , m_SessionCallback(sessionCallback)
+  , m_SslContext(boost::asio::ssl::context::sslv23)
 {
 }
 
 template <typename TSessionCallback>   //
-bool SslSocketClientServer<TSessionCallback>::LoadCertificateAndKeyFile(const std::string &certificateFile,
-                                                                        const std::string &keyFile)
+bool SslSocketClientServer<TSessionCallback>::LoadCertificateAndKeyFile(const std::string &certificateFile, const std::string &keyFile)
 {
   boost::system::error_code ec;
 
   m_SslContext.use_certificate_file(certificateFile, boost::asio::ssl::context::file_format::pem, ec);
 
   if (ec.failed()) {
-    _log_error(LOG_DETAILS, "Unable to load cert file:{}, {}", certificateFile, ec.what());
+    LOG_ERROR("Unable to load cert file:{}, {}", certificateFile, ec.what());
     return false;
   }
 
   m_SslContext.use_rsa_private_key_file(keyFile, boost::asio::ssl::context::file_format::pem, ec);
   if (ec.failed()) {
-    _log_error(LOG_DETAILS, "Unable to load key file:{}, {}", certificateFile, ec.what());
+    LOG_ERROR("Unable to load key file:{}, {}", certificateFile, ec.what());
     return false;
   }
 

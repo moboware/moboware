@@ -38,11 +38,10 @@ set(CMAKE_CXX_FLAGS_RELEASE ${RELEASE_FLAGS}) # debug info in release mode
 # openssl package
 find_package(OpenSSL REQUIRED)
 
-find_package(Threads)
-
-# rapid json parser
-add_compile_definitions(RAPIDJSON_HAS_STDSTRING)
-find_package(RapidJSON CONFIG REQUIRED)
+# nlohmann json parser
+# uasage: target_link_libraries(main PRIVATE nlohmann_json::nlohmann_json)
+find_package(nlohmann_json CONFIG REQUIRED)
+set(nlohmann-json_IMPLICIT_CONVERSIONS OFF)
 
 # boost package
 set(Boost_USE_STATIC_LIBS On)
@@ -58,6 +57,7 @@ find_package(
   REQUIRED)
 
 find_package(fmt REQUIRED)
+
 
 include_directories(${Boost_INCLUDE_DIRS})
 

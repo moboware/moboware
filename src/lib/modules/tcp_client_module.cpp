@@ -4,18 +4,18 @@
 using namespace moboware::modules;
 using namespace moboware::common;
 
-TcpClientModule::TcpClientModule(const std::shared_ptr<common::Service>& service, //
-                                 const std::shared_ptr<common::ChannelInterface>& channelInterface)
+TcpClientModule::TcpClientModule(const std::shared_ptr<common::Service> &service,   //
+                                 const std::shared_ptr<common::ChannelInterface> &channelInterface)
   : common::IModule("TcpClientModule", service, channelInterface)
-  , //
+  ,   //
   m_Timer(service)
   , m_TcpClient(std::make_shared<common::TcpClient>(service))
 {
 }
 
-bool TcpClientModule::LoadConfig(const boost::json::value& moduleValue)
+bool TcpClientModule::LoadConfig(const boost::json::value &moduleValue)
 {
-  _log_debug(LOG_DETAILS,"Load module Config");
+  LOG_DEBUG("Load module Config");
 
   m_Config.m_Address = moduleValue.at("Address").as_string().c_str();
   m_Config.m_Port = moduleValue.at("Port").as_int64();
@@ -38,4 +38,6 @@ bool TcpClientModule::Start()
   return false;
 }
 
-void TcpClientModule::OnWebSocketDataReceived(const boost::beast::flat_buffer& sendBuffer, const boost::asio::ip::tcp::endpoint& endpoint) {}
+void TcpClientModule::OnWebSocketDataReceived(const boost::beast::flat_buffer &sendBuffer, const boost::asio::ip::tcp::endpoint &endpoint)
+{
+}

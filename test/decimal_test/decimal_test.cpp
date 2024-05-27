@@ -23,17 +23,17 @@ int main(int argc, char *argv[])
 TEST(DecimalTest, MultiplyTest)
 {
 
-  _log_info(LOG_DETAILS, "Numeric Price_t digits:{}", std::numeric_limits<Price_t>::digits);
-  _log_info(LOG_DETAILS, "Numeric double digits:{}", std::numeric_limits<double>::digits10);
+  LOG_INFO("Numeric Price_t digits:{}", std::numeric_limits<Price_t>::digits);
+  LOG_INFO("Numeric double digits:{}", std::numeric_limits<double>::digits10);
 
-  _log_info(LOG_DETAILS, "Max Price_t:{}", std::numeric_limits<Price_t>::max());
-  _log_info(LOG_DETAILS, "Max double:{}", std::numeric_limits<double>::max());
+  LOG_INFO("Max Price_t:{}", std::numeric_limits<Price_t>::max());
+  LOG_INFO("Max double:{}", std::numeric_limits<double>::max());
 
-  _log_info(LOG_DETAILS, "Min Price_t:{}", std::numeric_limits<Price_t>::min());
-  _log_info(LOG_DETAILS, "Min double :{}", std::numeric_limits<double>::min());
+  LOG_INFO("Min Price_t:{}", std::numeric_limits<Price_t>::min());
+  LOG_INFO("Min double :{}", std::numeric_limits<double>::min());
 
-  _log_info(LOG_DETAILS, "Max Price_t digits:{}", std::numeric_limits<Price_t>::max_digits10);
-  _log_info(LOG_DETAILS, "Max double digits:{}", std::numeric_limits<double>::max_digits10);
+  LOG_INFO("Max Price_t digits:{}", std::numeric_limits<Price_t>::max_digits10);
+  LOG_INFO("Max double digits:{}", std::numeric_limits<double>::max_digits10);
 
   const std::string value{"1000000000000.000000000000000001"};
   const std::string value2{"2000000000000.000000000000000002"};
@@ -41,17 +41,17 @@ TEST(DecimalTest, MultiplyTest)
 
   Price_t decimal{value};
 
-  _log_info(LOG_DETAILS, "Decimal:{}", decimal);
+  LOG_INFO("Decimal:{}", decimal);
 
   EXPECT_EQ(decimal.convert_to<std::string>(), value);
   EXPECT_EQ(decimal += decimal, Price_t{value2});
-  _log_info(LOG_DETAILS, "Value  :{}", value);
-  _log_info(LOG_DETAILS, "Decimal:{}", decimal);
+  LOG_INFO("Value  :{}", value);
+  LOG_INFO("Decimal:{}", decimal);
 
   EXPECT_EQ(decimal *= 2.0, Price_t{value4});
 
-  _log_info(LOG_DETAILS, "Decimal:{}", decimal);
+  LOG_INFO("Decimal:{}", decimal);
 
   EXPECT_EQ(decimal /= decimal, 1);
-  _log_info(LOG_DETAILS, "Decimal:{}", decimal);
+  LOG_INFO("Decimal:{}", decimal);
 }

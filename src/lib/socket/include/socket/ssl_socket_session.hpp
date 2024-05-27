@@ -58,14 +58,13 @@ private:
 };
 
 template <typename TSessionCallback>   //
-SslSocketSession<TSessionCallback>::SslSocketSession(
-    const common::ServicePtr &service,
-    boost::asio::ssl::context &ssl_ctx,
-    TSessionCallback &callback,
-    boost::asio::ip::tcp::socket &&socket,
-    const SessionBase_t::SessionClosedCleanupHandlerFn &sessionClosedHandlerFn)
-    : moboware::socket::SocketSessionBase<TSessionCallback>(service, callback, sessionClosedHandlerFn)
-    , m_SslSocketStream(std::move(socket), ssl_ctx)
+SslSocketSession<TSessionCallback>::SslSocketSession(const common::ServicePtr &service,
+                                                     boost::asio::ssl::context &ssl_ctx,
+                                                     TSessionCallback &callback,
+                                                     boost::asio::ip::tcp::socket &&socket,
+                                                     const SessionBase_t::SessionClosedCleanupHandlerFn &sessionClosedHandlerFn)
+  : moboware::socket::SocketSessionBase<TSessionCallback>(service, callback, sessionClosedHandlerFn)
+  , m_SslSocketStream(std::move(socket), ssl_ctx)
 {
 }
 
@@ -81,7 +80,7 @@ bool SslSocketSession<TSessionCallback>::Accept()
   m_SslSocketStream.handshake(boost::asio::ssl::stream_base::server, ec);
 
   if (ec.failed()) {
-    _log_error(LOG_DETAILS, "Handshake failed:{}", ec.what());
+    LOG_ERROR("Handshake failed:{}", ec.what());
     return false;
   }
 
@@ -108,7 +107,7 @@ bool SslSocketSession<TSessionCallback>::Connect(const std::string &address, con
 
   const auto resolveResults{resolver.resolve(address, std::to_string(port), ec)};
   if (ec.failed()) {
-    _log_error(LOG_DETAILS, "Resolving address failed:{}:{} {}", address, port, ec.what());
+    LOG_ERROR("Resolving address failed:{}:{} {}", address, port, ec.what());
     return false;
   }
 
@@ -118,7 +117,7 @@ bool SslSocketSession<TSessionCallback>::Connect(const std::string &address, con
   const boost::asio::ip::tcp::endpoint &endpoint{resolveResults.begin()->endpoint()};
   boost::beast::get_lowest_layer(m_SslSocketStream).connect(endpoint, ec);
   if (ec.failed()) {
-    _log_error(LOG_DETAILS, "Connect to Web socket failed, {}:{} {}", address, port, ec.what());
+    LOG_ERROR("Connect to Web socket failed, {}:{} {}", address, port, ec.what());
     return false;
   }
 
@@ -137,7 +136,7 @@ bool SslSocketSession<TSessionCallback>::Connect(const std::string &address, con
   m_SslSocketStream.handshake(boost::asio::ssl::stream_base::client, ec);
 
   if (ec.failed()) {
-    _log_fatal(LOG_DETAILS, "Failed to handshake to ssl socket, {}:{} {}", address, port, ec.what());
+    LOG_FATAL("Failed to handshake to ssl socket, {}:{} {}", address, port, ec.what());
     return false;
   }
 
@@ -147,7 +146,7 @@ bool SslSocketSession<TSessionCallback>::Connect(const std::string &address, con
   // get/set tcp send/receive buffer sizes
   SessionBase_t::SetTcpBufferSizes(boost::beast::get_lowest_layer(m_SslSocketStream));
 
-  _log_info(LOG_DETAILS, "Ready for data reading/writing");
+  LOG_INFO("Ready for data reading/writing");
 
   // start reading data
   SessionBase_t::ReadData(boost::beast::get_lowest_layer(m_SslSocketStream));
@@ -156,14 +155,13 @@ bool SslSocketSession<TSessionCallback>::Connect(const std::string &address, con
 }
 
 template <typename TSessionCallback>   //
-std::size_t SslSocketSession<TSessionCallback>::ReadBuffer(socket::RingBuffer_t::BufferType_t *dataBuffer,
-                                                           const std::size_t requestedBufferSize)
+std::size_t SslSocketSession<TSessionCallback>::ReadBuffer(socket::RingBuffer_t::BufferType_t *dataBuffer, const std::size_t requestedBufferSize)
 {
   boost::system::error_code readError;
 
   const auto bytesRead{m_SslSocketStream.read_some(boost::asio::buffer(dataBuffer, requestedBufferSize), readError)};
   if (not readError.failed()) {
-    _log_debug(LOG_DETAILS, "Read {} data:{}", bytesRead, std::string(dataBuffer, bytesRead));
+    LOG_DEBUG("Read {} data:{}", bytesRead, std::string(dataBuffer, bytesRead));
     return bytesRead;
   }
   return 0ul;

@@ -27,8 +27,7 @@ auto OrderLevel::GetTopLevel() const -> std::optional<OrderInsertData>
   return topLevel;
 }
 
-auto OrderLevel::TradeTopLevel(const VolumeType_t volume, const std::function<void(const Trade &)> &tradedFn) const
-    -> VolumeType_t
+auto OrderLevel::TradeTopLevel(const VolumeType_t volume, const std::function<void(const Trade &)> &tradedFn) const -> VolumeType_t
 {
   VolumeType_t tradedVolume{};
   if (not m_TimeQueue.empty()) {
@@ -70,7 +69,7 @@ const OrderInsertData *OrderLevel::Insert(OrderInsertData &&orderData) noexcept
 
 bool OrderLevel::CancelOrder(const Id_t &orderId) noexcept
 {
-  _log_debug(LOG_DETAILS, "Cancel order id {}", orderId);
+  LOG_DEBUG("Cancel order id {}", orderId);
   for (auto iter{m_TimeQueue.cbegin()}; iter != std::end(m_TimeQueue); ++iter) {
     const auto &orderData{*iter};
     if (orderData.GetId() == orderId) {

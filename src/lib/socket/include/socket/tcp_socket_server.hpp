@@ -47,18 +47,17 @@ private:
 };
 
 template <typename TSessionCallback>   //
-TcpSocketServer<TSessionCallback>::TcpSocketServer(const std::shared_ptr<moboware::common::Service> &service,
-                                                   TSessionCallback &sessionCallback)
-    : TcpSocketClientServer_t(service, sessionCallback)
-    , m_Acceptor(TcpSocketClientServer_t::m_Strand)
-    , m_SessionCallback(sessionCallback)
+TcpSocketServer<TSessionCallback>::TcpSocketServer(const std::shared_ptr<moboware::common::Service> &service, TSessionCallback &sessionCallback)
+  : TcpSocketClientServer_t(service, sessionCallback)
+  , m_Acceptor(TcpSocketClientServer_t::m_Strand)
+  , m_SessionCallback(sessionCallback)
 {
 }
 
 template <typename TSessionCallback>   //
 bool TcpSocketServer<TSessionCallback>::Start(const std::string &address, const std::uint16_t port)
 {
-  _log_info(LOG_DETAILS, "Start server on {}:{}", address, port);
+  LOG_INFO("Start server on {}:{}", address, port);
 
   boost::asio::ip::tcp::resolver resolver(TcpSocketClientServer_t::m_Strand.get_inner_executor());
   boost::system::error_code ec;
@@ -66,7 +65,7 @@ bool TcpSocketServer<TSessionCallback>::Start(const std::string &address, const 
   const auto resolveResults{resolver.resolve(address, std::to_string(port), ec)};
 
   if (ec.failed()) {
-    _log_error(LOG_DETAILS, "Resolving address failed:{}:{} {}", address, port, ec.what());
+    LOG_ERROR("Resolving address failed:{}:{} {}", address, port, ec.what());
     return false;
   }
 
@@ -76,35 +75,35 @@ bool TcpSocketServer<TSessionCallback>::Start(const std::string &address, const 
   // Open the acceptor
   m_Acceptor.open(endpoint.protocol(), ec);
   if (ec) {
-    _log_error(LOG_DETAILS, "Open acceptor failed:{}", ec.what());
+    LOG_ERROR("Open acceptor failed:{}", ec.what());
     return false;
   }
 
   // Allow address reuse
   m_Acceptor.set_option(boost::asio::socket_base::reuse_address(true), ec);
   if (ec) {
-    _log_error(LOG_DETAILS, "set_option failed:{}", ec.what());
+    LOG_ERROR("set_option failed:{}", ec.what());
     return false;
   }
 
   // Bind to the server address
   m_Acceptor.bind(endpoint, ec);
   if (ec) {
-    _log_error(LOG_DETAILS, "bind failed:{}", ec.what());
+    LOG_ERROR("bind failed:{}", ec.what());
     return false;
   }
 
   // Start listening for connections
   m_Acceptor.listen(boost::asio::socket_base::max_listen_connections, ec);
   if (ec) {
-    _log_error(LOG_DETAILS, "start listen failed:{}", ec.what());
+    LOG_ERROR("start listen failed:{}", ec.what());
     return false;
   }
 
   // start accepting connections
   Accept();
 
-  _log_info(LOG_DETAILS, "TcpSocket server started");
+  LOG_INFO("TcpSocket server started");
 
   // start ping timer
   // StartPingTimer(std::chrono::milliseconds(3000));
@@ -122,7 +121,7 @@ std::size_t TcpSocketServer<TSessionCallback>::CheckClosedSessions(const boost::
     const auto session = iter->second;
     if (not session->IsOpen()) {
       m_Sessions.erase(iter);
-      _log_trace(LOG_DETAILS, "Removed 'closed' session {}:{}", remoteEndpoint.address().to_string(), remoteEndpoint.port());
+      LOG_TRACE("Removed 'closed' session {}:{}", remoteEndpoint.address().to_string(), remoteEndpoint.port());
     }
   }
   return m_Sessions.size();
@@ -133,7 +132,7 @@ void TcpSocketServer<TSessionCallback>::Accept()
 {
   const auto acceptorFunc = [&](const boost::system::error_code &ec, boost::asio::ip::tcp::socket webSocket) {
     if (ec.failed()) {
-      _log_error(LOG_DETAILS, "Failed to accept connection:{}", ec.what());
+      LOG_ERROR("Failed to accept connection:{}", ec.what());
     } else {
       // create session and store in our session list
       const auto endPointKey = std::make_pair(webSocket.remote_endpoint().address(), webSocket.remote_endpoint().port());
@@ -147,10 +146,7 @@ void TcpSocketServer<TSessionCallback>::Accept()
       const auto pair{m_Sessions.emplace(endPointKey, session)};
 
       if (pair.second and session->Accept()) {
-        _log_info(LOG_DETAILS,
-                  "Connection accepted from {}:{}",
-                  session->GetRemoteEndpoint().address().to_string(),
-                  session->GetRemoteEndpoint().port());
+        LOG_INFO("Connection accepted from {}:{}", session->GetRemoteEndpoint().address().to_string(), session->GetRemoteEndpoint().port());
         // store this new session in the sessions list
       } else {
         m_Sessions.erase(pair.first);
@@ -176,10 +172,7 @@ std::size_t TcpSocketServer<TSessionCallback>::SendSocketData(const std::vector<
     return session->SendData(sendBuffer);
   }
 
-  _log_error(LOG_DETAILS,
-             "No endpoint not found to send data to {}:{}",
-             remoteEndPoint.address().to_string(),
-             remoteEndPoint.port());
+  LOG_ERROR("No endpoint not found to send data to {}:{}", remoteEndPoint.address().to_string(), remoteEndPoint.port());
   return 0;
 }
 
@@ -189,7 +182,7 @@ void TcpSocketServer<TSessionCallback>::SendToAllClients(const std::vector<boost
   for (const auto &[k, v] : m_Sessions) {
     const auto &session = v;
     if (0 == session->SendData(sendBuffer)) {
-      _log_error(LOG_DETAILS, "Failed to send data to client: {}:{}", k.first.to_string(), k.second);
+      LOG_ERROR("Failed to send data to client: {}:{}", k.first.to_string(), k.second);
     }
   }
 }

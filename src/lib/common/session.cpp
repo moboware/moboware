@@ -8,7 +8,7 @@ using namespace boost::asio::ip;
 using namespace moboware::common;
 
 Session::Session(const std::shared_ptr<Service> &service)
-    : m_Socket(service->GetIoService())
+  : m_Socket(service->GetIoService())
 {
   _readDataHandler = [this](const system::error_code &errorCode) {
     if (ReadData(errorCode)) {
@@ -29,7 +29,7 @@ tcp::socket &Session::Socket()
 
 void Session::Start()
 {
-  _log_debug(LOG_DETAILS, "Start session");
+  LOG_DEBUG("Start session");
 
   Session::AsyncReceive();
 
@@ -50,14 +50,14 @@ void Session::AsyncReceive()
 bool Session::ReadData(const system::error_code &errorCode)
 {
   if (errorCode.failed()) {
-    _log_debug(LOG_DETAILS, "Read data failed {}", errorCode.to_string());
+    LOG_DEBUG("Read data failed {}", errorCode.to_string());
     return false;
   }
 
   system::error_code readError;
   const auto bytesAvailable = m_Socket.available(readError);
   if (readError.failed()) {
-    _log_debug(LOG_DETAILS, "Read bytes available failed {}", readError.to_string());
+    LOG_DEBUG("Read bytes available failed {}", readError.to_string());
     return false;
   }
 
@@ -65,14 +65,12 @@ bool Session::ReadData(const system::error_code &errorCode)
     readError.clear();
     std::array<char, maxBufferSize> readBuffer;
 
-    // _log_debug(LOG_DETAILS,bytesAvailable << " bytes available...");
-    const auto bytesRead = asio::read(m_Socket,
-                                      asio::buffer(readBuffer.data(), readBuffer.size()),
-                                      asio::transfer_at_least(bytesAvailable),
-                                      readError);
+    // LOG_DEBUG(bytesAvailable << " bytes available...");
+    const auto bytesRead =
+      asio::read(m_Socket, asio::buffer(readBuffer.data(), readBuffer.size()), asio::transfer_at_least(bytesAvailable), readError);
 
     if (readError.failed()) {
-      _log_debug(LOG_DETAILS, "Read data bytes failed {}", readError.to_string());
+      LOG_DEBUG("Read data bytes failed {}", readError.to_string());
       return false;
     }
 
@@ -95,19 +93,18 @@ std::size_t Session::Send(const asio::const_buffer &sendBuffer)
   const auto bytesSend = asio::write(Session::Socket(), sendBuffers, errorCode);
 
   if (errorCode.failed()) {
-    if (errorCode == asio::error::connection_reset || errorCode == asio::error::connection_aborted ||
-        errorCode == asio::error::broken_pipe || errorCode == asio::error::network_reset ||
-        errorCode == asio::error::network_down) {
+    if (errorCode == asio::error::connection_reset || errorCode == asio::error::connection_aborted || errorCode == asio::error::broken_pipe ||
+        errorCode == asio::error::network_reset || errorCode == asio::error::network_down) {
       if (m_SessionDisconnectedCallback && shared_from_this()) {
         m_SessionDisconnectedCallback(shared_from_this(), GetRemoteEndpoint());
       }
       CloseSocket();
     } else {
-      _log_debug(LOG_DETAILS, "send failed {}", errorCode.to_string());
+      LOG_DEBUG("send failed {}", errorCode.to_string());
     }
     return 0;
   }
-  // _log_debug(LOG_DETAILS,"Socket write {} bytes" ,bytesSend );
+  // LOG_DEBUG("Socket write {} bytes" ,bytesSend );
   return bytesSend;
 }
 
