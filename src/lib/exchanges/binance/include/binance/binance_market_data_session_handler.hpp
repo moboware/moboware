@@ -15,7 +15,7 @@ namespace moboware::exchange::binance {
  * @brief handles a binance market stream for one instrument
  */
 template <typename TDataHandler>   //
-class BinanceMarketDataSessionHandler : private TDataHandler {
+class BinanceMarketDataSessionHandler : public TDataHandler {
 public:
   explicit BinanceMarketDataSessionHandler(const common::ServicePtr &service, const MarketSubscription &instrument);
   ~BinanceMarketDataSessionHandler() = default;
@@ -34,8 +34,7 @@ public:
   void OnSessionClosed(const boost::asio::ip::tcp::endpoint &endpoint);
 
 private:
-  const MarketSubscription &m_MarketSubscription;
-  BinanceStreamHandler m_BinanceStreamHandler;
+  const MarketSubscription m_MarketSubscription;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -58,24 +57,25 @@ void BinanceMarketDataSessionHandler<TDataHandler>::OnDataRead(const boost::beas
 {
   const std::string_view msg{(const char *)readBuffer.data().data(), readBuffer.data().size()};
 
-  m_BinanceStreamHandler.Clear();
-  // parse JSON with sax parser
-  bool result{nlohmann::json::sax_parse(msg.begin(), msg.end(), &m_BinanceStreamHandler, nlohmann::json::input_format_t::json, false, true)};
+  BinanceStreamHandler binanceStreamHandler;
 
-  switch (m_BinanceStreamHandler.GetStreamType()) {
-  case BinanceStreamHandler::StreamType::TradeTickStream:
-    TDataHandler::OnTradeTick(m_MarketSubscription.instrument, m_BinanceStreamHandler.GetTradeTick(), sessionTimePoint);
+  // parse JSON with sax parser
+  bool result{nlohmann::json::sax_parse(msg.begin(), msg.end(), &binanceStreamHandler, nlohmann::json::input_format_t::json, false, true)};
+
+  switch (binanceStreamHandler.GetStreamType()) {
+  case MarketDataStreamType::TradeTickStream:
+    TDataHandler::OnTradeTick(m_MarketSubscription.instrument, binanceStreamHandler.GetTradeTick(), sessionTimePoint);
     break;
-  case BinanceStreamHandler::StreamType::BookTickerStream:
-    TDataHandler::OnTopOfTheBook(m_MarketSubscription.instrument, m_BinanceStreamHandler.GetBestBidOffer(), sessionTimePoint);
+  case MarketDataStreamType::BookTickerStream:
+    TDataHandler::OnTopOfTheBook(m_MarketSubscription.instrument, binanceStreamHandler.GetBestBidOffer(), sessionTimePoint);
     break;
-  case BinanceStreamHandler::StreamType::Depth100msStream:
+  case MarketDataStreamType::Depth100msStream:
     LOG_INFO("{}", msg);
     break;
-  case BinanceStreamHandler::StreamType::Depth5LevelsStream:
-  case BinanceStreamHandler::StreamType::Depth10LevelsStream:
-  case BinanceStreamHandler::StreamType::Depth20LevelsStream:
-    TDataHandler::OnOrderbook(m_MarketSubscription.instrument, m_BinanceStreamHandler.GetOrderbook(), sessionTimePoint);
+  case MarketDataStreamType::Depth5LevelsStream:
+  case MarketDataStreamType::Depth10LevelsStream:
+  case MarketDataStreamType::Depth20LevelsStream:
+    TDataHandler::OnOrderbook(m_MarketSubscription.instrument, binanceStreamHandler.GetOrderbook(), sessionTimePoint);
     break;
   }
 }
@@ -84,6 +84,8 @@ template <typename TDataHandler>   //
 void BinanceMarketDataSessionHandler<TDataHandler>::OnSessionConnected(const boost::asio::ip::tcp::endpoint &endpoint)
 {
   LOG_INFO("Session connected to {}:{}", endpoint.address().to_string(), endpoint.port());
+
+  TDataHandler::OnSessionConnected(m_MarketSubscription.instrument);
 }
 
 template <typename TDataHandler>   //

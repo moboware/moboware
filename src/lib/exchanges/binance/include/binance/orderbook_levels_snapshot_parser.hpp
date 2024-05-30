@@ -19,14 +19,6 @@ public:
   OrderbookLevelsParser() = default;
   ~OrderbookLevelsParser() = default;
 
-  void Clear()
-  {
-    m_Orderbook.numberOfBidLevels = 0;
-    m_Orderbook.numberOfAskLevels = 0;
-    m_ArrayIndentation = 0;
-    m_PriceVolumeFieldsIndex = 0;
-  }
-
   inline const exchange::Orderbook &GetOrderbook() const
   {
     return m_Orderbook;

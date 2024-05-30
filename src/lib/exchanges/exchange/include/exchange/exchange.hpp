@@ -7,6 +7,16 @@
 
 namespace moboware::exchange {
 
+enum MarketDataStreamType : std::uint8_t {
+  NoneStream,
+  TradeTickStream = 1,
+  BookTickerStream,
+  Depth100msStream,
+  Depth5LevelsStream,
+  Depth10LevelsStream,
+  Depth20LevelsStream
+};
+
 struct Instrument {
   std::string exchange{};
   std::string exchangeSymbol{};
@@ -29,11 +39,7 @@ struct TradeTick {
 
 struct MarketSubscription {
   Instrument instrument;
-
-  bool bboFeed{false};               // bbo feed
-  bool orderBookDepthFeed{false};    // order book depth diff snapshot
-  bool orderBook5DepthFeed{false};   // order book 5 levels depth snapshot
-  bool tradeTickFeed{false};         // trade tick feed
+  std::vector<MarketDataStreamType> streamSubscriptions;
 };
 
 struct OrderbookLevel {
@@ -42,8 +48,9 @@ struct OrderbookLevel {
 };
 
 struct Orderbook {
-  using Bids = std::array<OrderbookLevel, 20u>;
-  using Asks = std::array<OrderbookLevel, 20u>;
+  static const std::size_t MaxOrderbookDepth{20u};
+  using Bids = std::array<OrderbookLevel, MaxOrderbookDepth>;
+  using Asks = std::array<OrderbookLevel, MaxOrderbookDepth>;
 
   Bids m_Bids;
   std::size_t numberOfBidLevels{};

@@ -39,7 +39,7 @@ int main(int, char **)
     bool result{json::sax_parse(trade_json.begin(), trade_json.end(), &binanceStreamHandler, json::input_format_t::json, false, true)};
     const auto d{common::SessionTime_t::now() - t1};
 
-    if (binanceStreamHandler.GetStreamType() == BinanceStreamHandler::StreamType::TradeTickStream) {
+    if (binanceStreamHandler.GetStreamType() == MarketDataStreamType::TradeTickStream) {
       LOG_INFO("parse time:{}, result:{}, TradeTick, tradeId={}, tradePrice={}, tradeVolume={}, tradeTime={}",
                d,
                result,
@@ -69,7 +69,7 @@ int main(int, char **)
       json::sax_parse(bookTickerStreamJson.begin(), bookTickerStreamJson.end(), &binanceStreamHandler, json::input_format_t::json, false, true)};
     const auto d{common::SessionTime_t::now() - t1};
 
-    if (binanceStreamHandler.GetStreamType() == BinanceStreamHandler::StreamType::BookTickerStream) {
+    if (binanceStreamHandler.GetStreamType() == MarketDataStreamType::BookTickerStream) {
       LOG_INFO("parse time:{}, result:{}, BookTicker, bid:{}@{} -- ask:{}@{}",
                d,
                result,
@@ -101,7 +101,7 @@ int main(int, char **)
                                 true)};
     const auto d{common::SessionTime_t::now() - t1};
 
-    if (binanceStreamHandler.GetStreamType() == BinanceStreamHandler::StreamType::Depth5LevelsStream) {
+    if (binanceStreamHandler.GetStreamType() == MarketDataStreamType::Depth5LevelsStream) {
       LOG_INFO("parse time:{}, result:{}, OrderbookDepth, bid[0] {}@{}, ask[0] {}@{}",
                d,
                result,

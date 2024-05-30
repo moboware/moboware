@@ -273,29 +273,22 @@ void WebSocketSession<TSessionCallback>::ReadData()
   m_ReadBuffer.clear();
 
   boost::asio::dispatch(boost::asio::bind_executor(m_WebSocketStream.get_executor(), [&]() {
-    //
+    // lambda websocket read function
     const auto readDataFunc{[this](const boost::beast::error_code &ec, const std::size_t /*bytesTransferred*/) {
-      // This indicates that the session was closed
-      if (ec == boost::beast::websocket::error::closed) {
-        LOG_ERROR("Read error, closed Web socket, {}", ec.what());
+      if (not ec.failed()) {
+        // forward read data to channel
+        SessionBase_t::m_DataHandlerCallback.OnDataRead(m_ReadBuffer, SessionBase_t::GetRemoteEndpoint(), std::chrono::steady_clock::now());
 
-        SessionBase_t::m_SessionClosedCleanupHandler(SessionBase_t::GetRemoteEndpoint());
-        return;
-      } else if (ec.failed()) {
+        // initialize new read operation
+        this->ReadData();
+      } else {
+        // This indicates that the session was closed
         LOG_ERROR("Read error: {}, endpoint:{}@{}",
                   ec.what(),
                   SessionBase_t::GetRemoteEndpoint().port(),
                   SessionBase_t::GetRemoteEndpoint().address().to_string());
 
         SessionBase_t::m_SessionClosedCleanupHandler(SessionBase_t::GetRemoteEndpoint());
-
-        return;
-      } else {
-        // forward read data to channel
-        SessionBase_t::m_DataHandlerCallback.OnDataRead(m_ReadBuffer, SessionBase_t::GetRemoteEndpoint(), std::chrono::steady_clock::now());
-
-        // initialize new read operation
-        this->ReadData();
       }
     }};
     // start async reading
