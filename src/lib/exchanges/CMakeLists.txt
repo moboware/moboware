@@ -1,2 +1,3 @@
 add_subdirectory(exchange)
 add_subdirectory(binance)
+add_subdirectory(bitstamp)

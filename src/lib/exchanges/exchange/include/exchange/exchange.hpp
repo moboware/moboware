@@ -14,7 +14,8 @@ enum MarketDataStreamType : std::uint8_t {
   Depth100msStream,
   Depth5LevelsStream,
   Depth10LevelsStream,
-  Depth20LevelsStream
+  Depth20LevelsStream,
+  Depth100LevelsStream
 };
 
 struct Instrument {
@@ -48,9 +49,14 @@ struct OrderbookLevel {
 };
 
 struct Orderbook {
-  static const std::size_t MaxOrderbookDepth{20u};
-  using Bids = std::array<OrderbookLevel, MaxOrderbookDepth>;
-  using Asks = std::array<OrderbookLevel, MaxOrderbookDepth>;
+  void Init(const std::size_t MaxOrderbookDepth = 20u)
+  {
+    m_Bids.reserve(MaxOrderbookDepth);
+    m_Asks.reserve(MaxOrderbookDepth);
+  }
+
+  using Bids = std::vector<OrderbookLevel>;
+  using Asks = std::vector<OrderbookLevel>;
 
   Bids m_Bids;
   std::size_t numberOfBidLevels{};

@@ -1,4 +1,4 @@
-project(binance_price_feed)
+project(market_data_feed)
 
 add_executable(${PROJECT_NAME}
     main.cpp
@@ -6,4 +6,5 @@ add_executable(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
     moboware::exchange::binance
+    moboware::exchange::bitstamp
 )

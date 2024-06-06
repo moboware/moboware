@@ -5,20 +5,16 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
-namespace moboware::exchange::binance {
+namespace moboware::exchange::bitstamp {
 
-// parse the binance orderbook depth feed that provides the full 5, 10 or 20 levels orderbook
-// e.g. 5 level deep orderbook snapshot:
-// { "stream":"btcusdt@depth5@100ms",
-//      "data":{"lastUpdateId":47393218092,
-//         "bids":[["68790.00000000","2.08416000"],["68789.95000000","0.03166000"],["68789.79000000","0.03709000"],["68788.60000000","0.05820000"],["68788.04000000","0.01324000"]],
-//         "asks":[["68790.01000000","6.81568000"],["68790.02000000","0.00436000"],["68790.03000000","0.00436000"],["68790.04000000","0.00436000"],["68790.05000000","0.00436000"]]
-// }}
+//
+// parse the bitstamp orderbook depth feed that provides the 100 levels orderbook
+//
 class OrderbookLevelsParser {
 public:
   OrderbookLevelsParser()
   {
-    m_Orderbook.Init(20u);   // max 20 levels deep
+    m_Orderbook.Init(100u);   // max 100 levels deep
   }
 
   ~OrderbookLevelsParser() = default;
@@ -72,4 +68,4 @@ private:
   std::size_t m_ArrayIndentation{};
   std::size_t m_PriceVolumeFieldsIndex{};
 };
-}   // namespace moboware::exchange::binance
+}   // namespace moboware::exchange::bitstamp

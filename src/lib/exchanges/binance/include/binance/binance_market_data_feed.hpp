@@ -3,25 +3,35 @@
 #include "binance/binance_market_data_session_handler.hpp"
 #include "common/service.h"
 #include "exchange/exchange.hpp"
+#include "exchange/market_data_feed.hpp"
 
 namespace moboware::exchange::binance {
 
+/**
+ * @brief Main class for initializing a market data feed to the binance exchange.
+ *        This class needs, next to the service and market subscriptions als a callback handler instance.
+ *        All classes used, are templated based and do not use any virtual methods in the data path to keep the latency to a minimum
+ *  The binance market data feeds currently implement:
+ *  - realtime ticker feed
+ *  - realtime bbo feed
+ *  - orderbook snapshot 100 ms update  of 5, 10 or 20 level depth
+ * There is no full order book, because this needs a http rest recovery interface and that is due to the latency delay not implemented.
+ *  All feeds need only the websocket interface of binance.
+ * @tparam TMarketFeedSessionHandler
+ */
 template <typename TMarketFeedSessionHandler>   //
-class BinanceMarketDataFeed {
+class BinanceMarketDataFeed : public MarketDataFeed {
 public:
   explicit BinanceMarketDataFeed(const common::ServicePtr &service,
                                  TMarketFeedSessionHandler &binancePriceHandler,
                                  const MarketSubscription &marketSubscription);
-  ~BinanceMarketDataFeed() = default;
+  virtual ~BinanceMarketDataFeed() = default;
 
-  bool Connect();
+  bool Connect() override;
 
 private:
-  common::ServicePtr m_Service{};
-
   using WebSocketClient_t = web_socket::WebSocketClient<TMarketFeedSessionHandler>;
   WebSocketClient_t m_WebSocketClient;
-  const MarketSubscription m_MarketSubscription;
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -29,10 +39,8 @@ template <typename TMarketFeedSessionHandler>   //
 BinanceMarketDataFeed<TMarketFeedSessionHandler>::BinanceMarketDataFeed(const common::ServicePtr &service,
                                                                         TMarketFeedSessionHandler &binancePriceHandler,
                                                                         const MarketSubscription &marketSubscription)
-  : m_Service(service)
+  : MarketDataFeed(service, marketSubscription)
   , m_WebSocketClient(service, binancePriceHandler)
-  , m_MarketSubscription(marketSubscription)
-
 {
 }
 

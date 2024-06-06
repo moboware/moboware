@@ -57,17 +57,17 @@ void BinanceMarketDataSessionHandler<TDataHandler>::OnDataRead(const boost::beas
 {
   const std::string_view msg{(const char *)readBuffer.data().data(), readBuffer.data().size()};
 
-  BinanceStreamHandler binanceStreamHandler;
+  BinanceStreamParser binanceStreamParser;
 
   // parse JSON with sax parser
-  bool result{nlohmann::json::sax_parse(msg.begin(), msg.end(), &binanceStreamHandler, nlohmann::json::input_format_t::json, false, true)};
+  bool result{nlohmann::json::sax_parse(msg.begin(), msg.end(), &binanceStreamParser, nlohmann::json::input_format_t::json, false, true)};
 
-  switch (binanceStreamHandler.GetStreamType()) {
+  switch (binanceStreamParser.GetStreamType()) {
   case MarketDataStreamType::TradeTickStream:
-    TDataHandler::OnTradeTick(m_MarketSubscription.instrument, binanceStreamHandler.GetTradeTick(), sessionTimePoint);
+    TDataHandler::OnTradeTick(m_MarketSubscription.instrument, binanceStreamParser.GetTradeTick(), sessionTimePoint);
     break;
   case MarketDataStreamType::BookTickerStream:
-    TDataHandler::OnTopOfTheBook(m_MarketSubscription.instrument, binanceStreamHandler.GetBestBidOffer(), sessionTimePoint);
+    TDataHandler::OnTopOfTheBook(m_MarketSubscription.instrument, binanceStreamParser.GetBestBidOffer(), sessionTimePoint);
     break;
   case MarketDataStreamType::Depth100msStream:
     LOG_INFO("{}", msg);
@@ -75,7 +75,7 @@ void BinanceMarketDataSessionHandler<TDataHandler>::OnDataRead(const boost::beas
   case MarketDataStreamType::Depth5LevelsStream:
   case MarketDataStreamType::Depth10LevelsStream:
   case MarketDataStreamType::Depth20LevelsStream:
-    TDataHandler::OnOrderbook(m_MarketSubscription.instrument, binanceStreamHandler.GetOrderbook(), sessionTimePoint);
+    TDataHandler::OnOrderbook(m_MarketSubscription.instrument, binanceStreamParser.GetOrderbook(), sessionTimePoint);
     break;
   }
 }

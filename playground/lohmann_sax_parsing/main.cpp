@@ -32,7 +32,7 @@ int main(int, char **)
                                        }})"};
 
     // create a SAX event consumer object
-    BinanceStreamHandler binanceStreamHandler;
+    BinanceStreamParser binanceStreamHandler;
 
     // parse JSON
     const auto t1{common::SessionTime_t::now()};
@@ -61,7 +61,7 @@ int main(int, char **)
         "a":"68325.10000000",
         "A":"6.82643000"
         }})"};
-    BinanceStreamHandler binanceStreamHandler;
+    BinanceStreamParser binanceStreamHandler;
 
     // parse JSON
     const auto t1{common::SessionTime_t::now()};
@@ -89,7 +89,7 @@ int main(int, char **)
             "asks":[["68790.01000000","6.81568000"],["68790.02000000","0.00436000"],["68790.03000000","0.00436000"],["68790.04000000","0.00436000"],["68790.05000000","0.00436000"]]
       }})"};
 
-    BinanceStreamHandler binanceStreamHandler;
+    BinanceStreamParser binanceStreamHandler;
 
     // parse JSON
     const auto t1{common::SessionTime_t::now()};
