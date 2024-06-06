@@ -29,11 +29,14 @@ public:
   bool Connect() override;
 
 private:
+  bool SubscribeLiveTradeFeed(const exchange::Instrument &instrument);
+
   using WebSocketClient_t = web_socket::WebSocketClient<TMarketFeedSessionHandler>;
   WebSocketClient_t m_WebSocketClient;
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 template <typename TMarketFeedSessionHandler>   //
 BitstampMarketDataFeed<TMarketFeedSessionHandler>::BitstampMarketDataFeed(const common::ServicePtr &service,
                                                                           TMarketFeedSessionHandler &binancePriceHandler,
@@ -47,47 +50,41 @@ template <typename TMarketFeedSessionHandler>   //
 bool BitstampMarketDataFeed<TMarketFeedSessionHandler>::Connect()
 {
   // make subscription list of the stream that we are interested in
-  //"/stream?streams=btcusdt@bookTicker/btcusdt@trade/btcusdt@depth@100ms"
-  // std::vector<std::string> feeds;
-  // for (const auto streamSubscription : m_MarketSubscription.streamSubscriptions) {
-  //  switch (streamSubscription) {
-  //  case MarketDataStreamType::BookTickerStream:
-  //    feeds.push_back(m_MarketSubscription.instrument.exchangeSymbol + "@bookTicker");
-  //    break;
-  //  case MarketDataStreamType::TradeTickStream:
-  //    feeds.push_back(m_MarketSubscription.instrument.exchangeSymbol + "@trade");
-  //    break;
-  //  case MarketDataStreamType::Depth100msStream:
-  //    // orderbook depth snapshot update period 100ms
-  //    feeds.push_back(m_MarketSubscription.instrument.exchangeSymbol + "@depth@100ms");
-  //    break;
-  //  case MarketDataStreamType::Depth5LevelsStream:
-  //    // orderbook depth snapshot update period 100ms 5 levels deep
-  //    feeds.push_back(m_MarketSubscription.instrument.exchangeSymbol + "@depth5@100ms");
-  //    break;
-  //  case MarketDataStreamType::Depth10LevelsStream:
-  //    // orderbook depth snapshot update period 100ms 10 levels deep
-  //    feeds.push_back(m_MarketSubscription.instrument.exchangeSymbol + "@depth10@100ms");
-  //    break;
-  //  case MarketDataStreamType::Depth20LevelsStream:
-  //    // orderbook depth snapshot update period 100ms 20 levels deep
-  //    feeds.push_back(m_MarketSubscription.instrument.exchangeSymbol + "@depth20@100ms");
-  //    break;
-  //  }
-  //}
-  //
-  std::string stream{"/stream?streams="};
-  // for (std::size_t i = 0; i < feeds.size(); i++) {
-  //  stream += feeds[i];
-  //  if (i < feeds.size() - 1) {
-  //    stream += "/";
-  //  }
-  //}
-  LOG_INFO("subscription:{}", stream);
+  LOG_INFO("Connecting to Bitstamp");
 
-  m_WebSocketClient.SetTarget(stream);
+  if (m_WebSocketClient.Start("ws.bitstamp.net", 9443)) {
+    // subscribe to channels
+    LOG_INFO("Connected to Bitstamp!");
 
-  return m_WebSocketClient.Start("ws.bitstamp.net", 9443);
+    for (const auto streamSubscription : m_MarketSubscription.streamSubscriptions) {
+      switch (streamSubscription) {
+      case MarketDataStreamType::TradeTickStream:
+
+        if (not SubscribeLiveTradeFeed(m_MarketSubscription.instrument)) {
+          break;
+        }
+        break;
+      case MarketDataStreamType::Depth100LevelsStream:
+        // orderbook depth snapshot update period 100ms 20 levels deep
+        // feeds.push_back(m_MarketSubscription.instrument.exchangeSymbol + "@depth20@100ms");
+        break;
+      }
+    }
+    return true;
+  }
+  return false;
+}
+
+template <typename TMarketFeedSessionHandler>   //
+bool BitstampMarketDataFeed<TMarketFeedSessionHandler>::SubscribeLiveTradeFeed(const exchange::Instrument &instrument)
+{
+  LOG_INFO("subscription to live trade feed:{}::{}", instrument.exchange, instrument.exchangeSymbol);
+
+  std::stringstream ss;
+  // exchange symbol should be in lower case
+  ss << "{\"event\":\"bts:subscribe\",\"data\":{\"channel\":\"live_trades_" << instrument.exchangeSymbol << "\"}}";
+
+  return m_WebSocketClient.SendWebSocketData({ss.view().data(), ss.view().size()});
 }
 
 }   // namespace moboware::exchange::bitstamp

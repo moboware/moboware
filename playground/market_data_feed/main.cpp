@@ -81,7 +81,7 @@ int main(int, char **)
       {MarketDataStreamType::BookTickerStream, MarketDataStreamType::Depth10LevelsStream, MarketDataStreamType::TradeTickStream}
     };
 
-    marketFeeds.push_back(std::move(std::make_unique<BinanceExchangeMarketDataFeed_t>(service, marketSubscription)));
+    // marketFeeds.push_back(std::move(std::make_unique<BinanceExchangeMarketDataFeed_t>(service, marketSubscription)));
   }
 
   {   // feed for binance::ethusdt
@@ -96,7 +96,7 @@ int main(int, char **)
       {MarketDataStreamType::BookTickerStream, MarketDataStreamType::Depth10LevelsStream, MarketDataStreamType::TradeTickStream}
     };
 
-    marketFeeds.push_back(std::move(std::make_unique<BinanceExchangeMarketDataFeed_t>(service, marketSubscription)));
+    // marketFeeds.push_back(std::move(std::make_unique<BinanceExchangeMarketDataFeed_t>(service, marketSubscription)));
   }
 
   {   // feed for bitstamp::btcusd
@@ -108,7 +108,8 @@ int main(int, char **)
         "btc_usd"      //
       },
  // subscriptions
-      {MarketDataStreamType::Depth100LevelsStream,            MarketDataStreamType::TradeTickStream}
+      {MarketDataStreamType::Depth100LevelsStream,            //
+       MarketDataStreamType::TradeTickStream}
     };
 
     marketFeeds.push_back(std::move(std::make_unique<BitstampExchangeMarketDataFeed_t>(service, marketSubscription)));
@@ -127,6 +128,8 @@ int main(int, char **)
             // reconnect
             if (marketFeedPtr->GetMarketFeed().Connect()) {
               LOG_INFO("Connected to binance market feed");
+            } else {
+              LOG_WARN("Failed to connect binance market feed");
             }
           }
         } else if (std::holds_alternative<BitstampExchangeMarketDataFeedPtr_t>(marketFeedVariant)) {
@@ -137,6 +140,8 @@ int main(int, char **)
             // reconnect
             if (marketFeedPtr->GetMarketFeed().Connect()) {
               LOG_INFO("Connected to bitstamp market feed");
+            } else {
+              LOG_WARN("Failed to connect bitstamp market feed");
             }
           }
         }

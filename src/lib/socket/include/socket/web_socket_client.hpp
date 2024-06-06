@@ -31,7 +31,7 @@ private:
   using WebSocketClientServer_t = WebSocketClientServer<TSessionCallback>;
   using WebSocketSession_t = WebSocketSession<TSessionCallback>;
   std::shared_ptr<WebSocketSession_t> m_Session;
-  std::string m_Target{};
+  std::string m_Target{"/"};
 };
 
 template <typename TSessionCallback>   //
