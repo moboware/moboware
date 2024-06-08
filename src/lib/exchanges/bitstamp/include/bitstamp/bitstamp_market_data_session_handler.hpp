@@ -54,7 +54,7 @@ void BitstampMarketDataSessionHandler<TDataHandler>::OnDataRead(const boost::bea
 {
   const std::string_view msg{(const char *)readBuffer.data().data(), readBuffer.data().size()};
 
-  BitstampStreamParser bitstampStreamParser;
+  BitstampStreamParser bitstampStreamParser(msg);
 
   // parse JSON with sax parser
   bool result{nlohmann::json::sax_parse(msg.begin(), msg.end(), &bitstampStreamParser, nlohmann::json::input_format_t::json, false, true)};

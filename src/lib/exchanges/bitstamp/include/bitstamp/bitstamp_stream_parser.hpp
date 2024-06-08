@@ -9,10 +9,18 @@ namespace moboware::exchange::bitstamp {
 /**
  * @brief Bitstamp stream parser. Uses the nlohmann sax parser to parse the json
  *        stream received from the bitstamp websocket
+ *
+ * channel subscriptions: "{"event":"bts:subscription_succeeded","channel":"live_trades_btcusd","data":{}}" *
+ * trade tick event :
+ *  "{
+ *     "data":{"id":343272513,"timestamp":"1717840425","amount":0.00051,"amount_str":"0.00051000","price":69431,"price_str":"69431","type":0,"microtimestamp":"1717840425928000","buy_order_id":1757206328406016,"sell_order_id":1757206107889664},
+ *     "channel":"live_trades_btcusd","event":"trade"
+ *  }"
  */
 class BitstampStreamParser : public nlohmann::json::json_sax_t {
 public:
-  BitstampStreamParser();
+  explicit BitstampStreamParser(const std::string_view &msg);
+
   virtual ~BitstampStreamParser() = default;
 
   inline bool null() override
@@ -45,31 +53,15 @@ public:
 
   inline bool string(string_t &value) override
   {
-    //    if (m_StreamType == MarketDataStreamType::NoneStream and m_Key == "stream") {   // first initialization
-    //      if (value.find("@trade") != std::string::npos) {
-    //        m_StreamType = MarketDataStreamType::TradeTickStream;
-    //      } else if (value.find("@bookTicker") != std::string::npos) {
-    //        m_StreamType = MarketDataStreamType::BookTickerStream;
-    //      } else if (value.find("@depth@100ms") != std::string::npos) {
-    //        m_StreamType = MarketDataStreamType::Depth100msStream;
-    //      } else if (value.find("@depth5@100ms") != std::string::npos) {
-    //        m_StreamType = MarketDataStreamType::Depth5LevelsStream;
-    //      } else if (value.find("@depth10@100ms") != std::string::npos) {
-    //        m_StreamType = MarketDataStreamType::Depth10LevelsStream;
-    //      } else if (value.find("@depth20@100ms") != std::string::npos) {
-    //        m_StreamType = MarketDataStreamType::Depth20LevelsStream;
-    //      }
-    //    }
-    //
-    //    else if (m_StreamType == MarketDataStreamType::TradeTickStream) {
-    //      return m_TradeTickStreamParser.HandleTradeTick(m_Key, value);
-    //    } else if (m_StreamType == MarketDataStreamType::BookTickerStream) {
-    //      return m_BookTickerStreamParser.HandleBookTicker(m_Key, value);
-    //    } else if (m_StreamType == MarketDataStreamType::Depth5LevelsStream or    //
-    //               m_StreamType == MarketDataStreamType::Depth10LevelsStream or   //
-    //               m_StreamType == MarketDataStreamType::Depth20LevelsStream) {
-    //      return m_OrderbookLevelsParser.HandleOrderBookLevel(m_Key, value);
-    //    }
+    if (m_StreamType == MarketDataStreamType::TradeTickStream) {
+      return m_TradeTickStreamParser.HandleTradeTick(m_Key, value);
+      //    } else if (m_StreamType == MarketDataStreamType::BookTickerStream) {
+      //      return m_BookTickerStreamParser.HandleBookTicker(m_Key, value);
+      //    } else if (m_StreamType == MarketDataStreamType::Depth5LevelsStream or    //
+      //               m_StreamType == MarketDataStreamType::Depth10LevelsStream or   //
+      //               m_StreamType == MarketDataStreamType::Depth20LevelsStream) {
+      //      return m_OrderbookLevelsParser.HandleOrderBookLevel(m_Key, value);
+    }
 
     return true;
   }

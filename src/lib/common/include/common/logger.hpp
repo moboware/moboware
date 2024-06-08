@@ -148,15 +148,21 @@ public:
     }
 
     const auto now{std::chrono::system_clock::now()};
-    m_LogFileStreamPath = logFilePath;
+
     const auto fileName{fmt::format("{:%Y%m%d}_{}",   //
                                     now,
                                     logFilePath.filename().c_str())};
-    m_LogFileStreamPath.replace_filename(fileName);
 
-    m_LogFileStream.open(m_LogFileStreamPath.c_str(), std::ios_base::out | std::ios_base::app);
+    auto logFileStreamPath{logFilePath};
+    logFileStreamPath.replace_filename(fileName);
+    const std::string s{logFileStreamPath.string().c_str()};
+    std::cout << logFileStreamPath.string().c_str() << "," << s << std::endl;
+    m_LogFileStream.open(s.c_str(), std::ios_base::out | std::ios_base::app);
 
     if (m_LogFileStream.is_open()) {
+      const std::string_view buffer{"Start new log file entry"};
+      m_LogFileStream.write(buffer.data(), buffer.size());
+
       return true;
     }
     return false;
@@ -252,7 +258,6 @@ private:
 
   LogQueue_t m_LogQueue;
   std::ofstream m_LogFileStream{};
-  std::filesystem::path m_LogFileStreamPath;
 
   std::jthread m_LogConsumerThread;
   std::condition_variable m_ConditionVariable;

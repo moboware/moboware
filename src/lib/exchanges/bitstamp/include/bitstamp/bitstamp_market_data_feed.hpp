@@ -52,7 +52,7 @@ bool BitstampMarketDataFeed<TMarketFeedSessionHandler>::Connect()
   // make subscription list of the stream that we are interested in
   LOG_INFO("Connecting to Bitstamp");
 
-  if (m_WebSocketClient.Start("ws.bitstamp.net", 9443)) {
+  if (m_WebSocketClient.Start("ws.bitstamp.net", 443)) {
     // subscribe to channels
     LOG_INFO("Connected to Bitstamp!");
 

@@ -19,27 +19,27 @@ public:
 
   [[nodiscard]] inline bool HandleTradeTick(const std::string &key, nlohmann::json::json_sax_t::number_unsigned_t value)
   {
-    //    if (key == "T") {
-    //      m_TradeTick.tradeTime = common::SystemTimePoint_t(std::chrono::milliseconds(value));   // trade time
-    //      m_TradeTickFields |= TradeTickFields::TradeTickTimeField;
-    //
-    //    } else if (key == "t") {
-    //      m_TradeTick.tradeId = std::move(std::to_string(value));   // trade id
-    //      m_TradeTickFields |= TradeTickFields::TradeTickIdField;
-    //    }
+
+    if (key == "id") {
+      m_TradeTick.tradeId = std::move(std::to_string(value));   // trade id
+      m_TradeTickFields |= TradeTickFields::TradeTickIdField;
+    }
     return TestTradeTickFields();
   }
 
   [[nodiscard]] inline bool HandleTradeTick(const std::string &key, std::string &value)
   {
-    // char **endptr{};
-    //  if (key == "p") {
-    //    m_TradeTick.tradePrice = strtod(value.c_str(), endptr);   // trade price
-    //    m_TradeTickFields |= TradeTickFields::TradeTickPriceField;
-    //  } else if (key == "q") {
-    //    m_TradeTick.tradeVolume = strtod(value.c_str(), endptr);   // trade volume
-    //    m_TradeTickFields |= TradeTickFields::TradeTickVolumeField;
-    //  }
+    char **endptr{};
+    if (key == "price_str") {
+      m_TradeTick.tradePrice = strtod(value.c_str(), endptr);   // trade price
+      m_TradeTickFields |= TradeTickFields::TradeTickPriceField;
+    } else if (key == "amount_str") {
+      m_TradeTick.tradeVolume = strtod(value.c_str(), endptr);   // trade volume
+      m_TradeTickFields |= TradeTickFields::TradeTickVolumeField;
+    } else if (key == "microtimestamp") {
+      m_TradeTick.tradeTime = common::SystemTimePoint_t(std::chrono::microseconds(atol(value.c_str())));   // trade time
+      m_TradeTickFields |= TradeTickFields::TradeTickTimeField;
+    }
     return TestTradeTickFields();
   }
 

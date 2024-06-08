@@ -60,9 +60,19 @@ using BinanceExchangeMarketDataFeed_t =
   ExchangeMarketDataFeed<BinanceMarketDataFeed<BinanceMarketDataFeedHandler_t>, BinanceMarketDataFeedHandler_t>;
 using BinanceExchangeMarketDataFeedPtr_t = std::unique_ptr<BinanceExchangeMarketDataFeed_t>;
 
-int main(int, char **)
+int main(const int argc, const char *argv[])
 {
-  Logger::GetInstance().SetLogFile("./market_data_feed.log");
+#if 0
+  //log file name with full does not log for some reason
+  std::string argv0{argv[0]};
+  const auto rootDir{std::filesystem::path(argv0).parent_path()};
+  auto logFile{rootDir};
+  logFile /= "market_data_feed.log";
+  LOG_INFO("log file:{}", logFile.string());
+  Logger::GetInstance().SetLogFile(logFile);
+#else
+  Logger::GetInstance().SetLogFile("market_data_feed.log");
+#endif
 
   common::ServicePtr service{std::make_shared<common::Service>()};
   boost::asio::signal_set signals(service->GetIoService(), SIGTERM, SIGINT);
@@ -80,8 +90,7 @@ int main(int, char **)
  // subscriptions
       {MarketDataStreamType::BookTickerStream, MarketDataStreamType::Depth10LevelsStream, MarketDataStreamType::TradeTickStream}
     };
-
-    // marketFeeds.push_back(std::move(std::make_unique<BinanceExchangeMarketDataFeed_t>(service, marketSubscription)));
+    marketFeeds.push_back(std::move(std::make_unique<BinanceExchangeMarketDataFeed_t>(service, marketSubscription)));
   }
 
   {   // feed for binance::ethusdt
@@ -95,7 +104,6 @@ int main(int, char **)
  // subscriptions
       {MarketDataStreamType::BookTickerStream, MarketDataStreamType::Depth10LevelsStream, MarketDataStreamType::TradeTickStream}
     };
-
     // marketFeeds.push_back(std::move(std::make_unique<BinanceExchangeMarketDataFeed_t>(service, marketSubscription)));
   }
 
@@ -103,12 +111,12 @@ int main(int, char **)
     const MarketSubscription marketSubscription{
   // instrument
       {
-       "bitstamp ", //
-        "btcusd",                //
-        "btc_usd"      //
+       "bitstamp", //
+        "btcusd",                 //
+        "btc_usd"     //
       },
  // subscriptions
-      {MarketDataStreamType::Depth100LevelsStream,            //
+      {MarketDataStreamType::Depth100LevelsStream,           //
        MarketDataStreamType::TradeTickStream}
     };
 
